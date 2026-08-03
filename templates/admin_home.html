@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <title>EduMate - Admin Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <h1>EduMate</h1>
+    <h3>Admin Dashboard</h3>
+
+</header>
+
+
+
+<div class="dashboard">
+
+
+    <!-- Sidebar -->
+
+    <div class="sidebar">
+
+
+        <h3>User Management</h3>
+
+
+        <a href="{{ url_for('admin.add_teacher') }}">
+            Add Teacher
+        </a>
+
+
+        <a href="{{ url_for('admin.view_teachers') }}">
+            View Teachers
+        </a>
+
+
+        <a href="{{ url_for('admin.add_parent') }}">
+            Add Parent
+        </a>
+
+
+        <a href="{{ url_for('admin.view_parents') }}">
+            View Parents
+        </a>
+
+
+
+        <br>
+
+
+        <h3>Academic</h3>
+
+
+        <a href="{{ url_for('admin.add_standard') }}">
+            Add Standard
+        </a>
+
+
+        <a href="{{ url_for('admin.add_subject') }}">
+            Add Subject
+        </a>
+
+
+        <a href="{{ url_for('admin.add_chapter') }}">
+            Add Chapter
+        </a>
+
+
+
+        <br>
+
+
+        <h3>Reports</h3>
+
+
+        <a href="{{ url_for('admin.student_progress_for_admin') }}">
+            Student Progress
+        </a>
+
+
+
+        <br>
+
+
+        <h3>Account</h3>
+
+
+        <a href="{{ url_for('admin.admin_profile') }}">
+            My Profile
+        </a>
+
+
+        <a href="{{ url_for('auth.logout') }}">
+            Logout
+        </a>
+
+
+    </div>
+
+
+
+
+    <!-- Main Content -->
+
+    <div class="content">
+
+
+        <h2>Welcome Administrator</h2>
+
+
+        <p>
+            Welcome to the EduMate Administration Portal.
+            Select an option from the menu to manage the system.
+        </p>
+
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>
