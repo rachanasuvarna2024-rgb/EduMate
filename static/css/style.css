@@ -283,3 +283,29 @@ footer {
     padding: 12px;
     margin-top: 20px;
 }
+
+/*-----------------------------------
+Password Toggle Button Styles
+------------------------------------*/
+.password-container {
+    position: relative;
+}
+
+.password-container input {
+    padding-right: 45px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 0;
+    background: none;
+    color: #1f4e79;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+.password-toggle:hover {
+    background: none;
+}

@@ -1,0 +1,60 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>Add Standard</h2>
+
+    <p>Enter the standard details below.</p>
+
+
+    {% if message %}
+
+        {% if "successfully" in message %}
+
+            <div class="success">
+                {{ message }}
+            </div>
+
+        {% else %}
+
+            <div class="error">
+                {{ message }}
+            </div>
+
+        {% endif %}
+
+    {% endif %}
+
+
+    <div class="card">
+
+        <form action="{{ url_for('admin.add_standard') }}"
+              method="POST">
+
+
+            <label for="standard_name">
+                Standard Name:
+            </label>
+
+            <input type="text"
+                   id="standard_name"
+                   name="standard_name"
+                   placeholder="Enter standard name"
+                   maxlength="50"
+                   required>
+
+
+            <button type="submit">
+                Add Standard
+            </button>
+
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

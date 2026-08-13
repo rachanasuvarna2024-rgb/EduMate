@@ -1,0 +1,86 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>Edit Teacher</h2>
+
+    <p>Update the teacher's details below.</p>
+
+
+    {% if message %}
+
+        <div class="error">
+            {{ message }}
+        </div>
+
+    {% endif %}
+
+
+    <div class="card">
+
+        <form action="{{ url_for('admin.edit_teacher', teacher_id=teacher.teacher_id) }}"
+              method="POST">
+
+
+            <label for="name">Teacher Name:</label>
+
+            <input type="text"
+                   id="name"
+                   name="name"
+                   value="{{ teacher.name }}"
+                   required>
+
+
+            <label for="email">Email:</label>
+
+            <input type="email"
+                   id="email"
+                   name="email"
+                   value="{{ teacher.email }}"
+                   required>
+
+
+            <label for="mobile">Mobile Number:</label>
+
+            <input type="text"
+                   id="mobile"
+                   name="mobile"
+                   value="{{ teacher.mobile or '' }}"
+                   maxlength="15">
+
+
+            <label for="department">Department:</label>
+
+            <input type="text"
+                   id="department"
+                   name="department"
+                   value="{{ teacher.department or '' }}">
+
+
+            <label for="designation">Designation:</label>
+
+            <input type="text"
+                   id="designation"
+                   name="designation"
+                   value="{{ teacher.designation or '' }}">
+
+
+            <button type="submit">
+                Save Changes
+            </button>
+
+
+            <a href="{{ url_for('admin.view_teachers') }}"
+               class="btn">
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

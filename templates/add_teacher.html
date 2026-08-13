@@ -1,0 +1,112 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>Add Teacher</h2>
+
+    <p>Enter the teacher's details below.</p>
+
+
+    {% if message %}
+
+        <div class="success">
+            {{ message }}
+        </div>
+
+    {% endif %}
+
+
+    <div class="card">
+
+        <form action="{{ url_for('admin.add_teacher') }}" method="POST">
+
+            <label for="name">Teacher Name:</label>
+
+            <input type="text"
+                   id="name"
+                   name="name"
+                   required>
+
+
+            <label for="email">Email:</label>
+
+            <input type="email"
+                   id="email"
+                   name="email"
+                   required>
+
+
+            <label for="password">Password:</label>
+
+            <div class="password-container">
+
+                <input type="password"
+                       id="password"
+                       name="password"
+                       required>
+
+                <button type="button"
+                        class="password-toggle"
+                        onclick="togglePassword()">
+                    👁
+                </button>
+
+            </div>
+
+
+            <label for="mobile">Mobile Number:</label>
+
+            <input type="text"
+                   id="mobile"
+                   name="mobile"
+                   maxlength="15">
+
+
+            <label for="department">Department:</label>
+
+            <input type="text"
+                   id="department"
+                   name="department">
+
+
+            <label for="designation">Designation:</label>
+
+            <input type="text"
+                   id="designation"
+                   name="designation">
+
+
+            <button type="submit">
+                Add Teacher
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<script>
+
+function togglePassword() {
+
+    var password = document.getElementById("password");
+
+    if (password.type === "password") {
+
+        password.type = "text";
+
+    } else {
+
+        password.type = "password";
+
+    }
+
+}
+
+</script>
+
+{% endblock %}
