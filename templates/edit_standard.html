@@ -1,0 +1,80 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Edit Standard</h2>
+    <p>Update the standard name below.</p>
+
+    {% if err %}
+        <div class="alert alert-danger">{{ err }}</div>
+    {% endif %}
+
+    <div class="card form-card">
+        <form method="POST" action="{{ url_for('admin.edit_standard', standard_id=standard.standard_id) }}" id="editStandardForm" novalidate>
+            <div class="form-group">
+                <label for="standard_name">Standard Name <span class="required">*</span></label>
+                <input type="text" 
+                       id="standard_name" 
+                       name="standard_name" 
+                       value="{{ standard.standard_name }}" 
+                       placeholder="e.g., 10, FYBSc, 10th" 
+                       maxlength="50" 
+                       required>
+                <small id="standardError" class="error"></small>
+            </div>
+            
+            <div class="form-actions" style="margin-top: 15px;">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{{ url_for('admin.add_standard') }}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.error {
+    color: red;
+    display: none;
+    margin-top: 3px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+}
+</style>
+
+<script>
+const form = document.getElementById("editStandardForm");
+const standardInput = document.getElementById("standard_name");
+const error = document.getElementById("standardError");
+
+function validateStandardName() {
+    const name = standardInput.value.trim();
+    const pattern = /^[A-Za-z0-9]{1,50}$/;
+
+    if (name === "") {
+        error.textContent = "Standard name is required.";
+        error.style.display = "block";
+        return false;
+    }
+
+    if (!pattern.test(name)) {
+        error.textContent = "Standard name must contain only letters and numbers (no spaces or special characters allowed).";
+        error.style.display = "block";
+        return false;
+    }
+
+    error.textContent = "";
+    error.style.display = "none";
+    return true;
+}
+
+standardInput.addEventListener("input", validateStandardName);
+
+form.addEventListener("submit", function(event) {
+    if (!validateStandardName()) {
+        event.preventDefault();
+    }
+});
+</script>
+{% endblock %}

@@ -1,107 +1,25 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
+{% block title %}EduMate - Parent Dashboard{% endblock %}
+{% block portal_title %}Parent Guidance Portal{% endblock %}
 
-<head>
+{% block sidebar %}
+<h3>Child Monitoring</h3>
+<a href="#">Child Performance Overview</a>
+<a href="#">Weak Areas Analysis</a>
+<a href="#">Teacher Suggestions</a>
+<a href="#">Study Recommendations</a>
 
-    <title>EduMate - Parent Dashboard</title>
+<h3>Account</h3>
+<a href="#">My Profile</a>
+<a href="{{ url_for('auth.logout') }}">Logout</a>
+{% endblock %}
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
-
-</head>
-
-
-<body>
-
-
-<header>
-
-    <h1>EduMate</h1>
-    <h3>Parent Dashboard</h3>
-
-</header>
-
-
-
-<div class="dashboard">
-
-
-    <!-- Sidebar -->
-
-    <div class="sidebar">
-
-
-        <h3>Student Information</h3>
-
-
-        <a href="{{ url_for('parent.child_profile') }}">
-            Child Profile
-        </a>
-
-
-
-        <br>
-
-
-
-        <h3>Performance</h3>
-
-
-        <a href="{{ url_for('parent.child_results') }}">
-            View Test Results
-        </a>
-
-
-        <a href="{{ url_for('parent.child_progress') }}">
-            View Progress Report
-        </a>
-
-
-
-        <br>
-
-
-
-        <h3>Account</h3>
-
-
-        <a href="{{ url_for('parent.parent_profile') }}">
-            My Profile
-        </a>
-
-
-        <a href="{{ url_for('auth.logout') }}">
-            Logout
-        </a>
-
-
-    </div>
-
-
-
-
-    <!-- Main Content -->
-
-    <div class="content">
-
-
-        <h2>Welcome Parent</h2>
-
-
-        <p>
-            Welcome to the EduMate Parent Portal.
-            Use the menu on the left to view your child's profile,
-            monitor test results, and track academic progress.
-        </p>
-
-
-    </div>
-
-
+{% block content %}
+<div class="container">
+    <h2>Welcome Parent</h2>
+    <p>
+        Welcome to the EduMate Parent Guidance Dashboard. Monitor your child's academic progress, view weak concept analysis, and review teacher recommendations[cite: 1].
+    </p>
 </div>
-
-
-</body>
-
-</html>
+{% endblock %}

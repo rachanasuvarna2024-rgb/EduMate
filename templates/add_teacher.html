@@ -4,96 +4,450 @@
 
 <div class="container">
 
-    <h2>Add Teacher</h2>
+<h2>Add Teacher</h2>
 
-    <p>Enter the teacher's details below.</p>
+<p>Enter the teacher's details below.</p>
+
+{% if message %}
+    <div class="success">
+        {{ message }}
+    </div>
+{% endif %}
+
+<div class="card">
+
+    <form action="{{ url_for('admin.add_teacher') }}"
+          method="POST"
+          id="teacherForm"
+          novalidate>
+
+        <!-- Teacher Name -->
+        <label for="name">Teacher Name:</label>
+
+        <input type="text"
+               id="name"
+               name="name"
+               maxlength="50"
+               required>
+
+        <small id="nameError" class="error"></small>
 
 
-    {% if message %}
+        <!-- Email -->
+        <label for="email">Email:</label>
 
-        <div class="success">
-            {{ message }}
-        </div>
+        <input type="email"
+               id="email"
+               name="email"
+               maxlength="100"
+               required>
 
-    {% endif %}
+        <small id="emailError" class="error"></small>
 
 
-    <div class="card">
+        <!-- Password -->
+        <label for="password">Password:</label>
 
-        <form action="{{ url_for('admin.add_teacher') }}" method="POST">
+        <div class="password-container">
 
-            <label for="name">Teacher Name:</label>
-
-            <input type="text"
-                   id="name"
-                   name="name"
+            <input type="password"
+                   id="password"
+                   name="password"
+                   minlength="8"
                    required>
 
-
-            <label for="email">Email:</label>
-
-            <input type="email"
-                   id="email"
-                   name="email"
-                   required>
-
-
-            <label for="password">Password:</label>
-
-            <div class="password-container">
-
-                <input type="password"
-                       id="password"
-                       name="password"
-                       required>
-
-                <button type="button"
-                        class="password-toggle"
-                        onclick="togglePassword()">
-                    👁
-                </button>
-
-            </div>
-
-
-            <label for="mobile">Mobile Number:</label>
-
-            <input type="text"
-                   id="mobile"
-                   name="mobile"
-                   maxlength="15">
-
-
-            <label for="department">Department:</label>
-
-            <input type="text"
-                   id="department"
-                   name="department">
-
-
-            <label for="designation">Designation:</label>
-
-            <input type="text"
-                   id="designation"
-                   name="designation">
-
-
-            <button type="submit">
-                Add Teacher
+            <button type="button"
+                    class="password-toggle"
+                    onclick="togglePassword()">
+                👁
             </button>
 
-        </form>
+        </div>
 
-    </div>
+        <small id="passwordError" class="error"></small>
+
+
+        <!-- Mobile -->
+        <label for="mobile">Mobile Number:</label>
+
+        <input type="text"
+               id="mobile"
+               name="mobile"
+               maxlength="10"
+               inputmode="numeric"
+               required>
+
+        <small id="mobileError" class="error"></small>
+
+
+        <!-- Department -->
+        <label for="department">Department:</label>
+
+        <input type="text"
+               id="department"
+               name="department"
+               maxlength="50">
+
+        <small id="departmentError" class="error"></small>
+
+
+        <!-- Designation -->
+        <label for="designation">Designation:</label>
+
+        <input type="text"
+               id="designation"
+               name="designation"
+               maxlength="50">
+
+        <small id="designationError" class="error"></small>
+
+
+        <button type="submit">
+            Add Teacher
+        </button>
+
+    </form>
 
 </div>
 
+</div>
+
+<style>
+
+/* Error message */
+.error {
+    color: red;
+    display: none;
+    margin-top: 3px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+}
+
+/* Make sure validation never changes input appearance */
+input.invalid,
+input.valid {
+    border: 1px solid #ccc !important;
+    background-color: white !important;
+    box-shadow: none !important;
+}
+
+</style>
 
 <script>
 
+const form = document.getElementById("teacherForm");
+
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const mobileInput = document.getElementById("mobile");
+const departmentInput = document.getElementById("department");
+const designationInput = document.getElementById("designation");
+
+
+// =====================================================
+// ERROR MESSAGE FUNCTIONS
+// =====================================================
+
+function showError(errorElement, message) {
+
+    errorElement.textContent = message;
+    errorElement.style.display = "block";
+
+}
+
+
+function clearError(errorElement) {
+
+    errorElement.textContent = "";
+    errorElement.style.display = "none";
+
+}
+
+
+// =====================================================
+// NAME VALIDATION
+// =====================================================
+
+function validateName() {
+
+    const name = nameInput.value.trim();
+    const error = document.getElementById("nameError");
+
+    const namePattern = /^[A-Za-z][A-Za-z .']{1,49}$/;
+
+    if (name === "") {
+
+        showError(error, "Teacher name is required.");
+        return false;
+
+    }
+
+    if (!namePattern.test(name)) {
+
+        showError(
+            error,
+            "Name should contain only letters, spaces, dots or apostrophes."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+
+    return true;
+}
+
+
+// =====================================================
+// EMAIL VALIDATION
+// =====================================================
+
+function validateEmail() {
+
+    const email = emailInput.value.trim();
+    const error = document.getElementById("emailError");
+
+    const emailPattern =
+        /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+    if (email === "") {
+
+        showError(error, "Email address is required.");
+        return false;
+
+    }
+
+    if (!emailPattern.test(email)) {
+
+        showError(
+            error,
+            "Please enter a valid email address."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+
+    return true;
+}
+
+
+// =====================================================
+// PASSWORD VALIDATION
+// =====================================================
+
+function validatePassword() {
+
+    const password = passwordInput.value;
+    const error = document.getElementById("passwordError");
+
+    if (password === "") {
+
+        showError(error, "Password is required.");
+        return false;
+
+    }
+
+    if (password.length < 8) {
+
+        showError(
+            error,
+            "Password must contain at least 8 characters."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+
+    return true;
+}
+
+
+// =====================================================
+// MOBILE VALIDATION
+// =====================================================
+
+function validateMobile() {
+
+    const mobile = mobileInput.value.trim();
+    const error = document.getElementById("mobileError");
+
+    const mobilePattern = /^[6-9][0-9]{9}$/;
+
+    if (mobile === "") {
+
+        showError(error, "Mobile number is required.");
+        return false;
+
+    }
+
+    if (!mobilePattern.test(mobile)) {
+
+        showError(
+            error,
+            "Enter a valid 10-digit Indian mobile number."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+
+    return true;
+}
+
+
+// =====================================================
+// DEPARTMENT VALIDATION
+// =====================================================
+
+function validateDepartment() {
+
+    const department = departmentInput.value.trim();
+    const error = document.getElementById("departmentError");
+
+    /* Department is optional */
+
+    if (department === "") {
+
+        clearError(error);
+        return true;
+
+    }
+
+    const pattern = /^[A-Za-z ]{2,50}$/;
+
+    if (!pattern.test(department)) {
+
+        showError(
+            error,
+            "Department should contain only letters and spaces."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+
+    return true;
+}
+
+
+// =====================================================
+// DESIGNATION VALIDATION
+// =====================================================
+
+function validateDesignation() {
+
+    const designation = designationInput.value.trim();
+    const error = document.getElementById("designationError");
+
+    /* Designation is optional */
+
+    if (designation === "") {
+
+        clearError(error);
+        return true;
+
+    }
+
+    const pattern = /^[A-Za-z ]{2,50}$/;
+
+    if (!pattern.test(designation)) {
+
+        showError(
+            error,
+            "Designation should contain only letters and spaces."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+
+    return true;
+}
+
+
+// =====================================================
+// VALIDATE WHILE TYPING
+// =====================================================
+
+nameInput.addEventListener("input", validateName);
+
+emailInput.addEventListener("input", validateEmail);
+
+passwordInput.addEventListener("input", validatePassword);
+
+mobileInput.addEventListener("input", validateMobile);
+
+departmentInput.addEventListener("input", validateDepartment);
+
+designationInput.addEventListener("input", validateDesignation);
+
+
+// =====================================================
+// MOBILE - ALLOW ONLY NUMBERS
+// =====================================================
+
+mobileInput.addEventListener("input", function() {
+
+    this.value = this.value.replace(/[^0-9]/g, "");
+
+});
+
+
+// =====================================================
+// FORM SUBMISSION
+// =====================================================
+
+form.addEventListener("submit", function(event) {
+
+    const nameValid = validateName();
+
+    const emailValid = validateEmail();
+
+    const passwordValid = validatePassword();
+
+    const mobileValid = validateMobile();
+
+    const departmentValid = validateDepartment();
+
+    const designationValid = validateDesignation();
+
+
+    if (
+        !nameValid ||
+        !emailValid ||
+        !passwordValid ||
+        !mobileValid ||
+        !departmentValid ||
+        !designationValid
+    ) {
+
+        event.preventDefault();
+
+        alert("Please correct the invalid fields before submitting.");
+
+        return false;
+
+    }
+
+});
+
+
+// =====================================================
+// PASSWORD SHOW / HIDE
+// =====================================================
+
 function togglePassword() {
 
-    var password = document.getElementById("password");
+    const password = document.getElementById("password");
 
     if (password.type === "password") {
 

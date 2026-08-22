@@ -1,0 +1,561 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+
+<h2>Edit Student</h2>
+
+<p>Update the student's details below.</p>
+
+
+{% if message %}
+    <div class="error message">
+        {{ message }}
+    </div>
+{% endif %}
+
+
+<div class="card">
+
+    <form action="{{ url_for('admin.edit_student', student_id=student.student_id) }}"
+          method="POST"
+          id="editStudentForm"
+          novalidate>
+
+
+        <!-- Parent -->
+        <label for="parent_id">Parent:</label>
+
+        <select id="parent_id"
+                name="parent_id"
+                required>
+
+            <option value="">Select Parent</option>
+
+            {% for parent in parents %}
+
+                <option value="{{ parent.parent_id }}"
+                    {% if parent.parent_id == student.parent_id %}
+                        selected
+                    {% endif %}>
+                    {{ parent.name }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+
+        <small id="parentError" class="error"></small>
+
+
+        <!-- Standard -->
+        <label for="standard_id">Standard:</label>
+
+        <select id="standard_id"
+                name="standard_id"
+                required>
+
+            <option value="">Select Standard</option>
+
+            {% for standard in standards %}
+
+                <option value="{{ standard.standard_id }}"
+                    {% if standard.standard_id == student.standard_id %}
+                        selected
+                    {% endif %}>
+                    {{ standard.standard_name }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+
+        <small id="standardError" class="error"></small>
+
+
+        <!-- Admission Number -->
+        <label for="admission_no">Admission Number:</label>
+
+        <input type="text"
+               id="admission_no"
+               name="admission_no"
+               value="{{ student.admission_no or '' }}"
+               maxlength="30"
+               placeholder="e.g. ADM-2026/01">
+
+        <small id="admissionError" class="error"></small>
+
+
+        <!-- Roll Number -->
+        <label for="roll_no">Roll Number:</label>
+
+        <input type="text"
+               id="roll_no"
+               name="roll_no"
+               value="{{ student.roll_no }}"
+               maxlength="20"
+               required
+               placeholder="e.g. 101">
+
+        <small id="rollError" class="error"></small>
+
+
+        <!-- Division -->
+        <label for="division">Division:</label>
+
+        <input type="text"
+               id="division"
+               name="division"
+               value="{{ student.division or '' }}"
+               maxlength="10"
+               placeholder="e.g. A">
+
+        <small id="divisionError" class="error"></small>
+
+
+        <!-- Student Name -->
+        <label for="name">Student Name:</label>
+
+        <input type="text"
+               id="name"
+               name="name"
+               value="{{ student.name }}"
+               maxlength="100"
+               required>
+
+        <small id="nameError" class="error"></small>
+
+
+        <!-- Email -->
+        <label for="email">Email:</label>
+
+        <input type="email"
+               id="email"
+               name="email"
+               value="{{ student.email }}"
+               maxlength="100"
+               required>
+
+        <small id="emailError" class="error"></small>
+
+
+        <!-- Mobile -->
+        <label for="mobile">Mobile Number:</label>
+
+        <input type="text"
+               id="mobile"
+               name="mobile"
+               value="{{ student.mobile or '' }}"
+               maxlength="10"
+               inputmode="numeric">
+
+        <small id="mobileError" class="error"></small>
+
+
+        <button type="submit">
+            Save Changes
+        </button>
+
+
+        <a href="{{ url_for('admin.view_students') }}"
+           class="btn">
+            Cancel
+        </a>
+
+    </form>
+
+</div>
+
+
+</div>
+
+<style>
+
+.error {
+    color: red;
+    display: none;
+    margin-top: 3px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+}
+
+/* Keep input and select boxes normal */
+input.invalid,
+input.valid,
+select.invalid,
+select.valid {
+    border: 1px solid #ccc !important;
+    background-color: white !important;
+    box-shadow: none !important;
+}
+
+</style>
+
+<script>
+
+const form = document.getElementById("editStudentForm");
+
+const parentInput = document.getElementById("parent_id");
+const standardInput = document.getElementById("standard_id");
+
+const admissionInput = document.getElementById("admission_no");
+const rollInput = document.getElementById("roll_no");
+const divisionInput = document.getElementById("division");
+
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const mobileInput = document.getElementById("mobile");
+
+
+// =====================================================
+// ERROR MESSAGE FUNCTIONS
+// =====================================================
+
+function showError(errorElement, message) {
+
+    errorElement.textContent = message;
+    errorElement.style.display = "block";
+
+}
+
+
+function clearError(errorElement) {
+
+    errorElement.textContent = "";
+    errorElement.style.display = "none";
+
+}
+
+
+// =====================================================
+// PARENT VALIDATION
+// =====================================================
+
+function validateParent() {
+
+    const error = document.getElementById("parentError");
+
+    if (parentInput.value === "") {
+
+        showError(error, "Please select a parent.");
+        return false;
+
+    }
+
+    clearError(error);
+    return true;
+}
+
+
+// =====================================================
+// STANDARD VALIDATION
+// =====================================================
+
+function validateStandard() {
+
+    const error = document.getElementById("standardError");
+
+    if (standardInput.value === "") {
+
+        showError(error, "Please select a standard.");
+        return false;
+
+    }
+
+    clearError(error);
+    return true;
+}
+
+
+// =====================================================
+// ADMISSION NUMBER
+// =====================================================
+
+function validateAdmission() {
+
+    const admission = admissionInput.value.trim();
+    const error = document.getElementById("admissionError");
+
+    /* Admission number is optional */
+    if (admission === "") {
+
+        clearError(error);
+        return true;
+
+    }
+
+    if (admission.length > 30) {
+
+        showError(
+            error,
+            "Admission number cannot exceed 30 characters."
+        );
+
+        return false;
+    }
+
+    /* Allows letters, numbers, hyphens, slashes, and spaces */
+    const admissionPattern = /^[A-Za-z0-9/ -]{1,30}$/;
+
+    if (!admissionPattern.test(admission)) {
+
+        showError(
+            error,
+            "Admission number can only contain letters, numbers, spaces, hyphens (-), and slashes (/)."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+    return true;
+}
+
+
+// =====================================================
+// ROLL NUMBER
+// =====================================================
+
+function validateRoll() {
+
+    const roll = rollInput.value.trim();
+    const error = document.getElementById("rollError");
+
+    if (roll === "") {
+
+        showError(error, "Roll number is required.");
+        return false;
+
+    }
+
+    /* Checks for numbers/alphanumeric roll codes up to 20 chars */
+    const rollPattern = /^[A-Za-z0-9-]{1,20}$/;
+
+    if (!rollPattern.test(roll)) {
+
+        showError(
+            error,
+            "Roll number must be alphanumeric (e.g., 101 or R-101)."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+    return true;
+}
+
+
+// =====================================================
+// DIVISION
+// =====================================================
+
+function validateDivision() {
+
+    const division = divisionInput.value.trim();
+    const error = document.getElementById("divisionError");
+
+    /* Division is optional */
+    if (division === "") {
+
+        clearError(error);
+        return true;
+
+    }
+
+    const divisionPattern = /^[A-Za-z0-9 ]{1,10}$/;
+
+    if (!divisionPattern.test(division)) {
+
+        showError(
+            error,
+            "Division should contain only letters and numbers (e.g., A, B, Div-1)."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+    return true;
+}
+
+
+// =====================================================
+// NAME
+// =====================================================
+
+function validateName() {
+
+    const name = nameInput.value.trim();
+    const error = document.getElementById("nameError");
+
+    const namePattern = /^[A-Za-z][A-Za-z .']{1,99}$/;
+
+    if (name === "") {
+
+        showError(error, "Student name is required.");
+        return false;
+
+    }
+
+    if (!namePattern.test(name)) {
+
+        showError(
+            error,
+            "Name should contain only letters, spaces, dots or apostrophes."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+    return true;
+}
+
+
+// =====================================================
+// EMAIL
+// =====================================================
+
+function validateEmail() {
+
+    const email = emailInput.value.trim();
+    const error = document.getElementById("emailError");
+
+    const emailPattern =
+        /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+    if (email === "") {
+
+        showError(error, "Email address is required.");
+        return false;
+
+    }
+
+    if (!emailPattern.test(email)) {
+
+        showError(
+            error,
+            "Please enter a valid email address."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+    return true;
+}
+
+
+// =====================================================
+// MOBILE
+// =====================================================
+
+function validateMobile() {
+
+    const mobile = mobileInput.value.trim();
+    const error = document.getElementById("mobileError");
+
+    /* Mobile is optional */
+
+    if (mobile === "") {
+
+        clearError(error);
+        return true;
+
+    }
+
+    const mobilePattern = /^[6-9][0-9]{9}$/;
+
+    if (!mobilePattern.test(mobile)) {
+
+        showError(
+            error,
+            "Enter a valid 10-digit Indian mobile number."
+        );
+
+        return false;
+    }
+
+    clearError(error);
+    return true;
+}
+
+
+// =====================================================
+// REAL-TIME INPUT & AUTO-FORMATTING
+// =====================================================
+
+parentInput.addEventListener("change", validateParent);
+standardInput.addEventListener("change", validateStandard);
+
+admissionInput.addEventListener("input", validateAdmission);
+
+/* Automatically strip invalid symbols from roll numbers */
+rollInput.addEventListener("input", function() {
+
+    this.value = this.value.replace(/[^A-Za-z0-9-]/g, "");
+    validateRoll();
+
+});
+
+/* Convert division inputs directly to uppercase */
+divisionInput.addEventListener("input", function() {
+
+    this.value = this.value.toUpperCase();
+    validateDivision();
+
+});
+
+nameInput.addEventListener("input", validateName);
+emailInput.addEventListener("input", validateEmail);
+mobileInput.addEventListener("input", validateMobile);
+
+
+// =====================================================
+// MOBILE - ALLOW ONLY NUMBERS
+// =====================================================
+
+mobileInput.addEventListener("input", function() {
+
+    this.value = this.value.replace(/[^0-9]/g, "");
+
+});
+
+
+// =====================================================
+// FORM SUBMISSION
+// =====================================================
+
+form.addEventListener("submit", function(event) {
+
+    const valid =
+        validateParent() &&
+        validateStandard() &&
+        validateAdmission() &&
+        validateRoll() &&
+        validateDivision() &&
+        validateName() &&
+        validateEmail() &&
+        validateMobile();
+
+
+    if (!valid) {
+
+        event.preventDefault();
+
+        alert("Please correct the invalid fields before submitting.");
+
+        return false;
+
+    }
+
+});
+
+</script>
+
+{% endblock %}

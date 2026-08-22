@@ -1,113 +1,28 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
+{% block title %}EduMate - Student Dashboard{% endblock %}
+{% block portal_title %}Student Dashboard{% endblock %}
 
-<head>
+{% block sidebar %}
+<h3>Assessments</h3>
+<a href="#">Available Tests</a>
+<a href="#">Previous Test Results</a>
 
-    <title>EduMate - Student Dashboard</title>
+<h3>Progress & Analytics</h3>
+<a href="#">Learning Progress</a>
+<a href="#">Personalized Revision Planner</a>
+<a href="#">Learning Journey Timeline</a>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
+<h3>Account</h3>
+<a href="#">My Profile</a>
+<a href="{{ url_for('auth.logout') }}">Logout</a>
+{% endblock %}
 
-</head>
-
-
-<body>
-
-
-<header>
-
-    <h1>EduMate</h1>
-    <h3>Student Dashboard</h3>
-
-</header>
-
-
-
-<div class="dashboard">
-
-
-    <!-- Sidebar -->
-
-    <div class="sidebar">
-
-
-        <h3>Tests</h3>
-
-
-        <a href="{{ url_for('student.available_tests') }}">
-            Available Tests
-        </a>
-
-
-        <a href="{{ url_for('student.test_history') }}">
-            My Test History
-        </a>
-
-
-
-        <br>
-
-
-
-        <h3>Performance</h3>
-
-
-        <a href="{{ url_for('student.my_results') }}">
-            My Results
-        </a>
-
-
-        <a href="{{ url_for('student.my_progress') }}">
-            My Progress
-        </a>
-
-
-
-        <br>
-
-
-
-        <h3>Account</h3>
-
-
-        <a href="{{ url_for('student.student_profile') }}">
-            My Profile
-        </a>
-
-
-        <a href="{{ url_for('auth.logout') }}">
-            Logout
-        </a>
-
-
-    </div>
-
-
-
-
-    <!-- Main Content -->
-
-    <div class="content">
-
-
-        <h2>Welcome Student</h2>
-
-
-        <p>
-            Welcome to the EduMate Student Portal.
-            Use the menu on the left to take available tests,
-            view your test history, check your results, and
-            monitor your academic progress.
-        </p>
-
-
-    </div>
-
-
+{% block content %}
+<div class="container">
+    <h2>Welcome Student</h2>
+    <p>
+        Welcome to your EduMate Learning Portal. Check available tests, review past attempt results, and track your performance trends.
+    </p>
 </div>
-
-
-</body>
-
-</html>
+{% endblock %}

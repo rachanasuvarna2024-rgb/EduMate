@@ -1,0 +1,170 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Add Chapter</h2>
+    <p>Select a subject and enter the chapter details below.</p>
+
+    {% if msg %}
+        <div class="alert alert-success">{{ msg }}</div>
+    {% endif %}
+    {% if err %}
+        <div class="alert alert-danger">{{ err }}</div>
+    {% endif %}
+
+    <!-- FORM TO CREATE NEW CHAPTER -->
+    <div class="card form-card">
+        <form method="POST" action="{{ url_for('admin.add_chapter') }}" id="chapterForm" novalidate>
+            
+            <div class="form-group">
+                <label for="subject_id">Subject <span class="required">*</span></label>
+                <select id="subject_id" name="subject_id" required>
+                    <option value="">Select Subject</option>
+                    {% for subject in subjects %}
+                        <option value="{{ subject.subject_id }}">{{ subject.subject_name }} ({{ subject.standard_name }})</option>
+                    {% endfor %}
+                </select>
+                <small id="subjectError" class="error"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="chapter_number">Chapter Number</label>
+                <input type="number" id="chapter_number" name="chapter_number" placeholder="e.g., 1, 2, 3" min="1">
+                <small id="numberError" class="error"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="chapter_name">Chapter Name <span class="required">*</span></label>
+                <input type="text" id="chapter_name" name="chapter_name" placeholder="e.g., Introduction, Algebra" maxlength="200" required>
+                <small id="nameError" class="error"></small>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Add Chapter</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TABLE TO VIEW EXISTING CHAPTERS -->
+    <div style="margin-top: 30px;">
+        <h3>Existing Chapters</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Subject</th>
+                    <th>Chapter No.</th>
+                    <th>Chapter Name</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ch in chapters %}
+                <tr>
+                    <td>{{ ch.chapter_id }}</td>
+                    <td>{{ ch.subject_name }}</td>
+                    <td>{{ ch.chapter_number if ch.chapter_number else '-' }}</td>
+                    <td>{{ ch.chapter_name }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.edit_chapter', chapter_id=ch.chapter_id) }}" class="btn">
+                            Edit
+                        </a>
+
+                        <form action="{{ url_for('admin.delete_chapter', chapter_id=ch.chapter_id) }}" method="POST" style="display:inline;">
+                            <button type="submit" onclick="return confirm('Are you sure you want to delete this chapter?');">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">No chapters added yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.error {
+    color: red;
+    display: none;
+    margin-top: 3px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+}
+</style>
+
+<script>
+const form = document.getElementById("chapterForm");
+const subjectSelect = document.getElementById("subject_id");
+const numberInput = document.getElementById("chapter_number");
+const nameInput = document.getElementById("chapter_name");
+
+const subjectError = document.getElementById("subjectError");
+const numberError = document.getElementById("numberError");
+const nameError = document.getElementById("nameError");
+
+function validateSubject() {
+    if (subjectSelect.value === "") {
+        subjectError.textContent = "Please select a subject.";
+        subjectError.style.display = "block";
+        return false;
+    }
+    subjectError.textContent = "";
+    subjectError.style.display = "none";
+    return true;
+}
+
+function validateChapterNumber() {
+    const val = numberInput.value.trim();
+    if (val !== "" && (isNaN(val) || parseInt(val, 10) <= 0)) {
+        numberError.textContent = "Chapter number must be a positive integer.";
+        numberError.style.display = "block";
+        return false;
+    }
+    numberError.textContent = "";
+    numberError.style.display = "none";
+    return true;
+}
+
+function validateChapterName() {
+    const name = nameInput.value.trim();
+    const pattern = /^[A-Za-z0-9]{1,200}$/;
+
+    if (name === "") {
+        nameError.textContent = "Chapter name is required.";
+        nameError.style.display = "block";
+        return false;
+    }
+
+    if (!pattern.test(name)) {
+        nameError.textContent = "Chapter name must contain only letters and numbers (no spaces or special characters allowed).";
+        nameError.style.display = "block";
+        return false;
+    }
+
+    nameError.textContent = "";
+    nameError.style.display = "none";
+    return true;
+}
+
+subjectSelect.addEventListener("change", validateSubject);
+numberInput.addEventListener("input", validateChapterNumber);
+nameInput.addEventListener("input", validateChapterName);
+
+form.addEventListener("submit", function(event) {
+    const isSubjectValid = validateSubject();
+    const isNumberValid = validateChapterNumber();
+    const isNameValid = validateChapterName();
+
+    if (!isSubjectValid || !isNumberValid || !isNameValid) {
+        event.preventDefault();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>View Students</h2>
+
+    <p>View and manage all students registered in EduMate.</p>
+
+
+    {% if students %}
+
+    <div class="card">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Student ID</th>
+                    <th>Admission No</th>
+                    <th>Roll No</th>
+                    <th>Division</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Mobile</th>
+                    <th>Parent Name</th>
+                    <th>Standard</th>
+                    <th>Action</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for student in students %}
+
+                <tr>
+
+                    <td>{{ student.student_id }}</td>
+
+                    <td>{{ student.admission_no or '-' }}</td>
+
+                    <td>{{ student.roll_no }}</td>
+
+                    <td>{{ student.division or '-' }}</td>
+
+                    <td>{{ student.name }}</td>
+
+                    <td>{{ student.email }}</td>
+
+                    <td>{{ student.mobile or '-' }}</td>
+
+                    <td>{{ student.parent_name }}</td>
+
+                    <td>{{ student.standard_name }}</td>
+
+                    <td>
+
+                        <a href="{{ url_for('admin.edit_student', student_id=student.student_id) }}"
+                           class="btn">
+                            Edit
+                        </a>
+
+                        
+                        <form action="{{ url_for('admin.delete_student', student_id=student.student_id) }}"
+                              method="POST"
+                              style="display:inline;">
+                            <br/><br/>
+                            <button type="submit"
+                                    onclick="return confirm('Are you sure you want to delete this student?');">
+                                Delete
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+        <div class="info-box">
+            No students have been added yet.
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

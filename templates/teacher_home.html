@@ -1,130 +1,32 @@
-<!DOCTYPE html>
-
-<html>
-
-<head>
-
-    <title>EduMate - Teacher Dashboard</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
-
-</head>
-
-
-<body>
-
-
-<header>
-
-    <h1>EduMate</h1>
-    <h3>Teacher Dashboard</h3>
-
-</header>
-
-
-
-<div class="dashboard">
-
-
-    <!-- Sidebar -->
-
-    <div class="sidebar">
-
-
-        <h3>Question Bank</h3>
-
-
-        <a href="{{ url_for('teacher.add_question') }}">
-            Add Question
-        </a>
-
-
-        <a href="{{ url_for('teacher.view_questions') }}">
-            View Questions
-        </a>
-
-
-
-        <br>
-
-
-
-        <h3>Test Management</h3>
-
-
-        <a href="{{ url_for('teacher.create_test') }}">
-            Create Test
-        </a>
-
-
-        <a href="{{ url_for('teacher.view_tests') }}">
-            View Tests
-        </a>
-
-
-
-        <br>
-
-
-
-        <h3>Student Performance</h3>
-
-
-        <a href="{{ url_for('teacher.view_results') }}">
-            View Test Results
-        </a>
-
-
-        <a href="{{ url_for('teacher.student_progress') }}">
-            Student Progress
-        </a>
-
-
-
-        <br>
-
-
-
-        <h3>Account</h3>
-
-
-        <a href="{{ url_for('teacher.teacher_profile') }}">
-            My Profile
-        </a>
-
-
-        <a href="{{ url_for('auth.logout') }}">
-            Logout
-        </a>
-
-
-    </div>
-
-
-
-
-    <!-- Main Content -->
-
-    <div class="content">
-
-
-        <h2>Welcome Teacher</h2>
-
-
-        <p>
-            Welcome to the EduMate Teacher Portal.
-            Use the menu on the left to manage questions,
-            create tests, and monitor student performance.
-        </p>
-
-
-    </div>
-
-
+{% extends "base.html" %}
+
+{% block title %}EduMate - Teacher Dashboard{% endblock %}
+{% block portal_title %}Teacher Dashboard{% endblock %}
+
+{% block sidebar %}
+<h3>Question Bank</h3>
+<a href="#">Add Question</a>
+<a href="#">View Question Bank</a>
+
+<h3>Assessments</h3>
+<a href="#">Create Test</a>
+<a href="#">Manage / Publish Tests</a>
+
+<h3>Analytics & Reports</h3>
+<a href="#">Student Results</a>
+<a href="#">Class Analytics</a>
+<a href="#">CO Attainment Report</a>
+
+<h3>Account</h3>
+<a href="#">My Profile</a>
+<a href="{{ url_for('auth.logout') }}">Logout</a>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Welcome Teacher</h2>
+    <p>
+        Welcome to the EduMate Teacher Portal. Select an option from the sidebar menu to manage questions, test creation, and student analytics.
+    </p>
 </div>
-
-
-</body>
-
-</html>
+{% endblock %}

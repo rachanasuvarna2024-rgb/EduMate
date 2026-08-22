@@ -1,0 +1,136 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Edit Subject</h2>
+    <p>Update the subject details below.</p>
+
+    {% if err %}
+        <div class="alert alert-danger">{{ err }}</div>
+    {% endif %}
+
+    <div class="card form-card">
+        <form method="POST" action="{{ url_for('admin.edit_subject', subject_id=subject.subject_id) }}" id="editSubjectForm" novalidate>
+            
+            <div class="form-group">
+                <label for="standard_id">Standard <span class="required">*</span></label>
+                <select id="standard_id" name="standard_id" required>
+                    <option value="">Select Standard</option>
+                    {% for standard in standards %}
+                        <option value="{{ standard.standard_id }}" {% if standard.standard_id == subject.standard_id %}selected{% endif %}>
+                            {{ standard.standard_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <small id="standardError" class="error"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="subject_name">Subject Name <span class="required">*</span></label>
+                <input type="text" 
+                       id="subject_name" 
+                       name="subject_name" 
+                       value="{{ subject.subject_name }}" 
+                       placeholder="e.g., Mathematics, DBMS" 
+                       maxlength="100" 
+                       required>
+                <small id="subjectError" class="error"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="assessment_type">Assessment Type <span class="required">*</span></label>
+                <select id="assessment_type" name="assessment_type" required>
+                    <option value="Traditional" {% if subject.assessment_type == 'Traditional' %}selected{% endif %}>Traditional</option>
+                    <option value="OBE" {% if subject.assessment_type == 'OBE' %}selected{% endif %}>OBE (Outcome-Based Education)</option>
+                </select>
+                <small id="assessmentError" class="error"></small>
+            </div>
+
+            <div class="form-actions" style="margin-top: 15px;">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{{ url_for('admin.add_subject') }}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.error {
+    color: red;
+    display: none;
+    margin-top: 3px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+}
+</style>
+
+<script>
+const form = document.getElementById("editSubjectForm");
+const standardSelect = document.getElementById("standard_id");
+const subjectInput = document.getElementById("subject_name");
+const assessmentSelect = document.getElementById("assessment_type");
+
+const standardError = document.getElementById("standardError");
+const subjectError = document.getElementById("subjectError");
+const assessmentError = document.getElementById("assessmentError");
+
+function validateStandard() {
+    if (standardSelect.value === "") {
+        standardError.textContent = "Please select a standard.";
+        standardError.style.display = "block";
+        return false;
+    }
+    standardError.textContent = "";
+    standardError.style.display = "none";
+    return true;
+}
+
+function validateSubjectName() {
+    const name = subjectInput.value.trim();
+    const pattern = /^[A-Za-z0-9]{1,100}$/;
+
+    if (name === "") {
+        subjectError.textContent = "Subject name is required.";
+        subjectError.style.display = "block";
+        return false;
+    }
+
+    if (!pattern.test(name)) {
+        subjectError.textContent = "Subject name must contain only letters and numbers (no spaces or special characters).";
+        subjectError.style.display = "block";
+        return false;
+    }
+
+    subjectError.textContent = "";
+    subjectError.style.display = "none";
+    return true;
+}
+
+function validateAssessmentType() {
+    if (assessmentSelect.value === "") {
+        assessmentError.textContent = "Please select an assessment type.";
+        assessmentError.style.display = "block";
+        return false;
+    }
+    assessmentError.textContent = "";
+    assessmentError.style.display = "none";
+    return true;
+}
+
+standardSelect.addEventListener("change", validateStandard);
+subjectInput.addEventListener("input", validateSubjectName);
+assessmentSelect.addEventListener("change", validateAssessmentType);
+
+form.addEventListener("submit", function(event) {
+    const isStandardValid = validateStandard();
+    const isSubjectValid = validateSubjectName();
+    const isAssessmentValid = validateAssessmentType();
+
+    if (!isStandardValid || !isSubjectValid || !isAssessmentValid) {
+        event.preventDefault();
+    }
+});
+</script>
+{% endblock %}

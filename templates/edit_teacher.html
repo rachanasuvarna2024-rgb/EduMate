@@ -21,8 +21,14 @@
     <div class="card">
 
         <form action="{{ url_for('admin.edit_teacher', teacher_id=teacher.teacher_id) }}"
-              method="POST">
+              method="POST"
+              id="teacherForm"
+              novalidate>
 
+
+            <!-- ============================= -->
+            <!-- TEACHER NAME -->
+            <!-- ============================= -->
 
             <label for="name">Teacher Name:</label>
 
@@ -30,8 +36,15 @@
                    id="name"
                    name="name"
                    value="{{ teacher.name }}"
+                   maxlength="50"
                    required>
 
+            <small id="nameError" class="error-message"></small>
+
+
+            <!-- ============================= -->
+            <!-- EMAIL -->
+            <!-- ============================= -->
 
             <label for="email">Email:</label>
 
@@ -39,8 +52,15 @@
                    id="email"
                    name="email"
                    value="{{ teacher.email }}"
+                   maxlength="100"
                    required>
 
+            <small id="emailError" class="error-message"></small>
+
+
+            <!-- ============================= -->
+            <!-- MOBILE -->
+            <!-- ============================= -->
 
             <label for="mobile">Mobile Number:</label>
 
@@ -48,24 +68,46 @@
                    id="mobile"
                    name="mobile"
                    value="{{ teacher.mobile or '' }}"
-                   maxlength="15">
+                   maxlength="10"
+                   inputmode="numeric"
+                   required>
 
+            <small id="mobileError" class="error-message"></small>
+
+
+            <!-- ============================= -->
+            <!-- DEPARTMENT -->
+            <!-- ============================= -->
 
             <label for="department">Department:</label>
 
             <input type="text"
                    id="department"
                    name="department"
-                   value="{{ teacher.department or '' }}">
+                   value="{{ teacher.department or '' }}"
+                   maxlength="50">
 
+            <small id="departmentError" class="error-message"></small>
+
+
+            <!-- ============================= -->
+            <!-- DESIGNATION -->
+            <!-- ============================= -->
 
             <label for="designation">Designation:</label>
 
             <input type="text"
                    id="designation"
                    name="designation"
-                   value="{{ teacher.designation or '' }}">
+                   value="{{ teacher.designation or '' }}"
+                   maxlength="50">
 
+            <small id="designationError" class="error-message"></small>
+
+
+            <!-- ============================= -->
+            <!-- BUTTONS -->
+            <!-- ============================= -->
 
             <button type="submit">
                 Save Changes
@@ -82,5 +124,387 @@
     </div>
 
 </div>
+
+
+<!-- ============================= -->
+<!-- VALIDATION CSS -->
+<!-- ============================= -->
+
+<style>
+
+.error-message {
+    color: red;
+    display: block;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+input.invalid {
+    border: 2px solid red;
+}
+
+input.valid {
+    border: 2px solid green;
+}
+
+</style>
+
+
+<!-- ============================= -->
+<!-- VALIDATION JAVASCRIPT -->
+<!-- ============================= -->
+
+<script>
+
+const form = document.getElementById("teacherForm");
+
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const mobileInput = document.getElementById("mobile");
+const departmentInput = document.getElementById("department");
+const designationInput = document.getElementById("designation");
+
+
+// =====================================================
+// VALIDATE TEACHER NAME
+// =====================================================
+
+function validateName() {
+
+    const name = nameInput.value.trim();
+    const error = document.getElementById("nameError");
+
+    // Allows:
+    // Letters
+    // Spaces
+    // Dot
+    // Apostrophe
+
+    const namePattern = /^[A-Za-z][A-Za-z .']{1,49}$/;
+
+
+    if (name === "") {
+
+        error.textContent = "Teacher name is required.";
+
+        nameInput.classList.add("invalid");
+        nameInput.classList.remove("valid");
+
+        return false;
+    }
+
+
+    if (!namePattern.test(name)) {
+
+        error.textContent =
+            "Name should contain only letters, spaces, dots or apostrophes.";
+
+        nameInput.classList.add("invalid");
+        nameInput.classList.remove("valid");
+
+        return false;
+    }
+
+
+    error.textContent = "";
+
+    nameInput.classList.remove("invalid");
+    nameInput.classList.add("valid");
+
+    return true;
+}
+
+
+// =====================================================
+// VALIDATE EMAIL
+// =====================================================
+
+function validateEmail() {
+
+    const email = emailInput.value.trim();
+    const error = document.getElementById("emailError");
+
+
+    const emailPattern =
+        /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+
+    if (email === "") {
+
+        error.textContent =
+            "Email address is required.";
+
+        emailInput.classList.add("invalid");
+        emailInput.classList.remove("valid");
+
+        return false;
+    }
+
+
+    if (!emailPattern.test(email)) {
+
+        error.textContent =
+            "Please enter a valid email address.";
+
+        emailInput.classList.add("invalid");
+        emailInput.classList.remove("valid");
+
+        return false;
+    }
+
+
+    error.textContent = "";
+
+    emailInput.classList.remove("invalid");
+    emailInput.classList.add("valid");
+
+    return true;
+}
+
+
+// =====================================================
+// VALIDATE MOBILE NUMBER
+// =====================================================
+
+function validateMobile() {
+
+    const mobile = mobileInput.value.trim();
+    const error = document.getElementById("mobileError");
+
+
+    // Indian mobile number
+    // Must:
+    // - contain exactly 10 digits
+    // - start with 6, 7, 8 or 9
+
+    const mobilePattern = /^[6-9][0-9]{9}$/;
+
+
+    if (mobile === "") {
+
+        error.textContent =
+            "Mobile number is required.";
+
+        mobileInput.classList.add("invalid");
+        mobileInput.classList.remove("valid");
+
+        return false;
+    }
+
+
+    if (!mobilePattern.test(mobile)) {
+
+        error.textContent =
+            "Enter a valid 10-digit Indian mobile number.";
+
+        mobileInput.classList.add("invalid");
+        mobileInput.classList.remove("valid");
+
+        return false;
+    }
+
+
+    error.textContent = "";
+
+    mobileInput.classList.remove("invalid");
+    mobileInput.classList.add("valid");
+
+    return true;
+}
+
+
+// =====================================================
+// VALIDATE DEPARTMENT
+// =====================================================
+
+function validateDepartment() {
+
+    const department =
+        departmentInput.value.trim();
+
+    const error =
+        document.getElementById("departmentError");
+
+
+    // Department is optional
+
+    if (department === "") {
+
+        error.textContent = "";
+
+        departmentInput.classList.remove("invalid");
+        departmentInput.classList.remove("valid");
+
+        return true;
+    }
+
+
+    const departmentPattern =
+        /^[A-Za-z ]{2,50}$/;
+
+
+    if (!departmentPattern.test(department)) {
+
+        error.textContent =
+            "Department should contain only letters and spaces.";
+
+        departmentInput.classList.add("invalid");
+        departmentInput.classList.remove("valid");
+
+        return false;
+    }
+
+
+    error.textContent = "";
+
+    departmentInput.classList.remove("invalid");
+    departmentInput.classList.add("valid");
+
+    return true;
+}
+
+
+// =====================================================
+// VALIDATE DESIGNATION
+// =====================================================
+
+function validateDesignation() {
+
+    const designation =
+        designationInput.value.trim();
+
+    const error =
+        document.getElementById("designationError");
+
+
+    // Designation is optional
+
+    if (designation === "") {
+
+        error.textContent = "";
+
+        designationInput.classList.remove("invalid");
+        designationInput.classList.remove("valid");
+
+        return true;
+    }
+
+
+    const designationPattern =
+        /^[A-Za-z ]{2,50}$/;
+
+
+    if (!designationPattern.test(designation)) {
+
+        error.textContent =
+            "Designation should contain only letters and spaces.";
+
+        designationInput.classList.add("invalid");
+        designationInput.classList.remove("valid");
+
+        return false;
+    }
+
+
+    error.textContent = "";
+
+    designationInput.classList.remove("invalid");
+    designationInput.classList.add("valid");
+
+    return true;
+}
+
+
+// =====================================================
+// VALIDATE WHILE TYPING
+// =====================================================
+
+nameInput.addEventListener(
+    "input",
+    validateName
+);
+
+emailInput.addEventListener(
+    "input",
+    validateEmail
+);
+
+mobileInput.addEventListener(
+    "input",
+    validateMobile
+);
+
+departmentInput.addEventListener(
+    "input",
+    validateDepartment
+);
+
+designationInput.addEventListener(
+    "input",
+    validateDesignation
+);
+
+
+// =====================================================
+// ALLOW ONLY NUMBERS IN MOBILE
+// =====================================================
+
+mobileInput.addEventListener(
+    "input",
+    function() {
+
+        this.value =
+            this.value.replace(/[^0-9]/g, "");
+
+    }
+);
+
+
+// =====================================================
+// VALIDATE FORM BEFORE SUBMISSION
+// =====================================================
+
+form.addEventListener(
+    "submit",
+    function(event) {
+
+        const nameValid =
+            validateName();
+
+        const emailValid =
+            validateEmail();
+
+        const mobileValid =
+            validateMobile();
+
+        const departmentValid =
+            validateDepartment();
+
+        const designationValid =
+            validateDesignation();
+
+
+        if (
+            !nameValid ||
+            !emailValid ||
+            !mobileValid ||
+            !departmentValid ||
+            !designationValid
+        ) {
+
+            event.preventDefault();
+
+            alert(
+                "Please correct the invalid fields before saving."
+            );
+
+            return false;
+        }
+
+    }
+);
+
+</script>
 
 {% endblock %}
