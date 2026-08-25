@@ -1,36 +1,124 @@
 {% extends "base.html" %}
 
-{% block title %}EduMate - Admin Dashboard{% endblock %}
-{% block portal_title %}Admin Dashboard{% endblock %}
-
-{% block sidebar %}
-<h3>User Management</h3>
-<a href="{{ url_for('admin.add_teacher') }}">Add Teacher</a>
-<a href="{{ url_for('admin.view_teachers') }}">View Teachers</a>
-<a href="{{ url_for('admin.add_parent') }}">Add Parent</a>
-<a href="{{ url_for('admin.view_parents') }}">View Parents</a>
-<a href="{{ url_for('admin.add_student') }}">Add Student</a>
-<a href="{{ url_for('admin.view_students') }}">View Students</a>
-
-<h3>Academic</h3>
-<a href="{{ url_for('admin.add_standard') }}">Add Standard</a>
-<a href="{{ url_for('admin.add_subject') }}">Add Subject</a>
-<a href="{{ url_for('admin.add_chapter') }}">Add Chapter</a>
-
-<h3>Reports</h3>
-<a href="{{ url_for('admin.student_progress_for_admin') }}">Student Progress</a>
-
-<h3>Account</h3>
-<a href="{{ url_for('admin.admin_profile') }}">My Profile</a>
-<a href="{{ url_for('auth.logout') }}">Logout</a>
+{% block title %}
+EduMate - Admin Dashboard
 {% endblock %}
 
+{% block portal_title %}
+Admin Dashboard
+{% endblock %}
+
+
+{% block sidebar %}
+
+<!-- ====================================== -->
+<!-- INSTITUTION MANAGEMENT -->
+<!-- ====================================== -->
+
+<h3>Institution Management</h3>
+
+<a href="{{ url_for('admin.add_institution') }}">
+    Add Institution
+</a>
+
+<a href="{{ url_for('admin.manage_institutions') }}">
+    Manage Institutions
+</a>
+
+<a href="{{ url_for('admin.view_institutions') }}">
+    View Institutions
+</a>
+
+
+<!-- ====================================== -->
+<!-- USER MANAGEMENT -->
+<!-- ====================================== -->
+
+<h3>User Management</h3>
+
+<a href="{{ url_for('admin.add_teacher') }}">
+    Add Teacher
+</a>
+
+<a href="{{ url_for('admin.view_teachers') }}">
+    View Teachers
+</a>
+
+<a href="{{ url_for('admin.add_parent') }}">
+    Add Parent
+</a>
+
+<a href="{{ url_for('admin.view_parents') }}">
+    View Parents
+</a>
+
+<a href="{{ url_for('admin.add_student') }}">
+    Add Student
+</a>
+
+<a href="{{ url_for('admin.view_students') }}">
+    View Students
+</a>
+
+
+<!-- ====================================== -->
+<!-- ACADEMIC MANAGEMENT -->
+<!-- ====================================== -->
+
+<h3>Academic</h3>
+
+<a href="{{ url_for('admin.add_standard') }}">
+    Add Standard
+</a>
+
+<a href="{{ url_for('admin.add_subject') }}">
+    Add Subject
+</a>
+
+<a href="{{ url_for('admin.add_chapter') }}">
+    Add Chapter
+</a>
+
+
+<!-- ====================================== -->
+<!-- REPORTS -->
+<!-- ====================================== -->
+
+<h3>Reports</h3>
+
+<a href="{{ url_for('admin.student_progress_for_admin') }}">
+    Student Progress
+</a>
+
+
+<!-- ====================================== -->
+<!-- ACCOUNT -->
+<!-- ====================================== -->
+
+<h3>Account</h3>
+
+<a href="{{ url_for('admin.admin_profile') }}">
+    My Profile
+</a>
+
+<a href="{{ url_for('auth.logout') }}">
+    Logout
+</a>
+
+{% endblock %}
+
+
 {% block content %}
+
 <div class="container">
+
     <h2>Welcome Administrator</h2>
+
     <p>
         Welcome to the EduMate Administration Portal.
         Select an option from the menu to manage the system.
     </p>
+
 </div>
+
 {% endblock %}

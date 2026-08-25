@@ -1,0 +1,299 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>Manage Institution</h2>
+
+    {% if msg %}
+    <div class="success-message">
+        {{ msg }}
+    </div>
+    {% endif %}
+
+    {% if err %}
+    <div class="error-message">
+        {{ err }}
+    </div>
+    {% endif %}
+
+    <div class="card">
+
+        <form
+            action="{{ url_for('admin.manage_institution') }}"
+            method="POST"
+            id="manageInstitutionForm"
+        >
+
+            <!-- ================================================= -->
+            <!-- SELECT INSTITUTION -->
+            <!-- ================================================= -->
+            <div class="form-group">
+                <label for="institution_id">
+                    Select Institution
+                    <span class="required">*</span>
+                </label>
+
+                <select
+                    id="institution_id"
+                    name="institution_id"
+                    class="form-control"
+                    required
+                >
+                    <option value="">-- Select Existing Institution --</option>
+                    {% if institutions %}
+                        {% for inst in institutions %}
+                            <option value="{{ inst.id }}">{{ inst.institution_name }} ({{ inst.institution_code }})</option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="1">Sample Institution 1</option>
+                        <option value="2">Sample Institution 2</option>
+                    {% endif %}
+                </select>
+                <small class="field-error" id="institution_id_error"></small>
+            </div>
+
+            <hr>
+
+            <!-- ================================================= -->
+            <!-- COURSES OFFERED -->
+            <!-- ================================================= -->
+            <h3>1. Courses Offered</h3>
+            <div class="form-group">
+                <label>Select Existing Courses:</label>
+                <div class="checkbox-grid" id="coursesList">
+                    <label class="checkbox-item"><input type="checkbox" name="courses" value="B.Sc Computer Science"> B.Sc Computer Science</label>
+                    <label class="checkbox-item"><input type="checkbox" name="courses" value="B.Sc Information Technology"> B.Sc Information Technology</label>
+                    <label class="checkbox-item"><input type="checkbox" name="courses" value="B.Com"> B.Com</label>
+                    <label class="checkbox-item"><input type="checkbox" name="courses" value="B.A"> B.A</label>
+                    <label class="checkbox-item"><input type="checkbox" name="courses" value="BBA"> BBA</label>
+                    <label class="checkbox-item"><input type="checkbox" name="courses" value="M.Sc Computer Science"> M.Sc Computer Science</label>
+                </div>
+            </div>
+
+            <div class="add-custom-group">
+                <input type="text" id="new_course_input" class="form-control inline-input" placeholder="Enter new course name">
+                <button type="button" class="btn-add" onclick="addNewOption('new_course_input', 'coursesList', 'courses')">+ Add Course</button>
+            </div>
+
+            <hr>
+
+            <!-- ================================================= -->
+            <!-- DEPARTMENTS -->
+            <!-- ================================================= -->
+            <h3>2. Departments</h3>
+            <div class="form-group">
+                <label>Select Existing Departments:</label>
+                <div class="checkbox-grid" id="departmentsList">
+                    <label class="checkbox-item"><input type="checkbox" name="departments" value="Computer Science"> Computer Science</label>
+                    <label class="checkbox-item"><input type="checkbox" name="departments" value="Information Technology"> Information Technology</label>
+                    <label class="checkbox-item"><input type="checkbox" name="departments" value="Commerce"> Commerce</label>
+                    <label class="checkbox-item"><input type="checkbox" name="departments" value="Arts & Humanities"> Arts & Humanities</label>
+                    <label class="checkbox-item"><input type="checkbox" name="departments" value="Management Studies"> Management Studies</label>
+                    <label class="checkbox-item"><input type="checkbox" name="departments" value="Physics"> Physics</label>
+                </div>
+            </div>
+
+            <div class="add-custom-group">
+                <input type="text" id="new_department_input" class="form-control inline-input" placeholder="Enter new department name">
+                <button type="button" class="btn-add" onclick="addNewOption('new_department_input', 'departmentsList', 'departments')">+ Add Department</button>
+            </div>
+
+            <hr>
+
+            <!-- ================================================= -->
+            <!-- DESIGNATIONS -->
+            <!-- ================================================= -->
+            <h3>3. Designations</h3>
+            <div class="form-group">
+                <label>Select Existing Designations:</label>
+                <div class="checkbox-grid" id="designationsList">
+                    <label class="checkbox-item"><input type="checkbox" name="designations" value="Principal"> Principal</label>
+                    <label class="checkbox-item"><input type="checkbox" name="designations" value="Vice Principal"> Vice Principal</label>
+                    <label class="checkbox-item"><input type="checkbox" name="designations" value="Head of Department (HOD)"> Head of Department (HOD)</label>
+                    <label class="checkbox-item"><input type="checkbox" name="designations" value="Assistant Professor"> Assistant Professor</label>
+                    <label class="checkbox-item"><input type="checkbox" name="designations" value="Associate Professor"> Associate Professor</label>
+                    <label class="checkbox-item"><input type="checkbox" name="designations" value="Lab Assistant"> Lab Assistant</label>
+                </div>
+            </div>
+
+            <div class="add-custom-group">
+                <input type="text" id="new_designation_input" class="form-control inline-input" placeholder="Enter new designation name">
+                <button type="button" class="btn-add" onclick="addNewOption('new_designation_input', 'designationsList', 'designations')">+ Add Designation</button>
+            </div>
+
+            <br><br>
+
+            <!-- SUBMIT BUTTON -->
+            <button type="submit" class="btn-submit">
+                Save Configurations
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<style>
+/* ========================================================= */
+/* FORM & LAYOUT STYLES */
+/* ========================================================= */
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+}
+
+.required {
+    color: #dc3545;
+}
+
+.field-error {
+    display: block;
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+/* Checkbox Grid */
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+    background: #f9f9f9;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: normal !important;
+    cursor: pointer;
+}
+
+/* Custom Add Section */
+.add-custom-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.inline-input {
+    max-width: 300px;
+}
+
+.btn-add {
+    background-color: #198754;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-add:hover {
+    opacity: 0.9;
+}
+
+/* Submit Button */
+.btn-submit {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.btn-submit:hover {
+    opacity: 0.9;
+}
+
+/* Messages */
+.success-message {
+    color: #155724;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+}
+
+.error-message {
+    color: #721c24;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 20px 0;
+}
+</style>
+
+
+<script>
+/* Function to add a new dynamically typed option to the checkbox list */
+function addNewOption(inputId, containerId, inputName) {
+    const inputElement = document.getElementById(inputId);
+    const value = inputElement.value.trim();
+
+    if (!value) {
+        alert("Please enter a name before adding.");
+        return;
+    }
+
+    const container = document.getElementById(containerId);
+
+    // Create the label block
+    const label = document.createElement("label");
+    label.className = "checkbox-item";
+
+    // Create the checkbox element
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.name = inputName;
+    checkbox.value = value;
+    checkbox.checked = true; // Auto-check newly created custom items
+
+    // Append to container
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(" " + value));
+
+    container.appendChild(label);
+
+    // Clear input field
+    inputElement.value = "";
+}
+</script>
+
+{% endblock %}
