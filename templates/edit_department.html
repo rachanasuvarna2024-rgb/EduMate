@@ -1,0 +1,414 @@
+```html
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>Edit Department</h2>
+
+    {% if err %}
+    <div class="error-message">
+        {{ err }}
+    </div>
+    {% endif %}
+
+
+    <!-- ===================================================== -->
+    <!-- EDIT DEPARTMENT -->
+    <!-- ===================================================== -->
+
+    <div class="card">
+
+        <h3>Edit Department Details</h3>
+
+        <form
+            action="{{ url_for('admin.edit_department', department_id=department.department_id) }}"
+            method="POST"
+            id="editDepartmentForm"
+            onsubmit="return validateDepartmentForm()"
+        >
+
+            <!-- DEPARTMENT NAME -->
+
+            <div class="form-group">
+
+                <label for="department_name">
+                    Department Name
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="department_name"
+                    name="department_name"
+                    class="form-control"
+                    value="{{ department.department_name }}"
+                    placeholder="Enter department name"
+                    maxlength="150"
+                    required
+                >
+
+                <small
+                    class="field-error"
+                    id="department_name_error"
+                ></small>
+
+            </div>
+
+
+            <!-- INSTITUTION CATEGORY -->
+
+            <div class="form-group">
+
+                <label for="institution_category">
+                    Institution Category
+                    <span class="required">*</span>
+                </label>
+
+                <select
+                    id="institution_category"
+                    name="institution_category"
+                    class="form-control"
+                    required
+                >
+
+                    <option value="">
+                        -- Select Category --
+                    </option>
+
+                    <option
+                        value="School"
+                        {% if department.institution_category == "School" %}
+                        selected
+                        {% endif %}
+                    >
+                        School
+                    </option>
+
+                    <option
+                        value="Jr College"
+                        {% if department.institution_category == "Jr College" %}
+                        selected
+                        {% endif %}
+                    >
+                        Jr College
+                    </option>
+
+                    <option
+                        value="Degree College"
+                        {% if department.institution_category == "Degree College" %}
+                        selected
+                        {% endif %}
+                    >
+                        Degree College
+                    </option>
+
+                </select>
+
+                <small
+                    class="field-error"
+                    id="institution_category_error"
+                ></small>
+
+            </div>
+
+
+            <!-- STATUS -->
+
+            <div class="form-group">
+
+                <label for="status">
+                    Status
+                    <span class="required">*</span>
+                </label>
+
+                <select
+                    id="status"
+                    name="status"
+                    class="form-control"
+                    required
+                >
+
+                    <option
+                        value="Active"
+                        {% if department.status == "Active" %}
+                        selected
+                        {% endif %}
+                    >
+                        Active
+                    </option>
+
+                    <option
+                        value="Inactive"
+                        {% if department.status == "Inactive" %}
+                        selected
+                        {% endif %}
+                    >
+                        Inactive
+                    </option>
+
+                </select>
+
+                <small
+                    class="field-error"
+                    id="status_error"
+                ></small>
+
+            </div>
+
+
+            <!-- BUTTONS -->
+
+            <div class="button-group">
+
+                <button
+                    type="submit"
+                    class="btn-submit"
+                >
+                    Update Department
+                </button>
+
+                <a
+                    href="{{ url_for('admin.department_master') }}"
+                    class="btn-cancel"
+                >
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- CSS -->
+<!-- ========================================================= -->
+
+<style>
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+
+/* ========================================================= */
+/* CARD */
+/* ========================================================= */
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+
+/* ========================================================= */
+/* FORM */
+/* ========================================================= */
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.form-control {
+    width: 100%;
+    padding: 9px 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+}
+
+.required {
+    color: #dc3545;
+}
+
+.field-error {
+    display: block;
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 4px;
+    min-height: 16px;
+}
+
+
+/* ========================================================= */
+/* BUTTONS */
+/* ========================================================= */
+
+.button-group {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-submit {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.btn-submit:hover {
+    opacity: 0.9;
+}
+
+.btn-cancel {
+    display: inline-block;
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 15px;
+}
+
+.btn-cancel:hover {
+    opacity: 0.9;
+}
+
+
+/* ========================================================= */
+/* ERROR MESSAGE */
+/* ========================================================= */
+
+.error-message {
+    color: #721c24;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+</style>
+
+
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
+<script>
+
+function validateDepartmentForm() {
+
+    let valid = true;
+
+
+    /* Clear previous errors */
+
+    document.getElementById(
+        "department_name_error"
+    ).textContent = "";
+
+    document.getElementById(
+        "institution_category_error"
+    ).textContent = "";
+
+    document.getElementById(
+        "status_error"
+    ).textContent = "";
+
+
+    /* Get values */
+
+    const departmentName =
+        document.getElementById(
+            "department_name"
+        ).value.trim();
+
+    const category =
+        document.getElementById(
+            "institution_category"
+        ).value;
+
+    const status =
+        document.getElementById(
+            "status"
+        ).value;
+
+
+    /* ===================================================== */
+    /* DEPARTMENT NAME */
+    /* ===================================================== */
+
+    if (departmentName === "") {
+
+        document.getElementById(
+            "department_name_error"
+        ).textContent =
+            "Department name is required.";
+
+        valid = false;
+
+    }
+
+    else if (departmentName.length < 2) {
+
+        document.getElementById(
+            "department_name_error"
+        ).textContent =
+            "Department name must contain at least 2 characters.";
+
+        valid = false;
+
+    }
+
+
+    /* ===================================================== */
+    /* INSTITUTION CATEGORY */
+    /* ===================================================== */
+
+    if (category === "") {
+
+        document.getElementById(
+            "institution_category_error"
+        ).textContent =
+            "Please select an institution category.";
+
+        valid = false;
+
+    }
+
+
+    /* ===================================================== */
+    /* STATUS */
+    /* ===================================================== */
+
+    if (status === "") {
+
+        document.getElementById(
+            "status_error"
+        ).textContent =
+            "Please select a status.";
+
+        valid = false;
+
+    }
+
+
+    return valid;
+
+}
+
+</script>
+
+{% endblock %}
+```

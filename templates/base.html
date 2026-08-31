@@ -9,12 +9,14 @@
 <body>
 
 <header>
+    <!-- Sidebar Toggle Button -->
+    <button id="sidebarToggle" class="toggle-btn" aria-label="Toggle Sidebar">☰</button>
     <h1>EduMate</h1>
     <h3>{% block portal_title %}Smart Student Assessment System{% endblock %}</h3>
 </header>
 
 <div class="dashboard">
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         {% block sidebar %}
         <!-- Role specific sidebar links go here -->
         {% endblock %}
@@ -26,6 +28,17 @@
         {% endblock %}
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggleBtn = document.getElementById("sidebarToggle");
+        const sidebar = document.getElementById("sidebar");
+
+        toggleBtn.addEventListener("click", function () {
+            sidebar.classList.toggle("collapsed");
+        });
+    });
+</script>
 
 {% block extra_js %}{% endblock %}
 </body>

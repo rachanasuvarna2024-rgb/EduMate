@@ -1,8 +1,8 @@
-import json
 import re
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from session_utils import role_required
 from db import conn, cursor
+
 
 # ============================================================
 # ADMIN BLUEPRINT
@@ -14,73 +14,247 @@ admin_bp = Blueprint(
     url_prefix="/admin"
 )
 
+
 # ============================================================
-# COMMON VALIDATION HELPERS
+# VALIDATION PATTERNS
 # ============================================================
 
 EMAIL_PATTERN = re.compile(
     r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
 )
+
 NAME_PATTERN = re.compile(
     r"^[A-Za-z][A-Za-z .'-]{1,99}$"
 )
+
 PHONE_PATTERN = re.compile(
     r"^[0-9]{10}$"
 )
+
 PINCODE_PATTERN = re.compile(
     r"^[0-9]{6}$"
 )
+
 INSTITUTION_CODE_PATTERN = re.compile(
     r"^[A-Za-z0-9_-]{2,30}$"
 )
+
 TEXT_NAME_PATTERN = re.compile(
     r"^[A-Za-z][A-Za-z .'-]{0,99}$"
 )
 
 
-def get_parents():
-    cursor.execute("""
-        SELECT parent_id, name
-        FROM parent
-        ORDER BY name ASC
-    """)
-    return cursor.fetchall()
+# ============================================================
+# COMMON DATABASE HELPERS
+# ============================================================
 
-
-def get_standards():
-    cursor.execute("""
-        SELECT standard_id, standard_name
-        FROM standard
-        ORDER BY standard_id ASC
-    """)
-    return cursor.fetchall()
-
-
-def get_subjects():
+def get_institutions():
     cursor.execute("""
         SELECT
-            sub.subject_id,
-            sub.subject_name,
-            std.standard_name
-        FROM subject sub
-        JOIN standard std
-            ON sub.standard_id = std.standard_id
-        ORDER BY
-            std.standard_name ASC,
-            sub.subject_name ASC
+            institution_id,
+            institution_name,
+            institution_code,
+            institution_category
+        FROM institution
+        WHERE status = 'Active'
+        ORDER BY institution_name ASC
     """)
+    return cursor.fetchall()
+
+
+def get_parents(institution_id=None):
+
+    if institution_id:
+        cursor.execute("""
+            SELECT parent_id, name
+            FROM parent
+            WHERE institution_id = %s
+            ORDER BY name ASC
+        """, (institution_id,))
+    else:
+        cursor.execute("""
+            SELECT parent_id, name
+            FROM parent
+            ORDER BY name ASC
+        """)
+
+    return cursor.fetchall()
+
+
+def get_standards(institution_id=None):
+
+    if institution_id:
+        cursor.execute("""
+            SELECT
+                standard_id,
+                standard_name
+            FROM standard
+            WHERE institution_id = %s
+            ORDER BY standard_name ASC
+        """, (institution_id,))
+    else:
+        cursor.execute("""
+            SELECT
+                standard_id,
+                standard_name
+            FROM standard
+            ORDER BY standard_name ASC
+        """)
+
+    return cursor.fetchall()
+
+
+def get_subjects(institution_id=None):
+
+    if institution_id:
+
+        cursor.execute("""
+            SELECT
+                sub.subject_id,
+                sub.subject_name,
+                std.standard_name
+            FROM subject sub
+            JOIN standard std
+                ON sub.standard_id = std.standard_id
+            WHERE sub.institution_id = %s
+            ORDER BY
+                std.standard_name ASC,
+                sub.subject_name ASC
+        """, (institution_id,))
+
+    else:
+
+        cursor.execute("""
+            SELECT
+                sub.subject_id,
+                sub.subject_name,
+                std.standard_name
+            FROM subject sub
+            JOIN standard std
+                ON sub.standard_id = std.standard_id
+            ORDER BY
+                std.standard_name ASC,
+                sub.subject_name ASC
+        """)
+
+    return cursor.fetchall()
+
+
+def get_courses(institution_category=None):
+
+    if institution_category:
+
+        cursor.execute("""
+            SELECT
+                course_id,
+                course_name,
+                institution_category,
+                course_level,
+                stream,
+                specialization
+            FROM course_master
+            WHERE institution_category = %s
+              AND status = 'Active'
+            ORDER BY course_name ASC
+        """, (institution_category,))
+
+    else:
+
+        cursor.execute("""
+            SELECT
+                course_id,
+                course_name,
+                institution_category,
+                course_level,
+                stream,
+                specialization
+            FROM course_master
+            WHERE status = 'Active'
+            ORDER BY course_name ASC
+        """)
+
+    return cursor.fetchall()
+
+
+def get_departments(institution_category=None):
+
+    if institution_category:
+
+        cursor.execute("""
+            SELECT
+                department_id,
+                department_name,
+                institution_category
+            FROM department_master
+            WHERE institution_category = %s
+              AND status = 'Active'
+            ORDER BY department_name ASC
+        """, (institution_category,))
+
+    else:
+
+        cursor.execute("""
+            SELECT
+                department_id,
+                department_name,
+                institution_category
+            FROM department_master
+            WHERE status = 'Active'
+            ORDER BY department_name ASC
+        """)
+
+    return cursor.fetchall()
+
+
+def get_designations(institution_category=None):
+
+    if institution_category:
+
+        cursor.execute("""
+            SELECT
+                designation_id,
+                designation_name,
+                institution_category
+            FROM designation_master
+            WHERE institution_category = %s
+              AND status = 'Active'
+            ORDER BY designation_name ASC
+        """, (institution_category,))
+
+    else:
+
+        cursor.execute("""
+            SELECT
+                designation_id,
+                designation_name,
+                institution_category
+            FROM designation_master
+            WHERE status = 'Active'
+            ORDER BY designation_name ASC
+        """)
+
     return cursor.fetchall()
 
 
 # ============================================================
-# ADMIN HOME / DASHBOARD
+# ADMIN HOME
 # ============================================================
 
 @admin_bp.route("/")
 @admin_bp.route("/dashboard")
 @role_required("Admin")
 def admin_home():
-    return render_template("admin_home.html")
+
+    return render_template(
+        "admin_home.html"
+    )
+
+
+# ============================================================
+# ============================================================
+# INSTITUTION MANAGEMENT
+# ============================================================
+# ============================================================
 
 
 # ============================================================
@@ -90,6 +264,7 @@ def admin_home():
 @admin_bp.route("/view_institutions")
 @role_required("Admin")
 def view_institutions():
+
     cursor.execute("""
         SELECT
             institution_id,
@@ -103,7 +278,9 @@ def view_institutions():
             pincode,
             email,
             phone,
-            website
+            website,
+            status,
+            created_at
         FROM institution
         ORDER BY institution_id DESC
     """)
@@ -123,6 +300,7 @@ def view_institutions():
 @admin_bp.route("/manage_institutions")
 @role_required("Admin")
 def manage_institutions():
+
     cursor.execute("""
         SELECT
             institution_id,
@@ -133,7 +311,8 @@ def manage_institutions():
             city,
             state,
             email,
-            phone
+            phone,
+            status
         FROM institution
         ORDER BY institution_name ASC
     """)
@@ -153,112 +332,1184 @@ def manage_institutions():
 @admin_bp.route("/add_institution", methods=["GET", "POST"])
 @role_required("Admin")
 def add_institution():
-    if request.method == 'POST':
-        # Retrieve form data
-        institution_name = request.form.get('institution_name', '').strip()
-        institution_code = request.form.get('institution_code', '').strip().upper()
-        institution_category = request.form.get('institution_category', '').strip()
-        institution_type = request.form.get('institution_type', '').strip()
-        address = request.form.get('address', '').strip()
-        city = request.form.get('city', '').strip()
-        state = request.form.get('state', '').strip()
-        pincode = request.form.get('pincode', '').strip()
-        email = request.form.get('email', '').strip()
-        phone = request.form.get('phone', '').strip()
-        website = request.form.get('website', '').strip()
 
-        # Simple backend validation check
-        if not all([institution_name, institution_code, institution_category, 
-                    institution_type, address, city, state, pincode, email]):
-            return render_template('add_institution.html', err="Please fill out all required fields.")
+    if request.method == "POST":
+
+        institution_name = request.form.get(
+            "institution_name", ""
+        ).strip()
+
+        institution_code = request.form.get(
+            "institution_code", ""
+        ).strip().upper()
+
+        institution_category = request.form.get(
+            "institution_category", ""
+        ).strip()
+
+        institution_type = request.form.get(
+            "institution_type", ""
+        ).strip()
+
+        address = request.form.get(
+            "address", ""
+        ).strip()
+
+        city = request.form.get(
+            "city", ""
+        ).strip()
+
+        state = request.form.get(
+            "state", ""
+        ).strip()
+
+        pincode = request.form.get(
+            "pincode", ""
+        ).strip()
+
+        email = request.form.get(
+            "email", ""
+        ).strip().lower()
+
+        phone = request.form.get(
+            "phone", ""
+        ).strip()
+
+        website = request.form.get(
+            "website", ""
+        ).strip()
+
+        # ----------------------------------------------------
+        # VALIDATION
+        # ----------------------------------------------------
+
+        if not institution_name:
+            return render_template(
+                "add_institution.html",
+                err="Institution name is required."
+            )
+
+        if not institution_code:
+            return render_template(
+                "add_institution.html",
+                err="Institution code is required."
+            )
+
+        if not INSTITUTION_CODE_PATTERN.fullmatch(institution_code):
+            return render_template(
+                "add_institution.html",
+                err="Institution code can contain only letters, numbers, underscore and hyphen."
+            )
+
+        if institution_category not in [
+            "School",
+            "Jr College",
+            "Degree College"
+        ]:
+            return render_template(
+                "add_institution.html",
+                err="Please select a valid institution category."
+            )
+
+        if institution_type not in [
+            "Traditional",
+            "OBE"
+        ]:
+            return render_template(
+                "add_institution.html",
+                err="Please select a valid institution type."
+            )
+
+        if not address:
+            return render_template(
+                "add_institution.html",
+                err="Address is required."
+            )
+
+        if not city:
+            return render_template(
+                "add_institution.html",
+                err="City is required."
+            )
+
+        if not state:
+            return render_template(
+                "add_institution.html",
+                err="State is required."
+            )
+
+        if not PINCODE_PATTERN.fullmatch(pincode):
+            return render_template(
+                "add_institution.html",
+                err="Pincode must contain exactly 6 digits."
+            )
+
+        if not EMAIL_PATTERN.fullmatch(email):
+            return render_template(
+                "add_institution.html",
+                err="Please enter a valid email address."
+            )
+
+        if phone and not PHONE_PATTERN.fullmatch(phone):
+            return render_template(
+                "add_institution.html",
+                err="Phone number must contain exactly 10 digits."
+            )
 
         try:
-            cursor = conn.cursor()
-            
-            # Insert institution into your institution table
-            query = """
-                INSERT INTO institution 
-                (institution_name, institution_code, institution_category, institution_type, 
-                 address, city, state, pincode, email, phone, website)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(query, (
-                institution_name, institution_code, institution_category, institution_type,
-                address, city, state, pincode, email, phone or None, website or None
+
+            cursor.execute("""
+                SELECT institution_id
+                FROM institution
+                WHERE institution_code = %s
+            """, (institution_code,))
+
+            if cursor.fetchone():
+
+                return render_template(
+                    "add_institution.html",
+                    err="Institution code already exists."
+                )
+
+            cursor.execute("""
+                SELECT institution_id
+                FROM institution
+                WHERE email = %s
+            """, (email,))
+
+            if cursor.fetchone():
+
+                return render_template(
+                    "add_institution.html",
+                    err="Institution email already exists."
+                )
+
+            cursor.execute("""
+                INSERT INTO institution
+                (
+                    institution_name,
+                    institution_code,
+                    institution_category,
+                    institution_type,
+                    address,
+                    city,
+                    state,
+                    pincode,
+                    email,
+                    phone,
+                    website
+                )
+                VALUES
+                (
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s
+                )
+            """, (
+                institution_name,
+                institution_code,
+                institution_category,
+                institution_type,
+                address,
+                city,
+                state,
+                pincode,
+                email,
+                phone if phone else None,
+                website if website else None
             ))
-            
-            conn.commit()
-            cursor.close()
-
-            return render_template('add_institution.html', msg="Institution added successfully!")
-
-        except Exception as e:
-            # Catch database errors (e.g., duplicate code/email)
-            return render_template('add_institution.html', err=f"Error adding institution: {str(e)}")
-
-    # GET Request: Simply render the form without querying any extra tables
-    return render_template('add_institution.html')
-
-@admin_bp.route('/manage_institution', methods=['GET', 'POST'])
-def manage_institution():
-    if request.method == 'POST':
-        institution_id = request.form.get('institution_id')
-        
-        # Capture all checked values (including newly added items)
-        selected_courses = request.form.getlist('courses')
-        selected_departments = request.form.getlist('departments')
-        selected_designations = request.form.getlist('designations')
-
-        if not institution_id:
-            return render_template('manage_institution.html', err="Please select an institution.")
-
-        try:
-            cursor = conn.cursor(dictionary=True)
-
-            # Process Courses (Example insertion / linking logic)
-            for course_name in selected_courses:
-                # Insert course logic or linking logic goes here
-                pass
-
-            # Process Departments
-            for dept_name in selected_departments:
-                # Insert department logic or linking logic goes here
-                pass
-
-            # Process Designations
-            for desig_name in selected_designations:
-                # Insert designation logic or linking logic goes here
-                pass
 
             conn.commit()
-            cursor.close()
-
-            # Reload institutions list for the page view after POST
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT id, institution_name, institution_code FROM institution")
-            institutions = cursor.fetchall()
-            cursor.close()
 
             return render_template(
-                'manage_institution.html', 
-                msg="Institution details updated successfully!", 
-                institutions=institutions
+                "add_institution.html",
+                msg="Institution added successfully!"
             )
 
         except Exception as e:
+
             conn.rollback()
-            return render_template('manage_institution.html', err=f"Database error: {str(e)}")
 
-    # GET Request: Retrieve existing institutions for the dropdown
+            return render_template(
+                "add_institution.html",
+                err="Error adding institution: " + str(e)
+            )
+
+    return render_template(
+        "add_institution.html"
+    )
+
+
+# ============================================================
+# MANAGE INSTITUTION - ASSIGN MASTER DATA
+# ============================================================
+
+@admin_bp.route("/manage_institution", methods=["GET", "POST"])
+@role_required("Admin")
+def manage_institution():
+
+    institutions = get_institutions()
+
+    if request.method == "GET":
+
+        return render_template(
+            "manage_institution.html",
+            institutions=institutions
+        )
+
+    institution_id = request.form.get(
+        "institution_id"
+    )
+
+    if not institution_id:
+
+        return render_template(
+            "manage_institution.html",
+            institutions=institutions,
+            err="Please select an institution."
+        )
+
     try:
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT id, institution_name, institution_code FROM institution")
-        institutions = cursor.fetchall()
-        cursor.close()
-    except Exception as e:
-        institutions = []
 
-    return render_template('manage_institution.html', institutions=institutions)
+        # ----------------------------------------------------
+        # GET INSTITUTION CATEGORY
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            SELECT institution_category
+            FROM institution
+            WHERE institution_id = %s
+        """, (institution_id,))
+
+        institution = cursor.fetchone()
+
+        if not institution:
+
+            return render_template(
+                "manage_institution.html",
+                institutions=institutions,
+                err="Institution not found."
+            )
+
+        institution_category = institution[0]
+
+        # ----------------------------------------------------
+        # SELECTED MASTER IDs
+        # ----------------------------------------------------
+
+        selected_courses = request.form.getlist(
+            "courses"
+        )
+
+        selected_departments = request.form.getlist(
+            "departments"
+        )
+
+        selected_designations = request.form.getlist(
+            "designations"
+        )
+
+        # ----------------------------------------------------
+        # CLEAR EXISTING LINKS
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            DELETE FROM institution_course
+            WHERE institution_id = %s
+        """, (institution_id,))
+
+        cursor.execute("""
+            DELETE FROM institution_department
+            WHERE institution_id = %s
+        """, (institution_id,))
+
+        cursor.execute("""
+            DELETE FROM institution_designation
+            WHERE institution_id = %s
+        """, (institution_id,))
+
+        # ----------------------------------------------------
+        # ADD COURSES
+        # ----------------------------------------------------
+
+        for course_id in selected_courses:
+
+            cursor.execute("""
+                INSERT INTO institution_course
+                (
+                    institution_id,
+                    course_id
+                )
+                SELECT %s, course_id
+                FROM course_master
+                WHERE course_id = %s
+                  AND institution_category = %s
+            """, (
+                institution_id,
+                course_id,
+                institution_category
+            ))
+
+        # ----------------------------------------------------
+        # ADD DEPARTMENTS
+        # ----------------------------------------------------
+
+        for department_id in selected_departments:
+
+            cursor.execute("""
+                INSERT INTO institution_department
+                (
+                    institution_id,
+                    department_id
+                )
+                SELECT %s, department_id
+                FROM department_master
+                WHERE department_id = %s
+                  AND institution_category = %s
+            """, (
+                institution_id,
+                department_id,
+                institution_category
+            ))
+
+        # ----------------------------------------------------
+        # ADD DESIGNATIONS
+        # ----------------------------------------------------
+
+        for designation_id in selected_designations:
+
+            cursor.execute("""
+                INSERT INTO institution_designation
+                (
+                    institution_id,
+                    designation_id
+                )
+                SELECT %s, designation_id
+                FROM designation_master
+                WHERE designation_id = %s
+                  AND institution_category = %s
+            """, (
+                institution_id,
+                designation_id,
+                institution_category
+            ))
+
+        conn.commit()
+
+        return redirect(
+            url_for(
+                "admin.manage_institutions"
+            )
+        )
+
+    except Exception as e:
+
+        conn.rollback()
+
+        return render_template(
+            "manage_institution.html",
+            institutions=institutions,
+            err="Database error: " + str(e)
+        )
+
+
+# ============================================================
+# ============================================================
+# COURSE MASTER
+# ============================================================
+# ============================================================
+
+
+@admin_bp.route("/course_master", methods=["GET", "POST"])
+@role_required("Admin")
+def course_master():
+
+    msg = request.args.get("msg")
+    err = request.args.get("err")
+
+    if request.method == "POST":
+
+        course_name = request.form.get(
+            "course_name", ""
+        ).strip()
+
+        institution_category = request.form.get(
+            "institution_category", ""
+        ).strip()
+
+        course_level = request.form.get(
+            "course_level", ""
+        ).strip()
+
+        stream = request.form.get(
+            "stream", ""
+        ).strip()
+
+        specialization = request.form.get(
+            "specialization", ""
+        ).strip()
+
+        if not course_name:
+
+            err = "Course name is required."
+
+        elif institution_category not in [
+            "School",
+            "Jr College",
+            "Degree College"
+        ]:
+
+            err = "Please select a valid institution category."
+
+        else:
+
+            try:
+
+                cursor.execute("""
+                    SELECT course_id
+                    FROM course_master
+                    WHERE LOWER(course_name) = LOWER(%s)
+                      AND institution_category = %s
+                """, (
+                    course_name,
+                    institution_category
+                ))
+
+                if cursor.fetchone():
+
+                    err = "This course already exists for the selected institution category."
+
+                else:
+
+                    cursor.execute("""
+                        INSERT INTO course_master
+                        (
+                            course_name,
+                            institution_category,
+                            course_level,
+                            stream,
+                            specialization
+                        )
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (
+                        course_name,
+                        institution_category,
+                        course_level or None,
+                        stream or None,
+                        specialization or None
+                    ))
+
+                    conn.commit()
+
+                    msg = "Course added successfully!"
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = "Unable to add course: " + str(e)
+
+    cursor.execute("""
+        SELECT
+            course_id,
+            course_name,
+            institution_category,
+            course_level,
+            stream,
+            specialization,
+            status
+        FROM course_master
+        ORDER BY course_id ASC
+    """)
+
+    courses = cursor.fetchall()
+
+    return render_template(
+        "course_master.html",
+        courses=courses,
+        msg=msg,
+        err=err
+    )
+
+
+# ============================================================
+# EDIT COURSE
+# ============================================================
+
+@admin_bp.route(
+    "/edit_course/<int:course_id>",
+    methods=["GET", "POST"]
+)
+@role_required("Admin")
+def edit_course(course_id):
+
+    err = None
+
+    if request.method == "POST":
+
+        course_name = request.form.get(
+            "course_name", ""
+        ).strip()
+
+        institution_category = request.form.get(
+            "institution_category", ""
+        ).strip()
+
+        course_level = request.form.get(
+            "course_level", ""
+        ).strip()
+
+        stream = request.form.get(
+            "stream", ""
+        ).strip()
+
+        specialization = request.form.get(
+            "specialization", ""
+        ).strip()
+
+        if not course_name:
+
+            err = "Course name is required."
+
+        elif institution_category not in [
+            "School",
+            "Jr College",
+            "Degree College"
+        ]:
+
+            err = "Invalid institution category."
+
+        else:
+
+            try:
+
+                cursor.execute("""
+                    SELECT course_id
+                    FROM course_master
+                    WHERE LOWER(course_name) = LOWER(%s)
+                      AND institution_category = %s
+                      AND course_id != %s
+                """, (
+                    course_name,
+                    institution_category,
+                    course_id
+                ))
+
+                if cursor.fetchone():
+
+                    err = "This course already exists."
+
+                else:
+
+                    cursor.execute("""
+                        UPDATE course_master
+                        SET
+                            course_name = %s,
+                            institution_category = %s,
+                            course_level = %s,
+                            stream = %s,
+                            specialization = %s
+                        WHERE course_id = %s
+                    """, (
+                        course_name,
+                        institution_category,
+                        course_level or None,
+                        stream or None,
+                        specialization or None,
+                        course_id
+                    ))
+
+                    conn.commit()
+
+                    return redirect(
+                        url_for(
+                            "admin.course_master",
+                            msg="Course has been updated successfully."
+                        )
+                    )
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = "Unable to update course: " + str(e)
+
+    cursor.execute("""
+        SELECT *
+        FROM course_master
+        WHERE course_id = %s
+    """, (course_id,))
+
+    course = cursor.fetchone()
+
+    if not course:
+
+        return redirect(
+            url_for("admin.course_master")
+        )
+
+    return render_template(
+        "edit_course.html",
+        course=course,
+        err=err
+    )
+
+
+# ============================================================
+# DELETE COURSE
+# ============================================================
+
+@admin_bp.route(
+    "/delete_course/<int:course_id>",
+    methods=["POST"]
+)
+@role_required("Admin")
+def delete_course(course_id):
+
+    try:
+
+        cursor.execute("""
+            DELETE FROM course_master
+            WHERE course_id = %s
+        """, (course_id,))
+
+        conn.commit()
+
+        return redirect(
+            url_for(
+                "admin.course_master",
+                msg="Course has been deleted successfully."
+            )
+        )
+
+    except Exception:
+
+        conn.rollback()
+
+    return redirect(
+        url_for("admin.course_master"),
+        err="Unable to delete course."
+    )
+
+
+# ============================================================
+# ============================================================
+# DEPARTMENT MASTER
+# ============================================================
+# ============================================================
+
+
+@admin_bp.route("/department_master", methods=["GET", "POST"])
+@role_required("Admin")
+def department_master():
+
+    msg = request.args.get("msg")
+    err = request.args.get("err")
+
+    if request.method == "POST":
+
+        department_name = request.form.get(
+            "department_name", ""
+        ).strip()
+
+        institution_category = request.form.get(
+            "institution_category", ""
+        ).strip()
+
+        if not department_name:
+
+            err = "Department name is required."
+
+        elif institution_category not in [
+            "School",
+            "Jr College",
+            "Degree College"
+        ]:
+
+            err = "Please select a valid institution category."
+
+        else:
+
+            try:
+
+                cursor.execute("""
+                    SELECT department_id
+                    FROM department_master
+                    WHERE LOWER(department_name) = LOWER(%s)
+                      AND institution_category = %s
+                """, (
+                    department_name,
+                    institution_category
+                ))
+
+                if cursor.fetchone():
+
+                    err = "This department already exists."
+
+                else:
+
+                    cursor.execute("""
+                        INSERT INTO department_master
+                        (
+                            department_name,
+                            institution_category
+                        )
+                        VALUES (%s, %s)
+                    """, (
+                        department_name,
+                        institution_category
+                    ))
+
+                    conn.commit()
+
+                    msg = "Department added successfully!"
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = "Unable to add department: " + str(e)
+
+    cursor.execute("""
+        SELECT
+            department_id,
+            department_name,
+            institution_category,
+            status
+        FROM department_master
+        ORDER BY department_id ASC
+    """)
+
+    departments = cursor.fetchall()
+
+    return render_template(
+        "department_master.html",
+        departments=departments,
+        msg=msg,
+        err=err
+    )
+
+
+# ============================================================
+# EDIT DEPARTMENT
+# ============================================================
+
+@admin_bp.route(
+    "/edit_department/<int:department_id>",
+    methods=["GET", "POST"]
+)
+@role_required("Admin")
+def edit_department(department_id):
+
+    err = None
+
+    if request.method == "POST":
+
+        department_name = request.form.get(
+            "department_name", ""
+        ).strip()
+
+        institution_category = request.form.get(
+            "institution_category", ""
+        ).strip()
+
+        status = request.form.get(
+            "status", "Active"
+        ).strip()
+
+        if not department_name:
+
+            err = "Department name is required."
+
+        elif institution_category not in [
+            "School",
+            "Jr College",
+            "Degree College"
+        ]:
+
+            err = "Invalid institution category."
+
+        elif status not in [
+            "Active",
+            "Inactive"
+        ]:
+
+            err = "Invalid status."
+
+        else:
+
+            try:
+
+                # Check duplicate department
+                cursor.execute("""
+                    SELECT department_id
+                    FROM department_master
+                    WHERE LOWER(department_name) = LOWER(%s)
+                      AND institution_category = %s
+                      AND department_id != %s
+                """, (
+                    department_name,
+                    institution_category,
+                    department_id
+                ))
+
+                if cursor.fetchone():
+
+                    err = "This department already exists."
+
+                else:
+
+                    # Update selected department
+                    cursor.execute("""
+                        UPDATE department_master
+                        SET
+                            department_name = %s,
+                            institution_category = %s,
+                            status = %s
+                        WHERE department_id = %s
+                    """, (
+                        department_name,
+                        institution_category,
+                        status,
+                        department_id
+                    ))
+
+                    conn.commit()
+
+                    return redirect(
+                        url_for(
+                            "admin.department_master",
+                            msg="Department has been updated successfully."
+                        )
+                    )
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = "Unable to update department: " + str(e)
+
+
+    # Get selected department
+    cursor.execute("""
+        SELECT *
+        FROM department_master
+        WHERE department_id = %s
+    """, (department_id,))
+
+    department = cursor.fetchone()
+
+    if not department:
+
+        return redirect(
+            url_for("admin.department_master")
+        )
+
+    return render_template(
+        "edit_department.html",
+        department=department,
+        err=err
+    )
+
+# ============================================================
+# DELETE DEPARTMENT
+# ============================================================
+
+@admin_bp.route(
+    "/delete_department/<int:department_id>",
+    methods=["POST"]
+)
+@role_required("Admin")
+def delete_department(department_id):
+
+    try:
+
+        cursor.execute("""
+            DELETE FROM department_master
+            WHERE department_id = %s
+        """, (department_id,))
+
+        conn.commit()
+
+        return redirect(
+            url_for(
+                "admin.department_master",
+                msg="Department has been deleted successfully."
+            )
+        )
+
+    except Exception:
+
+        conn.rollback()
+
+        return redirect(
+            url_for(
+                "admin.department_master",
+                err="Unable to delete department."
+            )
+        )
+
+# ============================================================
+# ============================================================
+# DESIGNATION MASTER
+# ============================================================
+# ============================================================
+
+
+@admin_bp.route("/designation_master", methods=["GET", "POST"])
+@role_required("Admin")
+def designation_master():
+
+    msg = request.args.get("msg")
+    err = request.args.get("err")
+
+    if request.method == "POST":
+
+        designation_name = request.form.get(
+            "designation_name", ""
+        ).strip()
+
+        institution_category = request.form.get(
+            "institution_category", ""
+        ).strip()
+
+        if not designation_name:
+
+            err = "Designation name is required."
+
+        elif institution_category not in [
+            "School",
+            "Jr College",
+            "Degree College"
+        ]:
+
+            err = "Please select a valid institution category."
+
+        else:
+
+            try:
+
+                cursor.execute("""
+                    SELECT designation_id
+                    FROM designation_master
+                    WHERE LOWER(designation_name) = LOWER(%s)
+                      AND institution_category = %s
+                """, (
+                    designation_name,
+                    institution_category
+                ))
+
+                if cursor.fetchone():
+
+                    err = "This designation already exists."
+
+                else:
+
+                    cursor.execute("""
+                        INSERT INTO designation_master
+                        (
+                            designation_name,
+                            institution_category
+                        )
+                        VALUES (%s, %s)
+                    """, (
+                        designation_name,
+                        institution_category
+                    ))
+
+                    conn.commit()
+
+                    msg = "Designation added successfully!"
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = "Unable to add designation: " + str(e)
+
+    cursor.execute("""
+        SELECT
+            designation_id,
+            designation_name,
+            institution_category,
+            status
+        FROM designation_master
+        ORDER BY designation_id ASC
+    """)
+
+    designations = cursor.fetchall()
+
+    return render_template(
+        "designation_master.html",
+        designations=designations,
+        msg=msg,
+        err=err
+    )
+
+
+# ============================================================
+# EDIT DESIGNATION
+# ============================================================
+
+@admin_bp.route(
+    "/edit_designation/<int:designation_id>",
+    methods=["GET", "POST"]
+)
+@role_required("Admin")
+def edit_designation(designation_id):
+
+    err = None
+
+    if request.method == "POST":
+
+        designation_name = request.form.get(
+            "designation_name", ""
+        ).strip()
+
+        institution_category = request.form.get(
+            "institution_category", ""
+        ).strip()
+
+        status = request.form.get(
+            "status", "Active"
+        ).strip()
+
+        if not designation_name:
+
+            err = "Designation name is required."
+
+        elif institution_category not in [
+            "School",
+            "Jr College",
+            "Degree College"
+        ]:
+
+            err = "Invalid institution category."
+
+        elif status not in [
+            "Active",
+            "Inactive"
+        ]:
+
+            err = "Invalid status."
+
+        else:
+
+            try:
+
+                cursor.execute("""
+                    SELECT designation_id
+                    FROM designation_master
+                    WHERE LOWER(designation_name) = LOWER(%s)
+                      AND institution_category = %s
+                      AND designation_id != %s
+                """, (
+                    designation_name,
+                    institution_category,
+                    designation_id
+                ))
+
+                if cursor.fetchone():
+
+                    err = "This designation already exists."
+
+                else:
+
+                    cursor.execute("""
+                        UPDATE designation_master
+                        SET
+                            designation_name = %s,
+                            institution_category = %s,
+                            status = %s
+                        WHERE designation_id = %s
+                    """, (
+                        designation_name,
+                        institution_category,
+                        status,
+                        designation_id
+                    ))
+
+                    conn.commit()
+
+                    return redirect(
+                        url_for(
+                            "admin.designation_master",
+                            msg="Designation has been updated successfully."
+                        )
+                    )
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = "Unable to update designation: " + str(e)
+
+
+    cursor.execute("""
+        SELECT *
+        FROM designation_master
+        WHERE designation_id = %s
+    """, (designation_id,))
+
+    designation = cursor.fetchone()
+
+    if not designation:
+
+        return redirect(
+            url_for("admin.designation_master")
+        )
+
+    return render_template(
+        "edit_designation.html",
+        designation=designation,
+        err=err
+    )
+
+
+# ============================================================
+# DELETE DESIGNATION
+# ============================================================
+
+@admin_bp.route(
+    "/delete_designation/<int:designation_id>",
+    methods=["POST"]
+)
+@role_required("Admin")
+def delete_designation(designation_id):
+
+    try:
+
+        cursor.execute("""
+            DELETE FROM designation_master
+            WHERE designation_id = %s
+        """, (designation_id,))
+
+        conn.commit()
+
+        return redirect(
+            url_for(
+                "admin.designation_master",
+                msg="Designation has been deleted successfully."
+            )
+        )
+
+    except Exception:
+
+        conn.rollback()
+
+        return redirect(
+            url_for(
+                "admin.designation_master",
+                err="Unable to delete designation."
+            )
+        )
+
+
+# ============================================================
+# ============================================================
+# TEACHER MANAGEMENT
+# ============================================================
+# ============================================================
+
 
 # ============================================================
 # ADD TEACHER
@@ -267,48 +1518,139 @@ def manage_institution():
 @admin_bp.route("/add_teacher", methods=["GET", "POST"])
 @role_required("Admin")
 def add_teacher():
-    if request.method == "GET":
-        return render_template("add_teacher.html")
 
-    name = request.form.get("name", "").strip()
-    email = request.form.get("email", "").strip()
-    password = request.form.get("password", "")
-    mobile = request.form.get("mobile", "").strip()
-    department = request.form.get("department", "").strip()
-    designation = request.form.get("designation", "").strip()
+    institutions = get_institutions()
+
+    if request.method == "GET":
+
+        return render_template(
+            "add_teacher.html",
+            institutions=institutions
+        )
+
+    institution_id = request.form.get(
+        "institution_id", ""
+    ).strip()
+
+    name = request.form.get(
+        "name", ""
+    ).strip()
+
+    email = request.form.get(
+        "email", ""
+    ).strip().lower()
+
+    password = request.form.get(
+        "password", ""
+    )
+
+    mobile = request.form.get(
+        "mobile", ""
+    ).strip()
+
+    department_id = request.form.get(
+        "department_id", ""
+    ).strip()
+
+    designation_id = request.form.get(
+        "designation_id", ""
+    ).strip()
+
+    if not institution_id:
+
+        return render_template(
+            "add_teacher.html",
+            institutions=institutions,
+            message="Please select an institution."
+        )
 
     if not name:
-        return render_template("add_teacher.html", message="Name is required.")
+
+        return render_template(
+            "add_teacher.html",
+            institutions=institutions,
+            message="Name is required."
+        )
 
     if not email or not EMAIL_PATTERN.fullmatch(email):
-        return render_template("add_teacher.html", message="Please enter a valid email address.")
+
+        return render_template(
+            "add_teacher.html",
+            institutions=institutions,
+            message="Please enter a valid email address."
+        )
 
     if not password:
-        return render_template("add_teacher.html", message="Password is required.")
+
+        return render_template(
+            "add_teacher.html",
+            institutions=institutions,
+            message="Password is required."
+        )
 
     if mobile and not PHONE_PATTERN.fullmatch(mobile):
-        return render_template("add_teacher.html", message="Mobile number must contain exactly 10 digits.")
+
+        return render_template(
+            "add_teacher.html",
+            institutions=institutions,
+            message="Mobile number must contain exactly 10 digits."
+        )
 
     try:
-        cursor.execute("SELECT teacher_id FROM teacher WHERE email = %s", (email,))
-        if cursor.fetchone():
-            return render_template("add_teacher.html", message="Teacher email already exists.")
 
         cursor.execute("""
-            INSERT INTO teacher (name, email, password, mobile, department, designation)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            SELECT teacher_id
+            FROM teacher
+            WHERE email = %s
+        """, (email,))
+
+        if cursor.fetchone():
+
+            return render_template(
+                "add_teacher.html",
+                institutions=institutions,
+                message="Teacher email already exists."
+            )
+
+        cursor.execute("""
+            INSERT INTO teacher
+            (
+                institution_id,
+                department_id,
+                designation_id,
+                name,
+                email,
+                password,
+                mobile
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (
-            name, email, password,
-            mobile if mobile else None,
-            department if department else None,
-            designation if designation else None
+            institution_id,
+            department_id if department_id else None,
+            designation_id if designation_id else None,
+            name,
+            email,
+            password,
+            mobile if mobile else None
         ))
+
         conn.commit()
-        return render_template("add_teacher.html", message="Teacher added successfully!")
+
+        return render_template(
+            "add_teacher.html",
+            institutions=institutions,
+            message="Teacher added successfully!"
+        )
 
     except Exception as e:
+
         conn.rollback()
-        return render_template("add_teacher.html", message="Error adding teacher: " + str(e))
+
+        return render_template(
+            "add_teacher.html",
+            institutions=institutions,
+            message="Error adding teacher: " + str(e)
+        )
 
 
 # ============================================================
@@ -318,88 +1660,74 @@ def add_teacher():
 @admin_bp.route("/view_teachers")
 @role_required("Admin")
 def view_teachers():
+
     cursor.execute("""
-        SELECT teacher_id, name, email, mobile, department, designation
-        FROM teacher
-        ORDER BY teacher_id ASC
+        SELECT
+            t.teacher_id,
+            t.name,
+            t.email,
+            t.mobile,
+            i.institution_name,
+            d.department_name,
+            dg.designation_name
+        FROM teacher t
+
+        JOIN institution i
+            ON t.institution_id = i.institution_id
+
+        LEFT JOIN department_master d
+            ON t.department_id = d.department_id
+
+        LEFT JOIN designation_master dg
+            ON t.designation_id = dg.designation_id
+
+        ORDER BY t.teacher_id ASC
     """)
+
     teachers = cursor.fetchall()
-    return render_template("view_teachers.html", teachers=teachers)
 
-
-# ============================================================
-# EDIT TEACHER
-# ============================================================
-
-@admin_bp.route("/edit_teacher/<int:teacher_id>", methods=["GET", "POST"])
-@role_required("Admin")
-def edit_teacher(teacher_id):
-    cursor.execute("""
-        SELECT teacher_id, name, email, mobile, department, designation
-        FROM teacher WHERE teacher_id = %s
-    """, (teacher_id,))
-    teacher = cursor.fetchone()
-
-    if not teacher:
-        return "Teacher not found", 404
-
-    if request.method == "GET":
-        return render_template("edit_teacher.html", teacher=teacher)
-
-    name = request.form.get("name", "").strip()
-    email = request.form.get("email", "").strip()
-    mobile = request.form.get("mobile", "").strip()
-    department = request.form.get("department", "").strip()
-    designation = request.form.get("designation", "").strip()
-
-    if not name:
-        return render_template("edit_teacher.html", teacher=teacher, message="Name is required.")
-
-    if not email or not EMAIL_PATTERN.fullmatch(email):
-        return render_template("edit_teacher.html", teacher=teacher, message="Please enter a valid email address.")
-
-    if mobile and not PHONE_PATTERN.fullmatch(mobile):
-        return render_template("edit_teacher.html", teacher=teacher, message="Mobile number must contain exactly 10 digits.")
-
-    try:
-        cursor.execute("SELECT teacher_id FROM teacher WHERE email = %s AND teacher_id != %s", (email, teacher_id))
-        if cursor.fetchone():
-            return render_template("edit_teacher.html", teacher=teacher, message="Email already exists.")
-
-        cursor.execute("""
-            UPDATE teacher
-            SET name = %s, email = %s, mobile = %s, department = %s, designation = %s
-            WHERE teacher_id = %s
-        """, (
-            name, email,
-            mobile if mobile else None,
-            department if department else None,
-            designation if designation else None,
-            teacher_id
-        ))
-        conn.commit()
-        return redirect(url_for("admin.view_teachers"))
-
-    except Exception as e:
-        conn.rollback()
-        return render_template("edit_teacher.html", teacher=teacher, message="Error updating teacher: " + str(e))
+    return render_template(
+        "view_teachers.html",
+        teachers=teachers
+    )
 
 
 # ============================================================
 # DELETE TEACHER
 # ============================================================
 
-@admin_bp.route("/delete_teacher/<int:teacher_id>", methods=["POST"])
+@admin_bp.route(
+    "/delete_teacher/<int:teacher_id>",
+    methods=["POST"]
+)
 @role_required("Admin")
 def delete_teacher(teacher_id):
+
     try:
-        cursor.execute("DELETE FROM teacher WHERE teacher_id = %s", (teacher_id,))
+
+        cursor.execute("""
+            DELETE FROM teacher
+            WHERE teacher_id = %s
+        """, (teacher_id,))
+
         conn.commit()
+
     except Exception as e:
+
         conn.rollback()
+
         return "Error deleting teacher: " + str(e)
 
-    return redirect(url_for("admin.view_teachers"))
+    return redirect(
+        url_for("admin.view_teachers")
+    )
+
+
+# ============================================================
+# ============================================================
+# PARENT MANAGEMENT
+# ============================================================
+# ============================================================
 
 
 # ============================================================
@@ -409,41 +1737,127 @@ def delete_teacher(teacher_id):
 @admin_bp.route("/add_parent", methods=["GET", "POST"])
 @role_required("Admin")
 def add_parent():
-    if request.method == "GET":
-        return render_template("add_parent.html")
 
-    name = request.form.get("name", "").strip()
-    email = request.form.get("email", "").strip()
-    password = request.form.get("password", "")
-    mobile = request.form.get("mobile", "").strip()
+    institutions = get_institutions()
+
+    if request.method == "GET":
+
+        return render_template(
+            "add_parent.html",
+            institutions=institutions
+        )
+
+    institution_id = request.form.get(
+        "institution_id", ""
+    ).strip()
+
+    name = request.form.get(
+        "name", ""
+    ).strip()
+
+    email = request.form.get(
+        "email", ""
+    ).strip().lower()
+
+    password = request.form.get(
+        "password", ""
+    )
+
+    mobile = request.form.get(
+        "mobile", ""
+    ).strip()
+
+    if not institution_id:
+
+        return render_template(
+            "add_parent.html",
+            institutions=institutions,
+            message="Please select an institution."
+        )
 
     if not name:
-        return render_template("add_parent.html", message="Name is required.")
+
+        return render_template(
+            "add_parent.html",
+            institutions=institutions,
+            message="Name is required."
+        )
 
     if not email or not EMAIL_PATTERN.fullmatch(email):
-        return render_template("add_parent.html", message="Please enter a valid email address.")
+
+        return render_template(
+            "add_parent.html",
+            institutions=institutions,
+            message="Please enter a valid email address."
+        )
 
     if not password:
-        return render_template("add_parent.html", message="Password is required.")
+
+        return render_template(
+            "add_parent.html",
+            institutions=institutions,
+            message="Password is required."
+        )
 
     if mobile and not PHONE_PATTERN.fullmatch(mobile):
-        return render_template("add_parent.html", message="Mobile number must contain exactly 10 digits.")
+
+        return render_template(
+            "add_parent.html",
+            institutions=institutions,
+            message="Mobile number must contain exactly 10 digits."
+        )
 
     try:
-        cursor.execute("SELECT parent_id FROM parent WHERE email = %s", (email,))
-        if cursor.fetchone():
-            return render_template("add_parent.html", message="Parent email already exists.")
 
         cursor.execute("""
-            INSERT INTO parent (name, email, password, mobile)
-            VALUES (%s, %s, %s, %s)
-        """, (name, email, password, mobile if mobile else None))
+            SELECT parent_id
+            FROM parent
+            WHERE email = %s
+        """, (email,))
+
+        if cursor.fetchone():
+
+            return render_template(
+                "add_parent.html",
+                institutions=institutions,
+                message="Parent email already exists."
+            )
+
+        cursor.execute("""
+            INSERT INTO parent
+            (
+                institution_id,
+                name,
+                email,
+                password,
+                mobile
+            )
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            institution_id,
+            name,
+            email,
+            password,
+            mobile if mobile else None
+        ))
+
         conn.commit()
-        return render_template("add_parent.html", message="Parent added successfully!")
+
+        return render_template(
+            "add_parent.html",
+            institutions=institutions,
+            message="Parent added successfully!"
+        )
 
     except Exception as e:
+
         conn.rollback()
-        return render_template("add_parent.html", message="Error adding parent: " + str(e))
+
+        return render_template(
+            "add_parent.html",
+            institutions=institutions,
+            message="Error adding parent: " + str(e)
+        )
 
 
 # ============================================================
@@ -453,74 +1867,64 @@ def add_parent():
 @admin_bp.route("/view_parents")
 @role_required("Admin")
 def view_parents():
-    cursor.execute("SELECT parent_id, name, email, mobile FROM parent ORDER BY parent_id ASC")
+
+    cursor.execute("""
+        SELECT
+            p.parent_id,
+            p.name,
+            p.email,
+            p.mobile,
+            i.institution_name
+        FROM parent p
+        JOIN institution i
+            ON p.institution_id = i.institution_id
+        ORDER BY p.parent_id ASC
+    """)
+
     parents = cursor.fetchall()
-    return render_template("view_parents.html", parents=parents)
 
-
-# ============================================================
-# EDIT PARENT
-# ============================================================
-
-@admin_bp.route("/edit_parent/<int:parent_id>", methods=["GET", "POST"])
-@role_required("Admin")
-def edit_parent(parent_id):
-    cursor.execute("SELECT parent_id, name, email, mobile FROM parent WHERE parent_id = %s", (parent_id,))
-    parent = cursor.fetchone()
-
-    if not parent:
-        return "Parent not found", 404
-
-    if request.method == "GET":
-        return render_template("edit_parent.html", parent=parent)
-
-    name = request.form.get("name", "").strip()
-    email = request.form.get("email", "").strip()
-    mobile = request.form.get("mobile", "").strip()
-
-    if not name:
-        return render_template("edit_parent.html", parent=parent, message="Name is required.")
-
-    if not email or not EMAIL_PATTERN.fullmatch(email):
-        return render_template("edit_parent.html", parent=parent, message="Please enter a valid email address.")
-
-    if mobile and not PHONE_PATTERN.fullmatch(mobile):
-        return render_template("edit_parent.html", parent=parent, message="Mobile number must contain exactly 10 digits.")
-
-    try:
-        cursor.execute("SELECT parent_id FROM parent WHERE email = %s AND parent_id != %s", (email, parent_id))
-        if cursor.fetchone():
-            return render_template("edit_parent.html", parent=parent, message="Email already exists.")
-
-        cursor.execute("""
-            UPDATE parent
-            SET name = %s, email = %s, mobile = %s
-            WHERE parent_id = %s
-        """, (name, email, mobile if mobile else None, parent_id))
-        conn.commit()
-
-        return redirect(url_for("admin.view_parents"))
-
-    except Exception as e:
-        conn.rollback()
-        return render_template("edit_parent.html", parent=parent, message="Error updating parent: " + str(e))
+    return render_template(
+        "view_parents.html",
+        parents=parents
+    )
 
 
 # ============================================================
 # DELETE PARENT
 # ============================================================
 
-@admin_bp.route("/delete_parent/<int:parent_id>", methods=["POST"])
+@admin_bp.route(
+    "/delete_parent/<int:parent_id>",
+    methods=["POST"]
+)
 @role_required("Admin")
 def delete_parent(parent_id):
+
     try:
-        cursor.execute("DELETE FROM parent WHERE parent_id = %s", (parent_id,))
+
+        cursor.execute("""
+            DELETE FROM parent
+            WHERE parent_id = %s
+        """, (parent_id,))
+
         conn.commit()
+
     except Exception as e:
+
         conn.rollback()
+
         return "Error deleting parent: " + str(e)
 
-    return redirect(url_for("admin.view_parents"))
+    return redirect(
+        url_for("admin.view_parents")
+    )
+
+
+# ============================================================
+# ============================================================
+# STUDENT MANAGEMENT
+# ============================================================
+# ============================================================
 
 
 # ============================================================
@@ -530,60 +1934,154 @@ def delete_parent(parent_id):
 @admin_bp.route("/add_student", methods=["GET", "POST"])
 @role_required("Admin")
 def add_student():
-    parents = get_parents()
-    standards = get_standards()
+
+    institutions = get_institutions()
 
     if request.method == "GET":
-        return render_template("add_student.html", parents=parents, standards=standards)
 
-    parent_id = request.form.get("parent_id", "").strip()
-    standard_id = request.form.get("standard_id", "").strip()
-    admission_no = request.form.get("admission_no", "").strip()
-    roll_no = request.form.get("roll_no", "").strip()
-    division = request.form.get("division", "").strip()
-    name = request.form.get("name", "").strip()
-    email = request.form.get("email", "").strip()
-    password = request.form.get("password", "")
-    mobile = request.form.get("mobile", "").strip()
+        return render_template(
+            "add_student.html",
+            institutions=institutions,
+            parents=[],
+            standards=[]
+        )
 
-    if not parent_id:
+    institution_id = request.form.get(
+        "institution_id", ""
+    ).strip()
+
+    parent_id = request.form.get(
+        "parent_id", ""
+    ).strip()
+
+    standard_id = request.form.get(
+        "standard_id", ""
+    ).strip()
+
+    admission_no = request.form.get(
+        "admission_no", ""
+    ).strip()
+
+    roll_no = request.form.get(
+        "roll_no", ""
+    ).strip()
+
+    division = request.form.get(
+        "division", ""
+    ).strip()
+
+    name = request.form.get(
+        "name", ""
+    ).strip()
+
+    email = request.form.get(
+        "email", ""
+    ).strip().lower()
+
+    password = request.form.get(
+        "password", ""
+    )
+
+    mobile = request.form.get(
+        "mobile", ""
+    ).strip()
+
+    parents = get_parents(institution_id) if institution_id else []
+    standards = get_standards(institution_id) if institution_id else []
+
+    if not institution_id:
+
+        message = "Please select an institution."
+
+    elif not parent_id:
+
         message = "Please select a parent."
+
     elif not standard_id:
+
         message = "Please select a standard."
+
+    elif not roll_no:
+
+        message = "Roll number is required."
+
     elif not name:
+
         message = "Student name is required."
+
     elif not email or not EMAIL_PATTERN.fullmatch(email):
+
         message = "Please enter a valid email address."
+
     elif not password:
+
         message = "Password is required."
+
     elif mobile and not PHONE_PATTERN.fullmatch(mobile):
+
         message = "Mobile number must contain exactly 10 digits."
+
     else:
+
         try:
-            cursor.execute("SELECT student_id FROM student WHERE email = %s", (email,))
+
+            cursor.execute("""
+                SELECT student_id
+                FROM student
+                WHERE email = %s
+            """, (email,))
+
             if cursor.fetchone():
+
                 message = "Student email already exists."
+
             else:
+
                 cursor.execute("""
                     INSERT INTO student
-                    (parent_id, standard_id, admission_no, roll_no, division, name, email, password, mobile)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    (
+                        institution_id,
+                        parent_id,
+                        standard_id,
+                        admission_no,
+                        roll_no,
+                        division,
+                        name,
+                        email,
+                        password,
+                        mobile
+                    )
+                    VALUES
+                    (
+                        %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s
+                    )
                 """, (
-                    parent_id, standard_id,
+                    institution_id,
+                    parent_id,
+                    standard_id,
                     admission_no if admission_no else None,
                     roll_no,
                     division if division else None,
-                    name, email, password,
+                    name,
+                    email,
+                    password,
                     mobile if mobile else None
                 ))
+
                 conn.commit()
+
                 message = "Student added successfully!"
+
         except Exception as e:
+
             conn.rollback()
+
             message = "Error adding student: " + str(e)
 
     return render_template(
         "add_student.html",
+        institutions=institutions,
         parents=parents,
         standards=standards,
         message=message
@@ -597,540 +2095,1012 @@ def add_student():
 @admin_bp.route("/view_students")
 @role_required("Admin")
 def view_students():
+
     cursor.execute("""
         SELECT
-            s.student_id, s.admission_no, s.roll_no, s.division,
-            s.name, s.email, s.mobile, p.name AS parent_name, st.standard_name
+            s.student_id,
+            s.admission_no,
+            s.roll_no,
+            s.division,
+            s.name,
+            s.email,
+            s.mobile,
+            p.name AS parent_name,
+            st.standard_name,
+            i.institution_name
         FROM student s
-        JOIN parent p ON s.parent_id = p.parent_id
-        JOIN standard st ON s.standard_id = st.standard_id
+
+        JOIN parent p
+            ON s.parent_id = p.parent_id
+
+        JOIN standard st
+            ON s.standard_id = st.standard_id
+
+        JOIN institution i
+            ON s.institution_id = i.institution_id
+
         ORDER BY s.student_id ASC
     """)
+
     students = cursor.fetchall()
-    return render_template("view_students.html", students=students)
 
-
-# ============================================================
-# EDIT STUDENT
-# ============================================================
-
-@admin_bp.route("/edit_student/<int:student_id>", methods=["GET", "POST"])
-@role_required("Admin")
-def edit_student(student_id):
-    parents = get_parents()
-    standards = get_standards()
-
-    cursor.execute("""
-        SELECT student_id, parent_id, standard_id, admission_no, roll_no, division, name, email, mobile
-        FROM student WHERE student_id = %s
-    """, (student_id,))
-
-    student = cursor.fetchone()
-
-    if not student:
-        return "Student not found", 404
-
-    if request.method == "GET":
-        return render_template(
-            "edit_student.html",
-            student=student,
-            parents=parents,
-            standards=standards
-        )
-
-    parent_id = request.form.get("parent_id", "").strip()
-    standard_id = request.form.get("standard_id", "").strip()
-    admission_no = request.form.get("admission_no", "").strip()
-    roll_no = request.form.get("roll_no", "").strip()
-    division = request.form.get("division", "").strip()
-    name = request.form.get("name", "").strip()
-    email = request.form.get("email", "").strip()
-    mobile = request.form.get("mobile", "").strip()
-
-    message = None
-    if not parent_id:
-        message = "Please select a parent."
-    elif not standard_id:
-        message = "Please select a standard."
-    elif not name:
-        message = "Student name is required."
-    elif not email or not EMAIL_PATTERN.fullmatch(email):
-        message = "Please enter a valid email address."
-    elif mobile and not PHONE_PATTERN.fullmatch(mobile):
-        message = "Mobile number must contain exactly 10 digits."
-
-    if message:
-        return render_template(
-            "edit_student.html",
-            student=student,
-            parents=parents,
-            standards=standards,
-            message=message
-        )
-
-    try:
-        cursor.execute("SELECT student_id FROM student WHERE email = %s AND student_id != %s", (email, student_id))
-        if cursor.fetchone():
-            return render_template(
-                "edit_student.html",
-                student=student,
-                parents=parents,
-                standards=standards,
-                message="Email already exists."
-            )
-
-        cursor.execute("""
-            UPDATE student
-            SET parent_id = %s, standard_id = %s, admission_no = %s, roll_no = %s,
-                division = %s, name = %s, email = %s, mobile = %s
-            WHERE student_id = %s
-        """, (
-            parent_id, standard_id,
-            admission_no if admission_no else None,
-            roll_no,
-            division if division else None,
-            name, email,
-            mobile if mobile else None,
-            student_id
-        ))
-        conn.commit()
-
-        return redirect(url_for("admin.view_students"))
-
-    except Exception as e:
-        conn.rollback()
-        return render_template(
-            "edit_student.html",
-            student=student,
-            parents=parents,
-            standards=standards,
-            message="Error updating student: " + str(e)
-        )
+    return render_template(
+        "view_students.html",
+        students=students
+    )
 
 
 # ============================================================
 # DELETE STUDENT
 # ============================================================
 
-@admin_bp.route("/delete_student/<int:student_id>", methods=["POST"])
+@admin_bp.route(
+    "/delete_student/<int:student_id>",
+    methods=["POST"]
+)
 @role_required("Admin")
 def delete_student(student_id):
+
     try:
-        cursor.execute("DELETE FROM student WHERE student_id = %s", (student_id,))
+
+        cursor.execute("""
+            DELETE FROM student
+            WHERE student_id = %s
+        """, (student_id,))
+
         conn.commit()
+
     except Exception as e:
+
         conn.rollback()
+
         return "Error deleting student: " + str(e)
 
-    return redirect(url_for("admin.view_students"))
+    return redirect(
+        url_for("admin.view_students")
+    )
 
 
 # ============================================================
-# ADD STANDARD
 # ============================================================
+# STANDARD MANAGEMENT
+# ============================================================
+# ============================================================
+
 
 @admin_bp.route("/add_standard", methods=["GET", "POST"])
 @role_required("Admin")
 def add_standard():
+
     msg = None
     err = None
 
+    institutions = get_institutions()
+
     if request.method == "POST":
-        standard_name = request.form.get("standard_name", "").strip()
 
-        if not standard_name:
+        institution_id = request.form.get(
+            "institution_id", ""
+        ).strip()
+
+        course_id = request.form.get(
+            "course_id", ""
+        ).strip()
+
+        standard_name = request.form.get(
+            "standard_name", ""
+        ).strip()
+
+        if not institution_id:
+
+            err = "Please select an institution."
+
+        elif not course_id:
+
+            err = "Please select a course."
+
+        elif not standard_name:
+
             err = "Standard name is required."
+
         elif len(standard_name) > 50:
+
             err = "Standard name cannot exceed 50 characters."
+
         else:
+
             try:
-                cursor.execute("SELECT standard_id FROM standard WHERE LOWER(standard_name) = LOWER(%s)", (standard_name,))
+
+                cursor.execute("""
+                    SELECT standard_id
+                    FROM standard
+                    WHERE institution_id = %s
+                      AND course_id = %s
+                      AND LOWER(standard_name) = LOWER(%s)
+                """, (
+                    institution_id,
+                    course_id,
+                    standard_name
+                ))
+
                 if cursor.fetchone():
+
                     err = "This standard already exists."
+
                 else:
-                    cursor.execute("INSERT INTO standard (standard_name) VALUES (%s)", (standard_name,))
+
+                    cursor.execute("""
+                        INSERT INTO standard
+                        (
+                            institution_id,
+                            course_id,
+                            standard_name
+                        )
+                        VALUES (%s, %s, %s)
+                    """, (
+                        institution_id,
+                        course_id,
+                        standard_name
+                    ))
+
                     conn.commit()
+
                     msg = "Standard added successfully!"
-            except Exception:
+
+            except Exception as e:
+
                 conn.rollback()
-                err = "Unable to add standard."
 
-    cursor.execute("SELECT * FROM standard ORDER BY standard_id ASC")
-    standards = cursor.fetchall()
+                err = "Unable to add standard: " + str(e)
 
-    return render_template("add_standard.html", msg=msg, err=err, standards=standards)
+    standards = get_standards()
+
+    courses = get_courses()
+
+    return render_template(
+        "add_standard.html",
+        msg=msg,
+        err=err,
+        institutions=institutions,
+        courses=courses,
+        standards=standards
+    )
 
 
 # ============================================================
 # EDIT STANDARD
 # ============================================================
 
-@admin_bp.route("/edit_standard/<int:standard_id>", methods=["GET", "POST"])
+@admin_bp.route(
+    "/edit_standard/<int:standard_id>",
+    methods=["GET", "POST"]
+)
 @role_required("Admin")
 def edit_standard(standard_id):
+
     err = None
 
-    if request.method == "POST":
-        standard_name = request.form.get("standard_name", "").strip()
+    institutions = get_institutions()
+    courses = get_courses()
 
-        if not standard_name:
+    if request.method == "POST":
+
+        institution_id = request.form.get(
+            "institution_id", ""
+        ).strip()
+
+        course_id = request.form.get(
+            "course_id", ""
+        ).strip()
+
+        standard_name = request.form.get(
+            "standard_name", ""
+        ).strip()
+
+        if not institution_id:
+
+            err = "Please select an institution."
+
+        elif not course_id:
+
+            err = "Please select a course."
+
+        elif not standard_name:
+
             err = "Standard name is required."
+
         elif len(standard_name) > 50:
+
             err = "Standard name cannot exceed 50 characters."
+
         else:
+
             try:
+
                 cursor.execute("""
-                    SELECT standard_id FROM standard
-                    WHERE LOWER(standard_name) = LOWER(%s) AND standard_id != %s
-                """, (standard_name, standard_id))
+                    SELECT standard_id
+                    FROM standard
+                    WHERE institution_id = %s
+                      AND course_id = %s
+                      AND LOWER(standard_name) = LOWER(%s)
+                      AND standard_id != %s
+                """, (
+                    institution_id,
+                    course_id,
+                    standard_name,
+                    standard_id
+                ))
 
                 if cursor.fetchone():
-                    err = "This standard already exists."
-                else:
-                    cursor.execute("""
-                        UPDATE standard SET standard_name = %s WHERE standard_id = %s
-                    """, (standard_name, standard_id))
-                    conn.commit()
-                    return redirect(url_for("admin.add_standard"))
-            except Exception:
-                conn.rollback()
-                err = "Unable to update standard."
 
-    cursor.execute("SELECT * FROM standard WHERE standard_id = %s", (standard_id,))
+                    err = "This standard already exists."
+
+                else:
+
+                    cursor.execute("""
+                        UPDATE standard
+                        SET
+                            institution_id = %s,
+                            course_id = %s,
+                            standard_name = %s
+                        WHERE standard_id = %s
+                    """, (
+                        institution_id,
+                        course_id,
+                        standard_name,
+                        standard_id
+                    ))
+
+                    conn.commit()
+
+                    return redirect(
+                        url_for(
+                            "admin.add_standard"
+                        )
+                    )
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = "Unable to update standard: " + str(e)
+
+    cursor.execute("""
+        SELECT *
+        FROM standard
+        WHERE standard_id = %s
+    """, (standard_id,))
+
     standard = cursor.fetchone()
 
     if not standard:
-        return redirect(url_for("admin.add_standard"))
 
-    return render_template("edit_standard.html", standard=standard, err=err)
+        return redirect(
+            url_for("admin.add_standard")
+        )
+
+    return render_template(
+        "edit_standard.html",
+        standard=standard,
+        institutions=institutions,
+        courses=courses,
+        err=err
+    )
 
 
 # ============================================================
 # DELETE STANDARD
 # ============================================================
 
-@admin_bp.route("/delete_standard/<int:standard_id>", methods=["POST"])
+@admin_bp.route(
+    "/delete_standard/<int:standard_id>",
+    methods=["POST"]
+)
 @role_required("Admin")
 def delete_standard(standard_id):
+
     try:
-        cursor.execute("DELETE FROM standard WHERE standard_id = %s", (standard_id,))
+
+        cursor.execute("""
+            DELETE FROM standard
+            WHERE standard_id = %s
+        """, (standard_id,))
+
         conn.commit()
+
     except Exception:
+
         conn.rollback()
 
-    return redirect(url_for("admin.add_standard"))
+    return redirect(
+        url_for("admin.add_standard")
+    )
 
 
 # ============================================================
-# ADD SUBJECT
 # ============================================================
+# SUBJECT MANAGEMENT
+# ============================================================
+# ============================================================
+
 
 @admin_bp.route("/add_subject", methods=["GET", "POST"])
 @role_required("Admin")
 def add_subject():
+
     msg = None
     err = None
 
-    if request.method == "POST":
-        standard_id = request.form.get("standard_id", "").strip()
-        subject_name = request.form.get("subject_name", "").strip()
-        assessment_type = request.form.get("assessment_type", "Traditional").strip()
+    institutions = get_institutions()
 
-        if not standard_id:
+    if request.method == "POST":
+
+        institution_id = request.form.get(
+            "institution_id", ""
+        ).strip()
+
+        standard_id = request.form.get(
+            "standard_id", ""
+        ).strip()
+
+        subject_name = request.form.get(
+            "subject_name", ""
+        ).strip()
+
+        assessment_type = request.form.get(
+            "assessment_type",
+            "Traditional"
+        ).strip()
+
+        if not institution_id:
+
+            err = "Please select an institution."
+
+        elif not standard_id:
+
             err = "Please select a standard."
+
         elif not subject_name:
+
             err = "Subject name is required."
+
         elif len(subject_name) > 100:
+
             err = "Subject name cannot exceed 100 characters."
-        elif assessment_type not in ["Traditional", "OBE"]:
-            err = "Invalid assessment type selected."
+
+        elif assessment_type not in [
+            "Traditional",
+            "OBE"
+        ]:
+
+            err = "Invalid assessment type."
+
         else:
+
             try:
+
                 cursor.execute("""
-                    SELECT subject_id FROM subject
-                    WHERE standard_id = %s AND LOWER(subject_name) = LOWER(%s)
-                """, (standard_id, subject_name))
+                    SELECT subject_id
+                    FROM subject
+                    WHERE standard_id = %s
+                      AND LOWER(subject_name) = LOWER(%s)
+                """, (
+                    standard_id,
+                    subject_name
+                ))
 
                 if cursor.fetchone():
+
                     err = "This subject already exists for the selected standard."
+
                 else:
+
                     cursor.execute("""
-                        INSERT INTO subject (standard_id, subject_name, assessment_type)
-                        VALUES (%s, %s, %s)
-                    """, (standard_id, subject_name, assessment_type))
+                        INSERT INTO subject
+                        (
+                            institution_id,
+                            standard_id,
+                            subject_name,
+                            assessment_type
+                        )
+                        VALUES (%s, %s, %s, %s)
+                    """, (
+                        institution_id,
+                        standard_id,
+                        subject_name,
+                        assessment_type
+                    ))
+
                     conn.commit()
+
                     msg = "Subject added successfully!"
-            except Exception:
+
+            except Exception as e:
+
                 conn.rollback()
-                err = "Unable to add subject."
+
+                err = "Unable to add subject: " + str(e)
 
     standards = get_standards()
-    cursor.execute("""
-        SELECT sub.subject_id, sub.subject_name, sub.assessment_type, std.standard_name
-        FROM subject sub
-        JOIN standard std ON sub.standard_id = std.standard_id
-        ORDER BY sub.subject_id ASC
-    """)
-    subjects = cursor.fetchall()
 
-    return render_template("add_subject.html", msg=msg, err=err, standards=standards, subjects=subjects)
+    subjects = get_subjects()
+
+    return render_template(
+        "add_subject.html",
+        msg=msg,
+        err=err,
+        institutions=institutions,
+        standards=standards,
+        subjects=subjects
+    )
 
 
 # ============================================================
 # EDIT SUBJECT
 # ============================================================
 
-@admin_bp.route("/edit_subject/<int:subject_id>", methods=["GET", "POST"])
+@admin_bp.route(
+    "/edit_subject/<int:subject_id>",
+    methods=["GET", "POST"]
+)
 @role_required("Admin")
 def edit_subject(subject_id):
+
     err = None
 
-    if request.method == "POST":
-        standard_id = request.form.get("standard_id", "").strip()
-        subject_name = request.form.get("subject_name", "").strip()
-        assessment_type = request.form.get("assessment_type", "Traditional").strip()
+    institutions = get_institutions()
+    standards = get_standards()
 
-        if not standard_id:
+    if request.method == "POST":
+
+        institution_id = request.form.get(
+            "institution_id", ""
+        ).strip()
+
+        standard_id = request.form.get(
+            "standard_id", ""
+        ).strip()
+
+        subject_name = request.form.get(
+            "subject_name", ""
+        ).strip()
+
+        assessment_type = request.form.get(
+            "assessment_type",
+            "Traditional"
+        ).strip()
+
+        if not institution_id:
+
+            err = "Please select an institution."
+
+        elif not standard_id:
+
             err = "Please select a standard."
+
         elif not subject_name:
+
             err = "Subject name is required."
-        elif len(subject_name) > 100:
-            err = "Subject name cannot exceed 100 characters."
-        elif assessment_type not in ["Traditional", "OBE"]:
-            err = "Invalid assessment type selected."
+
+        elif assessment_type not in [
+            "Traditional",
+            "OBE"
+        ]:
+
+            err = "Invalid assessment type."
+
         else:
+
             try:
+
                 cursor.execute("""
-                    SELECT subject_id FROM subject
-                    WHERE standard_id = %s AND LOWER(subject_name) = LOWER(%s) AND subject_id != %s
-                """, (standard_id, subject_name, subject_id))
+                    SELECT subject_id
+                    FROM subject
+                    WHERE standard_id = %s
+                      AND LOWER(subject_name) = LOWER(%s)
+                      AND subject_id != %s
+                """, (
+                    standard_id,
+                    subject_name,
+                    subject_id
+                ))
 
                 if cursor.fetchone():
-                    err = "This subject already exists for the selected standard."
+
+                    err = "This subject already exists."
+
                 else:
+
                     cursor.execute("""
                         UPDATE subject
-                        SET standard_id = %s, subject_name = %s, assessment_type = %s
+                        SET
+                            institution_id = %s,
+                            standard_id = %s,
+                            subject_name = %s,
+                            assessment_type = %s
                         WHERE subject_id = %s
-                    """, (standard_id, subject_name, assessment_type, subject_id))
-                    conn.commit()
-                    return redirect(url_for("admin.add_subject"))
-            except Exception:
-                conn.rollback()
-                err = "Unable to update subject."
+                    """, (
+                        institution_id,
+                        standard_id,
+                        subject_name,
+                        assessment_type,
+                        subject_id
+                    ))
 
-    cursor.execute("SELECT * FROM subject WHERE subject_id = %s", (subject_id,))
+                    conn.commit()
+
+                    return redirect(
+                        url_for(
+                            "admin.add_subject"
+                        )
+                    )
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = "Unable to update subject: " + str(e)
+
+    cursor.execute("""
+        SELECT *
+        FROM subject
+        WHERE subject_id = %s
+    """, (subject_id,))
+
     subject = cursor.fetchone()
 
     if not subject:
-        return redirect(url_for("admin.add_subject"))
 
-    standards = get_standards()
-    return render_template("edit_subject.html", subject=subject, standards=standards, err=err)
+        return redirect(
+            url_for("admin.add_subject")
+        )
+
+    return render_template(
+        "edit_subject.html",
+        subject=subject,
+        institutions=institutions,
+        standards=standards,
+        err=err
+    )
 
 
 # ============================================================
 # DELETE SUBJECT
 # ============================================================
 
-@admin_bp.route("/delete_subject/<int:subject_id>", methods=["POST"])
+@admin_bp.route(
+    "/delete_subject/<int:subject_id>",
+    methods=["POST"]
+)
 @role_required("Admin")
 def delete_subject(subject_id):
+
     try:
-        cursor.execute("DELETE FROM subject WHERE subject_id = %s", (subject_id,))
+
+        cursor.execute("""
+            DELETE FROM subject
+            WHERE subject_id = %s
+        """, (subject_id,))
+
         conn.commit()
+
     except Exception:
+
         conn.rollback()
 
-    return redirect(url_for("admin.add_subject"))
+    return redirect(
+        url_for("admin.add_subject")
+    )
 
 
 # ============================================================
-# ADD CHAPTER
 # ============================================================
+# CHAPTER MANAGEMENT
+# ============================================================
+# ============================================================
+
 
 @admin_bp.route("/add_chapter", methods=["GET", "POST"])
 @role_required("Admin")
 def add_chapter():
+
     msg = None
     err = None
 
+    subjects = get_subjects()
+
     if request.method == "POST":
-        subject_id = request.form.get("subject_id", "").strip()
-        chapter_number = request.form.get("chapter_number", "").strip()
-        chapter_name = request.form.get("chapter_name", "").strip()
+
+        subject_id = request.form.get(
+            "subject_id", ""
+        ).strip()
+
+        chapter_number = request.form.get(
+            "chapter_number", ""
+        ).strip()
+
+        chapter_name = request.form.get(
+            "chapter_name", ""
+        ).strip()
 
         if not subject_id:
+
             err = "Please select a subject."
+
         elif not chapter_name:
+
             err = "Chapter name is required."
+
         elif len(chapter_name) > 200:
+
             err = "Chapter name cannot exceed 200 characters."
-        elif chapter_number and (not chapter_number.isdigit() or int(chapter_number) <= 0):
+
+        elif chapter_number and (
+            not chapter_number.isdigit()
+            or int(chapter_number) <= 0
+        ):
+
             err = "Chapter number must be a valid positive integer."
+
         else:
+
             try:
-                chapter_num_value = int(chapter_number) if chapter_number else None
+
+                chapter_num_value = (
+                    int(chapter_number)
+                    if chapter_number
+                    else None
+                )
+
                 cursor.execute("""
-                    SELECT chapter_id FROM chapter
-                    WHERE subject_id = %s AND (chapter_number = %s OR LOWER(chapter_name) = LOWER(%s))
-                """, (subject_id, chapter_num_value, chapter_name))
+                    SELECT chapter_id
+                    FROM chapter
+                    WHERE subject_id = %s
+                      AND (
+                            chapter_number = %s
+                            OR LOWER(chapter_name) = LOWER(%s)
+                      )
+                """, (
+                    subject_id,
+                    chapter_num_value,
+                    chapter_name
+                ))
 
                 if cursor.fetchone():
-                    err = "This chapter already exists for the selected subject."
-                else:
-                    cursor.execute("""
-                        INSERT INTO chapter (subject_id, chapter_number, chapter_name)
-                        VALUES (%s, %s, %s)
-                    """, (subject_id, chapter_num_value, chapter_name))
-                    conn.commit()
-                    msg = "Chapter added successfully!"
-            except Exception:
-                conn.rollback()
-                err = "Unable to add chapter."
 
-    subjects = get_subjects()
+                    err = "This chapter already exists."
+
+                else:
+
+                    cursor.execute("""
+                        INSERT INTO chapter
+                        (
+                            subject_id,
+                            chapter_number,
+                            chapter_name
+                        )
+                        VALUES (%s, %s, %s)
+                    """, (
+                        subject_id,
+                        chapter_num_value,
+                        chapter_name
+                    ))
+
+                    conn.commit()
+
+                    msg = "Chapter added successfully!"
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = "Unable to add chapter: " + str(e)
+
     cursor.execute("""
-        SELECT ch.chapter_id, ch.chapter_number, ch.chapter_name, sub.subject_name
+        SELECT
+            ch.chapter_id,
+            ch.chapter_number,
+            ch.chapter_name,
+            sub.subject_name
         FROM chapter ch
-        JOIN subject sub ON ch.subject_id = sub.subject_id
+        JOIN subject sub
+            ON ch.subject_id = sub.subject_id
         ORDER BY ch.chapter_id ASC
     """)
+
     chapters = cursor.fetchall()
 
-    return render_template("add_chapter.html", msg=msg, err=err, subjects=subjects, chapters=chapters)
+    return render_template(
+        "add_chapter.html",
+        msg=msg,
+        err=err,
+        subjects=subjects,
+        chapters=chapters
+    )
 
 
 # ============================================================
 # EDIT CHAPTER
 # ============================================================
 
-@admin_bp.route("/edit_chapter/<int:chapter_id>", methods=["GET", "POST"])
+@admin_bp.route(
+    "/edit_chapter/<int:chapter_id>",
+    methods=["GET", "POST"]
+)
 @role_required("Admin")
 def edit_chapter(chapter_id):
+
     err = None
 
     if request.method == "POST":
-        subject_id = request.form.get("subject_id", "").strip()
-        chapter_number = request.form.get("chapter_number", "").strip()
-        chapter_name = request.form.get("chapter_name", "").strip()
+
+        subject_id = request.form.get(
+            "subject_id", ""
+        ).strip()
+
+        chapter_number = request.form.get(
+            "chapter_number", ""
+        ).strip()
+
+        chapter_name = request.form.get(
+            "chapter_name", ""
+        ).strip()
 
         if not subject_id:
+
             err = "Please select a subject."
+
         elif not chapter_name:
+
             err = "Chapter name is required."
-        elif len(chapter_name) > 200:
-            err = "Chapter name cannot exceed 200 characters."
-        elif chapter_number and (not chapter_number.isdigit() or int(chapter_number) <= 0):
-            err = "Chapter number must be a valid positive integer."
+
+        elif chapter_number and (
+            not chapter_number.isdigit()
+            or int(chapter_number) <= 0
+        ):
+
+            err = "Invalid chapter number."
+
         else:
+
             try:
-                chapter_num_value = int(chapter_number) if chapter_number else None
+
+                chapter_num_value = (
+                    int(chapter_number)
+                    if chapter_number
+                    else None
+                )
+
                 cursor.execute("""
-                    SELECT chapter_id FROM chapter
+                    SELECT chapter_id
+                    FROM chapter
                     WHERE subject_id = %s
-                    AND (chapter_number = %s OR LOWER(chapter_name) = LOWER(%s))
-                    AND chapter_id != %s
-                """, (subject_id, chapter_num_value, chapter_name, chapter_id))
+                      AND (
+                            chapter_number = %s
+                            OR LOWER(chapter_name) = LOWER(%s)
+                      )
+                      AND chapter_id != %s
+                """, (
+                    subject_id,
+                    chapter_num_value,
+                    chapter_name,
+                    chapter_id
+                ))
 
                 if cursor.fetchone():
+
                     err = "Another chapter with these details already exists."
+
                 else:
+
                     cursor.execute("""
                         UPDATE chapter
-                        SET subject_id = %s, chapter_number = %s, chapter_name = %s
+                        SET
+                            subject_id = %s,
+                            chapter_number = %s,
+                            chapter_name = %s
                         WHERE chapter_id = %s
-                    """, (subject_id, chapter_num_value, chapter_name, chapter_id))
-                    conn.commit()
-                    return redirect(url_for("admin.add_chapter"))
-            except Exception:
-                conn.rollback()
-                err = "Unable to update chapter."
+                    """, (
+                        subject_id,
+                        chapter_num_value,
+                        chapter_name,
+                        chapter_id
+                    ))
 
-    cursor.execute("SELECT * FROM chapter WHERE chapter_id = %s", (chapter_id,))
+                    conn.commit()
+
+                    return redirect(
+                        url_for(
+                            "admin.add_chapter"
+                        )
+                    )
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = "Unable to update chapter: " + str(e)
+
+    cursor.execute("""
+        SELECT *
+        FROM chapter
+        WHERE chapter_id = %s
+    """, (chapter_id,))
+
     chapter = cursor.fetchone()
 
     if not chapter:
-        return redirect(url_for("admin.add_chapter"))
+
+        return redirect(
+            url_for("admin.add_chapter")
+        )
 
     subjects = get_subjects()
-    return render_template("edit_chapter.html", chapter=chapter, subjects=subjects, err=err)
+
+    return render_template(
+        "edit_chapter.html",
+        chapter=chapter,
+        subjects=subjects,
+        err=err
+    )
 
 
 # ============================================================
 # DELETE CHAPTER
 # ============================================================
 
-@admin_bp.route("/delete_chapter/<int:chapter_id>", methods=["POST"])
+@admin_bp.route(
+    "/delete_chapter/<int:chapter_id>",
+    methods=["POST"]
+)
 @role_required("Admin")
 def delete_chapter(chapter_id):
+
     try:
-        cursor.execute("DELETE FROM chapter WHERE chapter_id = %s", (chapter_id,))
+
+        cursor.execute("""
+            DELETE FROM chapter
+            WHERE chapter_id = %s
+        """, (chapter_id,))
+
         conn.commit()
+
     except Exception:
+
         conn.rollback()
 
-    return redirect(url_for("admin.add_chapter"))
+    return redirect(
+        url_for("admin.add_chapter")
+    )
 
 
 # ============================================================
+# ============================================================
 # STUDENT PROGRESS
+# ============================================================
 # ============================================================
 
 @admin_bp.route("/student_progress_for_admin")
 @role_required("Admin")
 def student_progress_for_admin():
-    return render_template("student_progress_for_admin.html")
+
+    return render_template(
+        "student_progress_for_admin.html"
+    )
 
 
+# ============================================================
 # ============================================================
 # ADMIN PROFILE
 # ============================================================
+# ============================================================
 
-@admin_bp.route("/profile", methods=["GET", "POST"])
+@admin_bp.route(
+    "/profile",
+    methods=["GET", "POST"]
+)
 @role_required("Admin")
 def admin_profile():
-    admin_id = session.get("user_id")
+
+    admin_id = session.get(
+        "user_id"
+    )
+
     msg = None
     err = None
 
     if not admin_id:
-        return redirect(url_for("auth.login"))
+
+        return redirect(
+            url_for("auth.login")
+        )
 
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip().lower()
+
+        name = request.form.get(
+            "name", ""
+        ).strip()
+
+        email = request.form.get(
+            "email", ""
+        ).strip().lower()
 
         if not name:
+
             err = "Name is required."
+
         elif len(name) > 100:
+
             err = "Name cannot exceed 100 characters."
+
         elif not EMAIL_PATTERN.fullmatch(email):
+
             err = "Please enter a valid email address."
+
         else:
+
             try:
+
                 cursor.execute("""
-                    SELECT admin_id FROM admin
-                    WHERE email = %s AND admin_id != %s
-                """, (email, admin_id))
+                    SELECT admin_id
+                    FROM admin
+                    WHERE email = %s
+                      AND admin_id != %s
+                """, (
+                    email,
+                    admin_id
+                ))
 
                 if cursor.fetchone():
+
                     err = "Email is already in use."
+
                 else:
+
                     cursor.execute("""
-                        UPDATE admin SET name = %s, email = %s WHERE admin_id = %s
-                    """, (name, email, admin_id))
+                        UPDATE admin
+                        SET
+                            name = %s,
+                            email = %s
+                        WHERE admin_id = %s
+                    """, (
+                        name,
+                        email,
+                        admin_id
+                    ))
+
                     conn.commit()
+
                     session["name"] = name
+
                     msg = "Profile updated successfully!"
+
             except Exception:
+
                 conn.rollback()
+
                 err = "Unable to update profile."
 
-    cursor.execute("SELECT admin_id, name, email FROM admin WHERE admin_id = %s", (admin_id,))
+    cursor.execute("""
+        SELECT
+            admin_id,
+            name,
+            email
+        FROM admin
+        WHERE admin_id = %s
+    """, (admin_id,))
+
     admin_data = cursor.fetchone()
 
     if not admin_data:
-        return redirect(url_for("auth.login"))
 
-    return render_template("admin_profile.html", admin=admin_data, msg=msg, err=err)
+        return redirect(
+            url_for("auth.login")
+        )
+
+    return render_template(
+        "admin_profile.html",
+        admin=admin_data,
+        msg=msg,
+        err=err
+    )

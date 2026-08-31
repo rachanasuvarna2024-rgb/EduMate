@@ -1,0 +1,558 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+<h2>Department Master</h2>
+
+{% if msg %}
+<div class="success-message">
+    {{ msg }}
+</div>
+{% endif %}
+
+{% if err %}
+<div class="error-message">
+    {{ err }}
+</div>
+{% endif %}
+
+
+<!-- ===================================================== -->
+<!-- ADD DEPARTMENT -->
+<!-- ===================================================== -->
+
+<div class="card">
+
+    <h3>Add Department</h3>
+
+    <form method="POST">
+
+        <input type="hidden" name="action" value="add">
+
+        <div class="form-row">
+
+            <!-- Department Name -->
+
+            <div class="form-group">
+
+                <label>
+                    Department Name
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    name="department_name"
+                    class="form-control"
+                    placeholder="Enter department name"
+                    required
+                >
+
+            </div>
+
+
+            <!-- Institution Category -->
+
+            <div class="form-group">
+
+                <label>
+                    Institution Category
+                    <span class="required">*</span>
+                </label>
+
+                <select
+                    name="institution_category"
+                    class="form-control"
+                    required
+                >
+
+                    <option value="">
+                        -- Select Category --
+                    </option>
+
+                    <option value="School">
+                        School
+                    </option>
+
+                    <option value="Jr College">
+                        Jr College
+                    </option>
+
+                    <option value="Degree College">
+                        Degree College
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- Status -->
+
+            <div class="form-group">
+
+                <label>
+                    Status
+                </label>
+
+                <select
+                    name="status"
+                    class="form-control"
+                >
+
+                    <option value="Active" selected>
+                        Active
+                    </option>
+
+                    <option value="Inactive">
+                        Inactive
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <button
+            type="submit"
+            class="btn-submit"
+        >
+            + Add Department
+        </button>
+
+    </form>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- EXISTING DEPARTMENTS -->
+<!-- ===================================================== -->
+
+<div class="card">
+
+    <h3>Existing Departments</h3>
+
+    <div class="table-container">
+
+        <table>
+
+            <!-- TABLE HEADERS -->
+
+            <thead>
+
+                <tr>
+
+                    <th>Department ID</th>
+
+                    <th>Department Name</th>
+
+                    <th>Institution Category</th>
+
+                    <th>Status</th>
+
+                    <th>Created At</th>
+
+                    <th>Updated At</th>
+
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+
+            <!-- TABLE DATA -->
+
+            <tbody>
+
+                {% if departments %}
+
+                    {% for department in departments %}
+
+                    <tr>
+
+                        <td>
+                            {{ department.department_id }}
+                        </td>
+
+
+                        <td>
+                            {{ department.department_name }}
+                        </td>
+
+
+                        <td>
+                            {{ department.institution_category }}
+                        </td>
+
+
+                        <td>
+
+                            {% if department.status == 'Active' %}
+
+                                <span class="status-active">
+                                    Active
+                                </span>
+
+                            {% else %}
+
+                                <span class="status-inactive">
+                                    Inactive
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ department.created_at }}
+                        </td>
+
+
+                        <td>
+                            {{ department.updated_at }}
+                        </td>
+
+
+                        <td class="action-buttons">
+
+                            <!-- EDIT -->
+
+                            <a
+                                href="{{ url_for('admin.edit_department', department_id=department.department_id) }}"
+                                class="btn-edit"
+                            >
+                                Edit
+                            </a>
+
+
+                            <!-- DELETE -->
+
+                            <form
+                                action="{{ url_for('admin.delete_department', department_id=department.department_id) }}"
+                                method="POST"
+                                style="display:inline;"
+                                onsubmit="return confirmDelete('{{ department.department_name|e }}')"
+                            >
+                                <button
+                                    type="submit"
+                                    class="btn-delete"
+                                >
+                                    Delete
+                                </button>
+                            </form>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <tr>
+
+                        <td
+                            colspan="7"
+                            class="no-data"
+                        >
+                            No departments found.
+
+                        </td>
+
+                    </tr>
+
+                {% endif %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<style>
+
+/* ===================================================== */
+/* CARD */
+/* ===================================================== */
+
+.card {
+
+    background: white;
+
+    padding: 20px;
+
+    margin-bottom: 20px;
+
+    border-radius: 6px;
+
+}
+
+
+/* ===================================================== */
+/* FORM */
+/* ===================================================== */
+
+.form-row {
+
+    display: flex;
+
+    gap: 15px;
+
+}
+
+
+.form-group {
+
+    flex: 1;
+
+    margin-bottom: 15px;
+
+}
+
+
+.form-group label {
+
+    display: block;
+
+    margin-bottom: 6px;
+
+    font-weight: 600;
+
+}
+
+
+.form-control {
+
+    width: 100%;
+
+    padding: 9px;
+
+    box-sizing: border-box;
+
+    border: 1px solid #ccc;
+
+    border-radius: 4px;
+
+}
+
+
+.required {
+
+    color: #dc3545;
+
+}
+
+
+/* ===================================================== */
+/* TABLE */
+/* ===================================================== */
+
+.table-container {
+
+    width: 100%;
+
+    overflow-x: auto;
+
+}
+
+
+table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+    min-width: 900px;
+
+}
+
+
+th,
+td {
+
+    padding: 10px;
+
+    border-bottom: 1px solid #ddd;
+
+    text-align: left;
+
+}
+
+
+th {
+
+    background: #f5f5f5;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+
+}
+
+
+/* ===================================================== */
+/* NO DATA */
+/* ===================================================== */
+
+.no-data {
+
+    text-align: center;
+
+    padding: 20px;
+
+    color: #666;
+
+}
+
+
+/* ===================================================== */
+/* STATUS */
+/* ===================================================== */
+
+.status-active {
+
+    color: #155724;
+
+    background: #d4edda;
+
+    padding: 4px 8px;
+
+    border-radius: 4px;
+
+    font-size: 13px;
+
+}
+
+
+.status-inactive {
+
+    color: #721c24;
+
+    background: #f8d7da;
+
+    padding: 4px 8px;
+
+    border-radius: 4px;
+
+    font-size: 13px;
+
+}
+
+
+/* ===================================================== */
+/* MESSAGES */
+/* ===================================================== */
+
+.success-message {
+
+    color: #155724;
+
+    background: #d4edda;
+
+    padding: 10px;
+
+    margin-bottom: 15px;
+
+}
+
+
+.error-message {
+
+    color: #721c24;
+
+    background: #f8d7da;
+
+    padding: 10px;
+
+    margin-bottom: 15px;
+
+}
+
+
+/* ===================================================== */
+/* BUTTONS */
+/* ===================================================== */
+
+.btn-submit,
+.btn-edit,
+.btn-delete,
+.btn-cancel {
+
+    border: none;
+
+    padding: 8px 14px;
+
+    border-radius: 4px;
+
+    cursor: pointer;
+
+}
+
+
+.btn-submit {
+
+    background: #0d6efd;
+
+    color: white;
+
+}
+
+
+.btn-edit {
+
+    background: #ffc107;
+
+}
+
+
+.btn-delete {
+
+    background: #dc3545;
+
+    color: white;
+
+}
+
+
+.btn-cancel {
+
+    background: #6c757d;
+
+    color: white;
+
+}
+
+
+.action-buttons {
+
+    white-space: nowrap;
+
+}
+
+</style>
+
+<script>
+
+    function confirmDelete(departmentName) {
+
+    return confirm(
+        "Are you sure you want to delete the department \"" +
+        departmentName +
+        "\"?"
+    );
+
+}
+
+</script>
+
+{% endblock %}
