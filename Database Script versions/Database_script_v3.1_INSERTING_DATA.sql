@@ -2,10 +2,7 @@
 -- EDUMATE DATABASE VERSION 3
 -- INSERT / SAMPLE DATA SCRIPT
 -- ============================================================
-
 USE edumate_db3_2;
-
-
 -- ============================================================
 -- 1. INSTITUTIONS
 -- ============================================================
@@ -304,12 +301,6 @@ INSERT INTO designation_master
     institution_category
 )
 VALUES
--- Jr College
-('Principal', 'School'),
-('Vice Principal', 'School'),
-('Head Master', 'School'),
-('Head Mistress', 'School'),
-('Teacher', 'School'),
 
 -- School
 ('Principal', 'School'),
@@ -318,6 +309,12 @@ VALUES
 ('Head Mistress', 'School'),
 ('Teacher', 'School'),
 
+-- Jr College
+('Principal', 'Jr College'),
+('Vice Principal', 'Jr College'),
+('Head Master', 'Jr College'),
+('Head Mistress', 'Jr College'),
+('Teacher', 'Jr College'),
 
 -- Degree College
 ('Principal', 'Degree College'),

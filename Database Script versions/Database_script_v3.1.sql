@@ -3,11 +3,11 @@
 -- Institution Management + Academic Structure
 -- ============================================================
 
-DROP DATABASE IF EXISTS edumate_db3_B;
+DROP DATABASE IF EXISTS edumate_db3_2;
 
-CREATE DATABASE edumate_db3_B;
+CREATE DATABASE edumate_db3_2;
 
-USE edumate_db3_B;
+USE edumate_db3_2;
 
 
 -- ============================================================
