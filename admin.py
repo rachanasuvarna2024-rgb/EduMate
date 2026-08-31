@@ -49,17 +49,37 @@ TEXT_NAME_PATTERN = re.compile(
 # ============================================================
 
 def get_institutions():
+
+    cursor.execute("""
+        SELECT DATABASE()
+    """)
+
+    current_db = cursor.fetchone()
+
+    print("======================================")
+    print("FLASK CONNECTED DATABASE:", current_db)
+    print("======================================")
+
+
     cursor.execute("""
         SELECT
             institution_id,
             institution_name,
             institution_code,
-            institution_category
+            institution_category,
+            status
         FROM institution
-        WHERE status = 'Active'
         ORDER BY institution_name ASC
     """)
-    return cursor.fetchall()
+
+    institutions = cursor.fetchall()
+
+    print("======================================")
+    print("INSTITUTIONS FOUND:", institutions)
+    print("TOTAL INSTITUTIONS:", len(institutions))
+    print("======================================")
+
+    return institutions
 
 
 def get_parents(institution_id=None):
@@ -255,8 +275,6 @@ def admin_home():
 # INSTITUTION MANAGEMENT
 # ============================================================
 # ============================================================
-
-
 # ============================================================
 # VIEW INSTITUTIONS
 # ============================================================
@@ -265,66 +283,176 @@ def admin_home():
 @role_required("Admin")
 def view_institutions():
 
-    cursor.execute("""
-        SELECT
-            institution_id,
-            institution_name,
-            institution_code,
-            institution_category,
-            institution_type,
-            address,
-            city,
-            state,
-            pincode,
-            email,
-            phone,
-            website,
-            status,
-            created_at
-        FROM institution
-        ORDER BY institution_id DESC
-    """)
+    try:
 
-    institutions = cursor.fetchall()
+        # ====================================================
+        # GET ALL INSTITUTIONS
+        # ====================================================
 
-    return render_template(
-        "view_institutions.html",
-        institutions=institutions
-    )
+        cursor.execute("""
+            SELECT
+                institution_id,
+                institution_name,
+                institution_code,
+                institution_category,
+                institution_type,
+                address,
+                city,
+                state,
+                pincode,
+                email,
+                phone,
+                website,
+                status
+            FROM institution
+            ORDER BY institution_name ASC
+        """)
 
+        institutions = cursor.fetchall()
+
+
+        # ====================================================
+        # DISPLAY PAGE
+        # ====================================================
+
+        return render_template(
+            "view_institutions.html",
+            institutions=institutions
+        )
+
+
+    # ========================================================
+    # ERROR HANDLING
+    # ========================================================
+
+    except Exception as e:
+
+        return render_template(
+            "view_institutions.html",
+
+            institutions=[],
+
+            err="Database error: " + str(e)
+        )
 
 # ============================================================
-# MANAGE INSTITUTIONS
+# DELETE INSTITUTION
 # ============================================================
 
-@admin_bp.route("/manage_institutions")
+@admin_bp.route(
+    "/delete_institution/<int:institution_id>",
+    methods=["POST"]
+)
 @role_required("Admin")
-def manage_institutions():
+def delete_institution(institution_id):
 
-    cursor.execute("""
-        SELECT
+    try:
+
+        # ====================================================
+        # CHECK IF INSTITUTION EXISTS
+        # ====================================================
+
+        cursor.execute("""
+            SELECT
+                institution_id,
+                institution_name
+            FROM institution
+            WHERE institution_id = %s
+        """, (
             institution_id,
-            institution_name,
-            institution_code,
-            institution_category,
-            institution_type,
-            city,
-            state,
-            email,
-            phone,
-            status
-        FROM institution
-        ORDER BY institution_name ASC
-    """)
+        ))
 
-    institutions = cursor.fetchall()
-
-    return render_template(
-        "manage_institution.html",
-        institutions=institutions
-    )
+        institution = cursor.fetchone()
 
 
+        if not institution:
+
+            return redirect(
+                url_for("admin.view_institutions")
+            )
+
+
+        # ====================================================
+        # DELETE COURSE ASSIGNMENTS
+        # ====================================================
+
+        cursor.execute("""
+            DELETE FROM institution_course
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+
+        # ====================================================
+        # DELETE DEPARTMENT ASSIGNMENTS
+        # ====================================================
+
+        cursor.execute("""
+            DELETE FROM institution_department
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+
+        # ====================================================
+        # DELETE DESIGNATION ASSIGNMENTS
+        # ====================================================
+
+        cursor.execute("""
+            DELETE FROM institution_designation
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+
+        # ====================================================
+        # DELETE INSTITUTION
+        # ====================================================
+
+        cursor.execute("""
+            DELETE FROM institution
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+
+        # ====================================================
+        # COMMIT
+        # ====================================================
+
+        conn.commit()
+
+
+        # ====================================================
+        # REDIRECT TO VIEW PAGE
+        # ====================================================
+
+        return redirect(
+            url_for(
+                "admin.view_institutions",
+                msg="Institution deleted successfully."
+            )
+        )
+
+
+    # ========================================================
+    # ERROR HANDLING
+    # ========================================================
+
+    except Exception as e:
+
+        conn.rollback()
+
+        return redirect(
+            url_for(
+                "admin.view_institutions",
+                err="Unable to delete institution: " + str(e)
+            )
+        )
 # ============================================================
 # ADD INSTITUTION
 # ============================================================
@@ -538,7 +666,6 @@ def add_institution():
         "add_institution.html"
     )
 
-
 # ============================================================
 # MANAGE INSTITUTION - ASSIGN MASTER DATA
 # ============================================================
@@ -547,54 +674,318 @@ def add_institution():
 @role_required("Admin")
 def manage_institution():
 
-    institutions = get_institutions()
-
-    if request.method == "GET":
-
-        return render_template(
-            "manage_institution.html",
-            institutions=institutions
-        )
-
-    institution_id = request.form.get(
-        "institution_id"
-    )
-
-    if not institution_id:
-
-        return render_template(
-            "manage_institution.html",
-            institutions=institutions,
-            err="Please select an institution."
-        )
-
     try:
 
-        # ----------------------------------------------------
-        # GET INSTITUTION CATEGORY
-        # ----------------------------------------------------
+        # ====================================================
+        # GET ALL ACTIVE INSTITUTIONS
+        # ====================================================
+
+        institutions = get_institutions()
+
+        # ====================================================
+        # DEFAULT VALUES
+        # ====================================================
+
+        selected_institution_id = None
+        selected_category = None
+
+        selected_courses = []
+        selected_departments = []
+        selected_designations = []
+
+        courses = []
+        departments = []
+        designations = []
+
+        # ====================================================
+        # GET REQUEST
+        # ====================================================
+
+        if request.method == "GET":
+
+            selected_institution_id = request.args.get(
+                "institution_id"
+            )
+
+            # =================================================
+            # NO INSTITUTION SELECTED
+            # =================================================
+
+            if not selected_institution_id:
+
+                return render_template(
+                    "manage_institution.html",
+
+                    institutions=institutions,
+
+                    courses=[],
+                    departments=[],
+                    designations=[],
+
+                    selected_institution_id=None,
+                    selected_category=None,
+
+                    selected_courses=[],
+                    selected_departments=[],
+                    selected_designations=[]
+                )
+
+            # =================================================
+            # GET CATEGORY FROM INSTITUTION TABLE
+            # =================================================
+
+            cursor.execute("""
+                SELECT
+                    institution_category
+                FROM institution
+                WHERE institution_id = %s
+            """, (
+                selected_institution_id,
+            ))
+
+            institution = cursor.fetchone()
+
+            # =================================================
+            # INSTITUTION NOT FOUND
+            # =================================================
+
+            if not institution:
+
+                return render_template(
+                    "manage_institution.html",
+
+                    institutions=institutions,
+
+                    courses=[],
+                    departments=[],
+                    designations=[],
+
+                    selected_institution_id=selected_institution_id,
+                    selected_category=None,
+
+                    selected_courses=[],
+                    selected_departments=[],
+                    selected_designations=[],
+
+                    err="Institution not found."
+                )
+
+            # =================================================
+            # GET INSTITUTION CATEGORY
+            # =================================================
+
+            selected_category = institution["institution_category"]
+
+            # =================================================
+            # GET COURSES FOR CATEGORY
+            # =================================================
+
+            cursor.execute("""
+                SELECT
+                    course_id,
+                    course_name
+                FROM course_master
+                WHERE institution_category = %s
+                ORDER BY course_name ASC
+            """, (
+                selected_category,
+            ))
+
+            courses = cursor.fetchall()
+
+            # =================================================
+            # GET DEPARTMENTS FOR CATEGORY
+            # =================================================
+
+            cursor.execute("""
+                SELECT
+                    department_id,
+                    department_name
+                FROM department_master
+                WHERE institution_category = %s
+                ORDER BY department_name ASC
+            """, (
+                selected_category,
+            ))
+
+            departments = cursor.fetchall()
+
+            # =================================================
+            # GET DESIGNATIONS FOR CATEGORY
+            # =================================================
+
+            cursor.execute("""
+                SELECT
+                    designation_id,
+                    designation_name
+                FROM designation_master
+                WHERE institution_category = %s
+                ORDER BY designation_name ASC
+            """, (
+                selected_category,
+            ))
+
+            designations = cursor.fetchall()
+
+            # =================================================
+            # GET EXISTING COURSE ASSIGNMENTS
+            # =================================================
+
+            cursor.execute("""
+                SELECT
+                    course_id
+                FROM institution_course
+                WHERE institution_id = %s
+            """, (
+                selected_institution_id,
+            ))
+
+            selected_courses = [
+                str(row["course_id"])
+                for row in cursor.fetchall()
+            ]
+
+            # =================================================
+            # GET EXISTING DEPARTMENT ASSIGNMENTS
+            # =================================================
+
+            cursor.execute("""
+                SELECT
+                    department_id
+                FROM institution_department
+                WHERE institution_id = %s
+            """, (
+                selected_institution_id,
+            ))
+
+            selected_departments = [
+                str(row["department_id"])
+                for row in cursor.fetchall()
+            ]
+
+            # =================================================
+            # GET EXISTING DESIGNATION ASSIGNMENTS
+            # =================================================
+
+            cursor.execute("""
+                SELECT
+                    designation_id
+                FROM institution_designation
+                WHERE institution_id = %s
+            """, (
+                selected_institution_id,
+            ))
+
+            selected_designations = [
+                str(row["designation_id"])
+                for row in cursor.fetchall()
+            ]
+
+            # =================================================
+            # DISPLAY PAGE
+            # =================================================
+
+            return render_template(
+                "manage_institution.html",
+
+                institutions=institutions,
+
+                courses=courses,
+                departments=departments,
+                designations=designations,
+
+                selected_institution_id=selected_institution_id,
+                selected_category=selected_category,
+
+                selected_courses=selected_courses,
+                selected_departments=selected_departments,
+                selected_designations=selected_designations
+            )
+
+        # ====================================================
+        # POST REQUEST - SAVE ASSIGNMENTS
+        # ====================================================
+
+        institution_id = request.form.get(
+            "institution_id"
+        )
+
+        # ====================================================
+        # VALIDATE INSTITUTION
+        # ====================================================
+
+        if not institution_id:
+
+            return render_template(
+                "manage_institution.html",
+
+                institutions=institutions,
+
+                courses=[],
+                departments=[],
+                designations=[],
+
+                selected_institution_id=None,
+                selected_category=None,
+
+                selected_courses=[],
+                selected_departments=[],
+                selected_designations=[],
+
+                err="Please select an institution."
+            )
+
+        # ====================================================
+        # GET CATEGORY FROM DATABASE
+        # ====================================================
 
         cursor.execute("""
-            SELECT institution_category
+            SELECT
+                institution_category
             FROM institution
             WHERE institution_id = %s
-        """, (institution_id,))
+        """, (
+            institution_id,
+        ))
 
         institution = cursor.fetchone()
+
+        # ====================================================
+        # INSTITUTION NOT FOUND
+        # ====================================================
 
         if not institution:
 
             return render_template(
                 "manage_institution.html",
+
                 institutions=institutions,
+
+                courses=[],
+                departments=[],
+                designations=[],
+
+                selected_institution_id=institution_id,
+                selected_category=None,
+
+                selected_courses=[],
+                selected_departments=[],
+                selected_designations=[],
+
                 err="Institution not found."
             )
 
-        institution_category = institution[0]
+        # ====================================================
+        # GET INSTITUTION CATEGORY
+        # ====================================================
 
-        # ----------------------------------------------------
-        # SELECTED MASTER IDs
-        # ----------------------------------------------------
+        institution_category = institution[
+            "institution_category"
+        ]
+
+        # ====================================================
+        # GET SELECTED MASTER IDs
+        # ====================================================
 
         selected_courses = request.form.getlist(
             "courses"
@@ -608,28 +999,42 @@ def manage_institution():
             "designations"
         )
 
-        # ----------------------------------------------------
-        # CLEAR EXISTING LINKS
-        # ----------------------------------------------------
+        # ====================================================
+        # CLEAR EXISTING COURSE LINKS
+        # ====================================================
 
         cursor.execute("""
             DELETE FROM institution_course
             WHERE institution_id = %s
-        """, (institution_id,))
+        """, (
+            institution_id,
+        ))
+
+        # ====================================================
+        # CLEAR EXISTING DEPARTMENT LINKS
+        # ====================================================
 
         cursor.execute("""
             DELETE FROM institution_department
             WHERE institution_id = %s
-        """, (institution_id,))
+        """, (
+            institution_id,
+        ))
+
+        # ====================================================
+        # CLEAR EXISTING DESIGNATION LINKS
+        # ====================================================
 
         cursor.execute("""
             DELETE FROM institution_designation
             WHERE institution_id = %s
-        """, (institution_id,))
+        """, (
+            institution_id,
+        ))
 
-        # ----------------------------------------------------
-        # ADD COURSES
-        # ----------------------------------------------------
+        # ====================================================
+        # INSERT COURSES
+        # ====================================================
 
         for course_id in selected_courses:
 
@@ -639,7 +1044,9 @@ def manage_institution():
                     institution_id,
                     course_id
                 )
-                SELECT %s, course_id
+                SELECT
+                    %s,
+                    course_id
                 FROM course_master
                 WHERE course_id = %s
                   AND institution_category = %s
@@ -649,9 +1056,9 @@ def manage_institution():
                 institution_category
             ))
 
-        # ----------------------------------------------------
-        # ADD DEPARTMENTS
-        # ----------------------------------------------------
+        # ====================================================
+        # INSERT DEPARTMENTS
+        # ====================================================
 
         for department_id in selected_departments:
 
@@ -661,7 +1068,9 @@ def manage_institution():
                     institution_id,
                     department_id
                 )
-                SELECT %s, department_id
+                SELECT
+                    %s,
+                    department_id
                 FROM department_master
                 WHERE department_id = %s
                   AND institution_category = %s
@@ -671,9 +1080,9 @@ def manage_institution():
                 institution_category
             ))
 
-        # ----------------------------------------------------
-        # ADD DESIGNATIONS
-        # ----------------------------------------------------
+        # ====================================================
+        # INSERT DESIGNATIONS
+        # ====================================================
 
         for designation_id in selected_designations:
 
@@ -683,7 +1092,9 @@ def manage_institution():
                     institution_id,
                     designation_id
                 )
-                SELECT %s, designation_id
+                SELECT
+                    %s,
+                    designation_id
                 FROM designation_master
                 WHERE designation_id = %s
                   AND institution_category = %s
@@ -693,13 +1104,26 @@ def manage_institution():
                 institution_category
             ))
 
+        # ====================================================
+        # COMMIT
+        # ====================================================
+
         conn.commit()
+
+        # ====================================================
+        # REDIRECT BACK TO SAME INSTITUTION
+        # ====================================================
 
         return redirect(
             url_for(
-                "admin.manage_institutions"
+                "admin.manage_institution",
+                institution_id=institution_id
             )
         )
+
+    # ========================================================
+    # ERROR HANDLING
+    # ========================================================
 
     except Exception as e:
 
@@ -707,7 +1131,20 @@ def manage_institution():
 
         return render_template(
             "manage_institution.html",
+
             institutions=institutions,
+
+            courses=courses,
+            departments=departments,
+            designations=designations,
+
+            selected_institution_id=selected_institution_id,
+            selected_category=selected_category,
+
+            selected_courses=selected_courses,
+            selected_departments=selected_departments,
+            selected_designations=selected_designations,
+
             err="Database error: " + str(e)
         )
 

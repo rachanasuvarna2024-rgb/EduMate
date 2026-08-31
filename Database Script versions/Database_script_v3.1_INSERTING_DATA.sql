@@ -297,13 +297,19 @@ VALUES
 -- 4. DESIGNATION MASTER
 -- GLOBAL MASTER LIST
 -- ============================================================
-
+USE edumate_db3_2;	
 INSERT INTO designation_master
 (
     designation_name,
     institution_category
 )
 VALUES
+-- Jr College
+('Principal', 'School'),
+('Vice Principal', 'School'),
+('Head Master', 'School'),
+('Head Mistress', 'School'),
+('Teacher', 'School'),
 
 -- School
 ('Principal', 'School'),
@@ -311,6 +317,7 @@ VALUES
 ('Head Master', 'School'),
 ('Head Mistress', 'School'),
 ('Teacher', 'School'),
+
 
 -- Degree College
 ('Principal', 'Degree College'),

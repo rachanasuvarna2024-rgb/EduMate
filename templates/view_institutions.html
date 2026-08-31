@@ -1,0 +1,388 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>View Institutions</h2>
+
+
+    <!-- ===================================================== -->
+    <!-- SUCCESS MESSAGE -->
+    <!-- ===================================================== -->
+
+    {% if msg %}
+
+    <div class="success-message">
+        {{ msg }}
+    </div>
+
+    {% endif %}
+
+
+    <!-- ===================================================== -->
+    <!-- ERROR MESSAGE -->
+    <!-- ===================================================== -->
+
+    {% if err %}
+
+    <div class="error-message">
+        {{ err }}
+    </div>
+
+    {% endif %}
+
+
+    <!-- ===================================================== -->
+    <!-- INSTITUTION LIST -->
+    <!-- ===================================================== -->
+
+    <div class="card">
+
+        <h3>Institution List</h3>
+
+
+        {% if institutions %}
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Sr. No.</th>
+
+                        <th>Institution Name</th>
+
+                        <th>Institution Code</th>
+
+                        <th>Category</th>
+
+                        <th>Type</th>
+
+                        <th>Address</th>
+
+                        <th>City</th>
+
+                        <th>State</th>
+
+                        <th>Pincode</th>
+
+                        <th>Email</th>
+
+                        <th>Phone</th>
+
+                        <th>Website</th>
+
+                        <th>Status</th>
+
+                        <th>Action</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for institution in institutions %}
+
+                    <tr>
+
+                        <!-- SR NO -->
+
+                        <td>
+                            {{ loop.index }}
+                        </td>
+
+
+                        <!-- INSTITUTION NAME -->
+
+                        <td>
+                            {{ institution["institution_name"] }}
+                        </td>
+
+
+                        <!-- INSTITUTION CODE -->
+
+                        <td>
+                            {{ institution["institution_code"] }}
+                        </td>
+
+
+                        <!-- CATEGORY -->
+
+                        <td>
+                            {{ institution["institution_category"] }}
+                        </td>
+
+
+                        <!-- TYPE -->
+
+                        <td>
+                            {{ institution["institution_type"] }}
+                        </td>
+
+
+                        <!-- ADDRESS -->
+
+                        <td>
+                            {{ institution["address"] or "-" }}
+                        </td>
+
+
+                        <!-- CITY -->
+
+                        <td>
+                            {{ institution["city"] or "-" }}
+                        </td>
+
+
+                        <!-- STATE -->
+
+                        <td>
+                            {{ institution["state"] or "-" }}
+                        </td>
+
+
+                        <!-- PINCODE -->
+
+                        <td>
+                            {{ institution["pincode"] or "-" }}
+                        </td>
+
+
+                        <!-- EMAIL -->
+
+                        <td>
+                            {{ institution["email"] or "-" }}
+                        </td>
+
+
+                        <!-- PHONE -->
+
+                        <td>
+                            {{ institution["phone"] or "-" }}
+                        </td>
+
+
+                        <!-- WEBSITE -->
+
+                        <td>
+
+                            {% if institution["website"] %}
+
+                                <a
+                                    href="{{ institution['website'] }}"
+                                    target="_blank"
+                                >
+                                    {{ institution["website"] }}
+                                </a>
+
+                            {% else %}
+
+                                -
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- STATUS -->
+
+                        <td>
+
+                            {% if institution["status"] == "Active" %}
+
+                                <span class="status-active">
+                                    Active
+                                </span>
+
+                            {% else %}
+
+                                <span class="status-inactive">
+                                    Inactive
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- ACTION -->
+
+                        <td>
+
+                            <form
+                                method="POST"
+                                action="{{ url_for(
+                                    'admin.delete_institution',
+                                    institution_id=institution['institution_id']
+                                ) }}"
+                                onsubmit="return confirm(
+                                    'Are you sure you want to delete this institution? This action cannot be undone.'
+                                );"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="btn-delete"
+                                >
+                                    Delete
+                                </button>
+
+                            </form>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <p class="empty-message">
+            No institutions found.
+        </p>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- ACTION BUTTONS -->
+    <!-- ===================================================== -->
+
+    <div class="form-actions">
+
+        <a
+            href="{{ url_for('admin.add_institution') }}"
+            class="btn btn-primary"
+        >
+            Add Institution
+        </a>
+
+
+        <a
+            href="{{ url_for('admin.manage_institution') }}"
+            class="btn btn-secondary"
+        >
+            Manage Institutions
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- CSS -->
+<!-- ========================================================= -->
+
+<style>
+
+.card {
+    background: #ffffff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 15px;
+}
+
+table {
+    width: 100%;
+    min-width: 1500px;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+th {
+    background: #f5f5f5;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background: #fafafa;
+}
+
+.status-active {
+    color: #198754;
+    font-weight: bold;
+}
+
+.status-inactive {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.empty-message {
+    color: #777;
+    font-style: italic;
+    margin-top: 15px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: #ffffff;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: #ffffff;
+}
+
+.btn-delete {
+    background: #dc3545;
+    color: #ffffff;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    background: #bb2d3b;
+}
+
+</style>
+
+{% endblock %}
