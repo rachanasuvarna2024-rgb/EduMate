@@ -1,0 +1,304 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>Subject Master</h2>
+
+    {% if msg %}
+    <div class="success-message">
+        {{ msg }}
+    </div>
+    {% endif %}
+
+    {% if err %}
+    <div class="error-message">
+        {{ err }}
+    </div>
+    {% endif %}
+
+
+    <!-- ===================================================== -->
+    <!-- ADD SUBJECT -->
+    <!-- ===================================================== -->
+
+    <div class="card">
+
+        <h3>Add Subject</h3>
+
+        <form method="POST"
+              action="{{ url_for('admin.subject_master') }}">
+
+            <div class="form-group">
+
+                <label for="subject_name">
+                    Subject Name
+                </label>
+
+                <input
+                    type="text"
+                    id="subject_name"
+                    name="subject_name"
+                    placeholder="Enter subject name"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="course_id">
+                    Course
+                </label>
+
+                <select
+                    id="course_id"
+                    name="course_id"
+                    required
+                >
+
+                    <option value="">
+                        -- Select Course --
+                    </option>
+
+                    {% for course in courses %}
+
+                    <option value="{{ course.course_id }}">
+                        {{ course.course_name }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="institution_category">
+                    Institution Category
+                </label>
+
+                <select
+                    id="institution_category"
+                    name="institution_category"
+                    required
+                >
+
+                    <option value="">
+                        -- Select Institution Category --
+                    </option>
+
+                    <option value="School">
+                        School
+                    </option>
+
+                    <option value="Jr College">
+                        Jr College
+                    </option>
+
+                    <option value="Degree College">
+                        Degree College
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <button type="submit" class="btn">
+                Add Subject
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- SUBJECT LIST -->
+    <!-- ===================================================== -->
+
+    <div class="card">
+
+        <h3>Existing Subjects</h3>
+
+
+        {% if subjects %}
+
+        <table class="data-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+                    <th>Subject Name</th>
+                    <th>Course</th>
+                    <th>Institution Category</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for subject in subjects %}
+
+                <tr>
+
+                    <td>
+                        {{ subject.subject_master_id }}
+                    </td>
+
+                    <td>
+                        {{ subject.subject_name }}
+                    </td>
+
+                    <td>
+                        {{ subject.course_name }}
+                    </td>
+
+                    <td>
+                        {{ subject.institution_category }}
+                    </td>
+
+                    <td>
+                        {{ subject.status }}
+                    </td>
+
+                    <td>
+
+                        <!-- ACTION BUTTON CONTAINER -->
+
+                        <div class="action-buttons">
+
+                            <!-- EDIT -->
+
+                            <a
+                                href="{{ url_for(
+                                    'admin.edit_subject',
+                                    subject_master_id=subject.subject_master_id
+                                ) }}"
+                                class="btn btn-small"
+                            >
+                                Edit
+                            </a>
+
+
+                            <!-- ACTIVATE / DEACTIVATE -->
+
+                            <form
+                                method="POST"
+                                action="{{ url_for(
+                                    'admin.toggle_subject',
+                                    subject_master_id=subject.subject_master_id
+                                ) }}"
+                                style="display: inline;"
+                            >
+
+                                {% if subject.status == 'Active' %}
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-small"
+                                    onclick="return confirm(
+                                        'Deactivate this subject?'
+                                    );"
+                                >
+                                    Deactivate
+                                </button>
+
+                                {% else %}
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-small"
+                                >
+                                    Activate
+                                </button>
+
+                                {% endif %}
+
+                            </form>
+
+
+                            <!-- DELETE -->
+
+                            <form
+                                method="POST"
+                                action="{{ url_for(
+                                    'admin.delete_subject',
+                                    subject_master_id=subject.subject_master_id
+                                ) }}"
+                                style="display: inline;"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-small"
+                                    onclick="return confirm(
+                                        'Delete this subject permanently?'
+                                    );"
+                                >
+                                    Delete
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        {% else %}
+
+        <p>
+            No subjects found.
+        </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- BUTTON SPACING -->
+<!-- ===================================================== -->
+
+<style>
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.action-buttons form {
+    margin: 0;
+    padding: 0;
+}
+
+.action-buttons .btn {
+    margin: 0;
+}
+
+</style>
+
+{% endblock %}

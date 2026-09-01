@@ -9,7 +9,7 @@ try:
         host="localhost",
         user="root",
         password="learning_Sql#",
-        database="edumate_db3_2"
+        database="edumate_db3_3"
     )
 
     cursor = conn.cursor(dictionary=True)

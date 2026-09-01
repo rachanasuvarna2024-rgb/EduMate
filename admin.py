@@ -1147,14 +1147,426 @@ def manage_institution():
 
             err="Database error: " + str(e)
         )
+# ============================================================
+# ============================================================
+# STREAM MASTER
+# ============================================================
+# ============================================================
+
+@admin_bp.route(
+    "/stream-master",
+    methods=["GET", "POST"]
+)
+@role_required("Admin")
+def stream_master():
+
+    msg = request.args.get("msg")
+    err = request.args.get("err")
+
+    # ========================================================
+    # ADD STREAM
+    # ========================================================
+
+    if request.method == "POST":
+
+        stream_name = request.form.get(
+            "stream_name",
+            ""
+        ).strip()
+
+        institution_category = request.form.get(
+            "institution_category",
+            ""
+        ).strip()
+
+        # ----------------------------------------------------
+        # VALIDATION
+        # ----------------------------------------------------
+
+        if not stream_name:
+
+            err = "Stream name is required."
+
+        elif institution_category not in [
+            "School",
+            "Jr College",
+            "Degree College"
+        ]:
+
+            err = "Please select a valid institution category."
+
+        else:
+
+            try:
+
+                # ------------------------------------------------
+                # CHECK DUPLICATE
+                # ------------------------------------------------
+
+                cursor.execute("""
+                    SELECT stream_id
+                    FROM stream_master
+                    WHERE LOWER(stream_name) = LOWER(%s)
+                      AND institution_category = %s
+                """, (
+                    stream_name,
+                    institution_category
+                ))
+
+                if cursor.fetchone():
+
+                    err = (
+                        "This stream already exists for "
+                        + institution_category
+                        + "."
+                    )
+
+                else:
+
+                    # ------------------------------------------------
+                    # INSERT STREAM
+                    # ------------------------------------------------
+
+                    cursor.execute("""
+                        INSERT INTO stream_master
+                        (
+                            stream_name,
+                            institution_category
+                        )
+                        VALUES (%s, %s)
+                    """, (
+                        stream_name,
+                        institution_category
+                    ))
+
+                    conn.commit()
+
+                    msg = "Stream added successfully."
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = (
+                    "Error adding stream: "
+                    + str(e)
+                )
+
+    # ========================================================
+    # FILTER
+    # ========================================================
+
+    selected_category = request.args.get(
+        "category",
+        ""
+    ).strip()
+
+    # ========================================================
+    # GET STREAMS
+    # ========================================================
+
+    if selected_category in [
+        "School",
+        "Jr College",
+        "Degree College"
+    ]:
+
+        cursor.execute("""
+            SELECT
+                stream_id,
+                stream_name,
+                institution_category,
+                status,
+                created_at,
+                updated_at
+            FROM stream_master
+            WHERE institution_category = %s
+            ORDER BY
+                institution_category,
+                stream_name
+        """, (
+            selected_category,
+        ))
+
+    else:
+
+        selected_category = ""
+
+        cursor.execute("""
+            SELECT
+                stream_id,
+                stream_name,
+                institution_category,
+                status,
+                created_at,
+                updated_at
+            FROM stream_master
+            ORDER BY
+                institution_category,
+                stream_name
+        """)
+
+    streams = cursor.fetchall()
+
+    return render_template(
+        "stream_master.html",
+        streams=streams,
+        selected_category=selected_category,
+        msg=msg,
+        err=err
+    )
 
 
+# ============================================================
+# EDIT STREAM
+# ============================================================
+
+@admin_bp.route(
+    "/edit_stream/<int:stream_id>",
+    methods=["GET", "POST"]
+)
+@role_required("Admin")
+def edit_stream(stream_id):
+
+    err = None
+
+    if request.method == "POST":
+
+        stream_name = request.form.get(
+            "stream_name",
+            ""
+        ).strip()
+
+        institution_category = request.form.get(
+            "institution_category",
+            ""
+        ).strip()
+
+        status = request.form.get(
+            "status",
+            "Active"
+        ).strip()
+
+        if not stream_name:
+
+            err = "Stream name is required."
+
+        elif institution_category not in [
+            "School",
+            "Jr College",
+            "Degree College"
+        ]:
+
+            err = "Invalid institution category."
+
+        elif status not in [
+            "Active",
+            "Inactive"
+        ]:
+
+            err = "Invalid status."
+
+        else:
+
+            try:
+
+                cursor.execute("""
+                    SELECT stream_id
+                    FROM stream_master
+                    WHERE LOWER(stream_name) = LOWER(%s)
+                      AND institution_category = %s
+                      AND stream_id != %s
+                """, (
+                    stream_name,
+                    institution_category,
+                    stream_id
+                ))
+
+                if cursor.fetchone():
+
+                    err = "This stream already exists."
+
+                else:
+
+                    cursor.execute("""
+                        UPDATE stream_master
+                        SET
+                            stream_name = %s,
+                            institution_category = %s,
+                            status = %s
+                        WHERE stream_id = %s
+                    """, (
+                        stream_name,
+                        institution_category,
+                        status,
+                        stream_id
+                    ))
+
+                    conn.commit()
+
+                    return redirect(
+                        url_for(
+                            "admin.stream_master",
+                            msg="Stream has been updated successfully."
+                        )
+                    )
+
+            except Exception as e:
+
+                conn.rollback()
+
+                err = (
+                    "Unable to update stream: "
+                    + str(e)
+                )
+
+    cursor.execute("""
+        SELECT
+            stream_id,
+            stream_name,
+            institution_category,
+            status,
+            created_at,
+            updated_at
+        FROM stream_master
+        WHERE stream_id = %s
+    """, (stream_id,))
+
+    stream = cursor.fetchone()
+
+    if not stream:
+
+        return redirect(
+            url_for("admin.stream_master")
+        )
+
+    return render_template(
+        "edit_stream.html",
+        stream=stream,
+        err=err
+    )
+
+
+# ============================================================
+# DELETE STREAM
+# ============================================================
+
+@admin_bp.route(
+    "/delete_stream/<int:stream_id>",
+    methods=["POST"]
+)
+@role_required("Admin")
+def delete_stream(stream_id):
+
+    try:
+
+        cursor.execute("""
+            DELETE FROM stream_master
+            WHERE stream_id = %s
+        """, (stream_id,))
+
+        conn.commit()
+
+        return redirect(
+            url_for(
+                "admin.stream_master",
+                msg="Stream has been deleted successfully."
+            )
+        )
+
+    except Exception:
+
+        conn.rollback()
+
+        return redirect(
+            url_for(
+                "admin.stream_master",
+                err="Unable to delete stream."
+            )
+        )
+
+# ============================================================
+# TOGGLE STREAM STATUS
+# ============================================================
+
+@admin_bp.route(
+    "/toggle_stream/<int:stream_id>",
+    methods=["POST"]
+)
+@role_required("Admin")
+def toggle_stream(stream_id):
+
+    try:
+
+        # ====================================================
+        # GET CURRENT STATUS
+        # ====================================================
+
+        cursor.execute("""
+            SELECT status
+            FROM stream_master
+            WHERE stream_id = %s
+        """, (stream_id,))
+
+        stream = cursor.fetchone()
+
+        if not stream:
+
+            return redirect(
+                url_for(
+                    "admin.stream_master",
+                    err="Stream not found."
+                )
+            )
+
+        # ====================================================
+        # TOGGLE STATUS
+        # ====================================================
+
+        current_status = stream["status"]
+
+        if current_status == "Active":
+            new_status = "Inactive"
+        else:
+            new_status = "Active"
+
+        # ====================================================
+        # UPDATE STATUS
+        # ====================================================
+
+        cursor.execute("""
+            UPDATE stream_master
+            SET status = %s
+            WHERE stream_id = %s
+        """, (
+            new_status,
+            stream_id
+        ))
+
+        conn.commit()
+
+        return redirect(
+            url_for(
+                "admin.stream_master",
+                msg="Stream status updated successfully."
+            )
+        )
+
+    except Exception as e:
+
+        conn.rollback()
+
+        return redirect(
+            url_for(
+                "admin.stream_master",
+                err="Unable to update stream status: " + str(e)
+            )
+        )
 # ============================================================
 # ============================================================
 # COURSE MASTER
 # ============================================================
 # ============================================================
-
 
 @admin_bp.route("/course_master", methods=["GET", "POST"])
 @role_required("Admin")
@@ -2853,122 +3265,247 @@ def delete_standard(standard_id):
         url_for("admin.add_standard")
     )
 
+# ============================================================
+# ============================================================
+# SUBJECT MASTER
+# ============================================================
+# ============================================================
 
-# ============================================================
-# ============================================================
-# SUBJECT MANAGEMENT
-# ============================================================
-# ============================================================
 
-
-@admin_bp.route("/add_subject", methods=["GET", "POST"])
+@admin_bp.route(
+    "/subject-master",
+    methods=["GET", "POST"]
+)
 @role_required("Admin")
-def add_subject():
+def subject_master():
 
-    msg = None
-    err = None
+    msg = request.args.get("msg")
+    err = request.args.get("err")
 
-    institutions = get_institutions()
+    # ========================================================
+    # ADD SUBJECT
+    # ========================================================
 
     if request.method == "POST":
 
-        institution_id = request.form.get(
-            "institution_id", ""
-        ).strip()
-
-        standard_id = request.form.get(
-            "standard_id", ""
-        ).strip()
-
         subject_name = request.form.get(
-            "subject_name", ""
+            "subject_name",
+            ""
         ).strip()
 
-        assessment_type = request.form.get(
-            "assessment_type",
-            "Traditional"
+        course_id = request.form.get(
+            "course_id",
+            ""
         ).strip()
 
-        if not institution_id:
+        institution_category = request.form.get(
+            "institution_category",
+            ""
+        ).strip()
 
-            err = "Please select an institution."
+        # ----------------------------------------------------
+        # VALIDATION
+        # ----------------------------------------------------
 
-        elif not standard_id:
-
-            err = "Please select a standard."
-
-        elif not subject_name:
+        if not subject_name:
 
             err = "Subject name is required."
 
-        elif len(subject_name) > 100:
+        elif not course_id:
 
-            err = "Subject name cannot exceed 100 characters."
+            err = "Please select a course."
 
-        elif assessment_type not in [
-            "Traditional",
-            "OBE"
+        elif institution_category not in [
+            "School",
+            "Jr College",
+            "Degree College"
         ]:
 
-            err = "Invalid assessment type."
+            err = "Please select a valid institution category."
 
         else:
 
             try:
 
+                # ------------------------------------------------
+                # CHECK WHETHER COURSE EXISTS
+                # ------------------------------------------------
+
                 cursor.execute("""
-                    SELECT subject_id
-                    FROM subject
-                    WHERE standard_id = %s
-                      AND LOWER(subject_name) = LOWER(%s)
+                    SELECT course_id
+                    FROM course_master
+                    WHERE course_id = %s
+                      AND institution_category = %s
+                      AND status = 'Active'
                 """, (
-                    standard_id,
-                    subject_name
+                    course_id,
+                    institution_category
                 ))
 
-                if cursor.fetchone():
+                course = cursor.fetchone()
 
-                    err = "This subject already exists for the selected standard."
+                if not course:
+
+                    err = (
+                        "The selected course is not available "
+                        "for this institution category."
+                    )
 
                 else:
 
+                    # ------------------------------------------------
+                    # CHECK DUPLICATE SUBJECT
+                    # ------------------------------------------------
+
                     cursor.execute("""
-                        INSERT INTO subject
-                        (
-                            institution_id,
-                            standard_id,
-                            subject_name,
-                            assessment_type
-                        )
-                        VALUES (%s, %s, %s, %s)
+                        SELECT subject_master_id
+                        FROM subject_master
+                        WHERE LOWER(subject_name) = LOWER(%s)
+                          AND course_id = %s
+                          AND institution_category = %s
                     """, (
-                        institution_id,
-                        standard_id,
                         subject_name,
-                        assessment_type
+                        course_id,
+                        institution_category
                     ))
 
-                    conn.commit()
+                    existing_subject = cursor.fetchone()
 
-                    msg = "Subject added successfully!"
+                    if existing_subject:
+
+                        err = (
+                            "This subject already exists "
+                            "for the selected course."
+                        )
+
+                    else:
+
+                        # ------------------------------------------------
+                        # INSERT SUBJECT
+                        # ------------------------------------------------
+
+                        cursor.execute("""
+                            INSERT INTO subject_master
+                            (
+                                subject_name,
+                                course_id,
+                                institution_category
+                            )
+                            VALUES (%s, %s, %s)
+                        """, (
+                            subject_name,
+                            course_id,
+                            institution_category
+                        ))
+
+                        conn.commit()
+
+                        msg = "Subject added successfully."
 
             except Exception as e:
 
                 conn.rollback()
 
-                err = "Unable to add subject: " + str(e)
+                err = (
+                    "Error adding subject: "
+                    + str(e)
+                )
 
-    standards = get_standards()
+    # ========================================================
+    # FILTER
+    # ========================================================
 
-    subjects = get_subjects()
+    selected_category = request.args.get(
+        "category",
+        ""
+    ).strip()
+
+    # ========================================================
+    # GET COURSES
+    # ========================================================
+
+    cursor.execute("""
+        SELECT
+            course_id,
+            course_name,
+            institution_category
+        FROM course_master
+        WHERE status = 'Active'
+        ORDER BY
+            institution_category,
+            course_name
+    """)
+
+    courses = cursor.fetchall()
+
+    # ========================================================
+    # GET SUBJECTS
+    # ========================================================
+
+    if selected_category in [
+        "School",
+        "Jr College",
+        "Degree College"
+    ]:
+
+        cursor.execute("""
+            SELECT
+                sm.subject_master_id,
+                sm.subject_name,
+                sm.course_id,
+                cm.course_name,
+                sm.institution_category,
+                sm.status,
+                sm.created_at,
+                sm.updated_at
+            FROM subject_master sm
+            INNER JOIN course_master cm
+                ON sm.course_id = cm.course_id
+            WHERE sm.institution_category = %s
+            ORDER BY
+                sm.institution_category,
+                cm.course_name,
+                sm.subject_name
+        """, (
+            selected_category,
+        ))
+
+    else:
+
+        selected_category = ""
+
+        cursor.execute("""
+            SELECT
+                sm.subject_master_id,
+                sm.subject_name,
+                sm.course_id,
+                cm.course_name,
+                sm.institution_category,
+                sm.status,
+                sm.created_at,
+                sm.updated_at
+            FROM subject_master sm
+            INNER JOIN course_master cm
+                ON sm.course_id = cm.course_id
+            ORDER BY
+                sm.institution_category,
+                cm.course_name,
+                sm.subject_name
+        """)
+
+    subjects = cursor.fetchall()
+
+    # ========================================================
+    # RENDER
+    # ========================================================
 
     return render_template(
-        "add_subject.html",
+        "subject_master.html",
+        subjects=subjects,
+        courses=courses,
+        selected_category=selected_category,
         msg=msg,
-        err=err,
-        institutions=institutions,
-        standards=standards,
-        subjects=subjects
+        err=err
     )
 
 
@@ -2976,160 +3513,387 @@ def add_subject():
 # EDIT SUBJECT
 # ============================================================
 
+
 @admin_bp.route(
-    "/edit_subject/<int:subject_id>",
+    "/edit_subject/<int:subject_master_id>",
     methods=["GET", "POST"]
 )
 @role_required("Admin")
-def edit_subject(subject_id):
+def edit_subject(subject_master_id):
 
     err = None
 
-    institutions = get_institutions()
-    standards = get_standards()
+    # ========================================================
+    # UPDATE SUBJECT
+    # ========================================================
 
     if request.method == "POST":
 
-        institution_id = request.form.get(
-            "institution_id", ""
-        ).strip()
-
-        standard_id = request.form.get(
-            "standard_id", ""
-        ).strip()
-
         subject_name = request.form.get(
-            "subject_name", ""
+            "subject_name",
+            ""
         ).strip()
 
-        assessment_type = request.form.get(
-            "assessment_type",
-            "Traditional"
+        course_id = request.form.get(
+            "course_id",
+            ""
         ).strip()
 
-        if not institution_id:
+        institution_category = request.form.get(
+            "institution_category",
+            ""
+        ).strip()
 
-            err = "Please select an institution."
+        status = request.form.get(
+            "status",
+            "Active"
+        ).strip()
 
-        elif not standard_id:
+        # ----------------------------------------------------
+        # VALIDATION
+        # ----------------------------------------------------
 
-            err = "Please select a standard."
-
-        elif not subject_name:
+        if not subject_name:
 
             err = "Subject name is required."
 
-        elif assessment_type not in [
-            "Traditional",
-            "OBE"
+        elif not course_id:
+
+            err = "Please select a course."
+
+        elif institution_category not in [
+            "School",
+            "Jr College",
+            "Degree College"
         ]:
 
-            err = "Invalid assessment type."
+            err = "Invalid institution category."
+
+        elif status not in [
+            "Active",
+            "Inactive"
+        ]:
+
+            err = "Invalid status."
 
         else:
 
             try:
 
+                # ------------------------------------------------
+                # CHECK COURSE
+                # ------------------------------------------------
+
                 cursor.execute("""
-                    SELECT subject_id
-                    FROM subject
-                    WHERE standard_id = %s
-                      AND LOWER(subject_name) = LOWER(%s)
-                      AND subject_id != %s
+                    SELECT course_id
+                    FROM course_master
+                    WHERE course_id = %s
+                      AND institution_category = %s
+                      AND status = 'Active'
                 """, (
-                    standard_id,
-                    subject_name,
-                    subject_id
+                    course_id,
+                    institution_category
                 ))
 
-                if cursor.fetchone():
+                course = cursor.fetchone()
 
-                    err = "This subject already exists."
+                if not course:
+
+                    err = (
+                        "The selected course is not available "
+                        "for this institution category."
+                    )
 
                 else:
 
+                    # ------------------------------------------------
+                    # CHECK DUPLICATE
+                    # ------------------------------------------------
+
                     cursor.execute("""
-                        UPDATE subject
-                        SET
-                            institution_id = %s,
-                            standard_id = %s,
-                            subject_name = %s,
-                            assessment_type = %s
-                        WHERE subject_id = %s
+                        SELECT subject_master_id
+                        FROM subject_master
+                        WHERE LOWER(subject_name) = LOWER(%s)
+                          AND course_id = %s
+                          AND institution_category = %s
+                          AND subject_master_id != %s
                     """, (
-                        institution_id,
-                        standard_id,
                         subject_name,
-                        assessment_type,
-                        subject_id
+                        course_id,
+                        institution_category,
+                        subject_master_id
                     ))
 
-                    conn.commit()
+                    existing_subject = cursor.fetchone()
 
-                    return redirect(
-                        url_for(
-                            "admin.add_subject"
+                    if existing_subject:
+
+                        err = (
+                            "This subject already exists "
+                            "for the selected course."
                         )
-                    )
+
+                    else:
+
+                        # ------------------------------------------------
+                        # UPDATE
+                        # ------------------------------------------------
+
+                        cursor.execute("""
+                            UPDATE subject_master
+                            SET
+                                subject_name = %s,
+                                course_id = %s,
+                                institution_category = %s,
+                                status = %s
+                            WHERE subject_master_id = %s
+                        """, (
+                            subject_name,
+                            course_id,
+                            institution_category,
+                            status,
+                            subject_master_id
+                        ))
+
+                        conn.commit()
+
+                        return redirect(
+                            url_for(
+                                "admin.subject_master",
+                                msg="Subject has been updated successfully."
+                            )
+                        )
 
             except Exception as e:
 
                 conn.rollback()
 
-                err = "Unable to update subject: " + str(e)
+                err = (
+                    "Unable to update subject: "
+                    + str(e)
+                )
+
+    # ========================================================
+    # GET SUBJECT
+    # ========================================================
 
     cursor.execute("""
-        SELECT *
-        FROM subject
-        WHERE subject_id = %s
-    """, (subject_id,))
+        SELECT
+            subject_master_id,
+            subject_name,
+            course_id,
+            institution_category,
+            status,
+            created_at,
+            updated_at
+        FROM subject_master
+        WHERE subject_master_id = %s
+    """, (
+        subject_master_id,
+    ))
 
     subject = cursor.fetchone()
+
+    # --------------------------------------------------------
+    # SUBJECT NOT FOUND
+    # --------------------------------------------------------
 
     if not subject:
 
         return redirect(
-            url_for("admin.add_subject")
+            url_for("admin.subject_master")
         )
+
+    # ========================================================
+    # GET COURSES
+    # ========================================================
+
+    cursor.execute("""
+        SELECT
+            course_id,
+            course_name,
+            institution_category
+        FROM course_master
+        WHERE status = 'Active'
+        ORDER BY
+            institution_category,
+            course_name
+    """)
+
+    courses = cursor.fetchall()
+
+    # ========================================================
+    # RENDER EDIT PAGE
+    # ========================================================
 
     return render_template(
         "edit_subject.html",
         subject=subject,
-        institutions=institutions,
-        standards=standards,
+        courses=courses,
         err=err
     )
+
+
+# ============================================================
+# TOGGLE SUBJECT STATUS
+# ============================================================
+
+
+@admin_bp.route(
+    "/toggle_subject/<int:subject_master_id>",
+    methods=["POST"]
+)
+@role_required("Admin")
+def toggle_subject(subject_master_id):
+
+    try:
+
+        # ====================================================
+        # GET CURRENT STATUS
+        # ====================================================
+
+        cursor.execute("""
+            SELECT status
+            FROM subject_master
+            WHERE subject_master_id = %s
+        """, (
+            subject_master_id,
+        ))
+
+        subject = cursor.fetchone()
+
+        if not subject:
+
+            return redirect(
+                url_for(
+                    "admin.subject_master",
+                    err="Subject not found."
+                )
+            )
+
+        # ====================================================
+        # TOGGLE STATUS
+        # ====================================================
+
+        current_status = subject["status"]
+
+        if current_status == "Active":
+
+            new_status = "Inactive"
+
+        else:
+
+            new_status = "Active"
+
+        # ====================================================
+        # UPDATE STATUS
+        # ====================================================
+
+        cursor.execute("""
+            UPDATE subject_master
+            SET status = %s
+            WHERE subject_master_id = %s
+        """, (
+            new_status,
+            subject_master_id
+        ))
+
+        conn.commit()
+
+        if new_status == "Inactive":
+
+            message = "Subject has been deactivated successfully."
+
+        else:
+
+            message = "Subject has been activated successfully."
+
+        return redirect(
+            url_for(
+                "admin.subject_master",
+                msg=message
+            )
+        )
+
+    except Exception as e:
+
+        conn.rollback()
+
+        return redirect(
+            url_for(
+                "admin.subject_master",
+                err="Unable to update subject status: " + str(e)
+            )
+        )
 
 
 # ============================================================
 # DELETE SUBJECT
 # ============================================================
 
+
 @admin_bp.route(
-    "/delete_subject/<int:subject_id>",
+    "/delete_subject/<int:subject_master_id>",
     methods=["POST"]
 )
 @role_required("Admin")
-def delete_subject(subject_id):
+def delete_subject(subject_master_id):
 
     try:
 
+        # ====================================================
+        # CHECK SUBJECT
+        # ====================================================
+
         cursor.execute("""
-            DELETE FROM subject
-            WHERE subject_id = %s
-        """, (subject_id,))
+            SELECT subject_master_id
+            FROM subject_master
+            WHERE subject_master_id = %s
+        """, (
+            subject_master_id,
+        ))
+
+        subject = cursor.fetchone()
+
+        if not subject:
+
+            return redirect(
+                url_for(
+                    "admin.subject_master",
+                    err="Subject not found."
+                )
+            )
+
+        # ====================================================
+        # DELETE SUBJECT
+        # ====================================================
+
+        cursor.execute("""
+            DELETE FROM subject_master
+            WHERE subject_master_id = %s
+        """, (
+            subject_master_id,
+        ))
 
         conn.commit()
 
-    except Exception:
+        return redirect(
+            url_for(
+                "admin.subject_master",
+                msg="Subject has been deleted successfully."
+            )
+        )
+
+    except Exception as e:
 
         conn.rollback()
 
-    return redirect(
-        url_for("admin.add_subject")
-    )
-
-
+        return redirect(
+            url_for(
+                "admin.subject_master",
+                err="Unable to delete subject: " + str(e)
+            )
+        )
 # ============================================================
 # ============================================================
 # CHAPTER MANAGEMENT
