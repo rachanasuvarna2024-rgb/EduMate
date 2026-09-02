@@ -34,7 +34,10 @@
             onsubmit="return validateCourseForm()"
         >
 
+            <!-- ================================================= -->
             <!-- COURSE NAME -->
+            <!-- ================================================= -->
+
             <div class="form-group">
 
                 <label for="course_name">
@@ -60,7 +63,10 @@
             </div>
 
 
+            <!-- ================================================= -->
             <!-- INSTITUTION CATEGORY -->
+            <!-- ================================================= -->
+
             <div class="form-group">
 
                 <label for="institution_category">
@@ -73,7 +79,6 @@
                     name="institution_category"
                     class="form-control"
                     required
-                    onchange="updateCourseFields()"
                 >
 
                     <option value="">
@@ -102,96 +107,10 @@
             </div>
 
 
-            <!-- COURSE LEVEL -->
-            <div class="form-group">
-
-                <label for="course_level">
-                    Course Level
-                    <span class="required">*</span>
-                </label>
-
-                <select
-                    id="course_level"
-                    name="course_level"
-                    class="form-control"
-                    required
-                    disabled
-                >
-
-                    <option value="">
-                        -- Select Institution Category First --
-                    </option>
-
-                </select>
-
-                <small
-                    class="field-error"
-                    id="course_level_error"
-                ></small>
-
-            </div>
-
-
-            <!-- STREAM -->
-            <div class="form-group">
-
-                <label for="stream">
-                    Stream
-                    <span id="stream_required" class="required"></span>
-                </label>
-
-                <select
-                    id="stream"
-                    name="stream"
-                    class="form-control"
-                    disabled
-                    onchange="updateSpecializations()"
-                >
-
-                    <option value="">
-                        -- Select Institution Category First --
-                    </option>
-
-                </select>
-
-                <small
-                    class="field-error"
-                    id="stream_error"
-                ></small>
-
-            </div>
-
-
-            <!-- SPECIALIZATION -->
-            <div class="form-group">
-
-                <label for="specialization">
-                    Specialization
-                    <span id="specialization_required" class="required"></span>
-                </label>
-
-                <select
-                    id="specialization"
-                    name="specialization"
-                    class="form-control"
-                    disabled
-                >
-
-                    <option value="">
-                        -- Select Stream First --
-                    </option>
-
-                </select>
-
-                <small
-                    class="field-error"
-                    id="specialization_error"
-                ></small>
-
-            </div>
-
-
+            <!-- ================================================= -->
             <!-- STATUS -->
+            <!-- ================================================= -->
+
             <div class="form-group">
 
                 <label for="status">
@@ -206,7 +125,7 @@
                     required
                 >
 
-                    <option value="Active">
+                    <option value="Active" selected>
                         Active
                     </option>
 
@@ -223,6 +142,10 @@
 
             </div>
 
+
+            <!-- ================================================= -->
+            <!-- SUBMIT -->
+            <!-- ================================================= -->
 
             <button
                 type="submit"
@@ -251,19 +174,23 @@
             <table class="data-table">
 
                 <thead>
+
                     <tr>
 
                         <th>Course ID</th>
+
                         <th>Course Name</th>
+
                         <th>Institution Category</th>
-                        <th>Course Level</th>
-                        <th>Stream</th>
-                        <th>Specialization</th>
+
                         <th>Status</th>
-                        <th>Action</th>
+
+                        <th>Actions</th>
 
                     </tr>
+
                 </thead>
+
 
                 <tbody>
 
@@ -271,29 +198,36 @@
 
                     <tr>
 
+                        <!-- ================================= -->
+                        <!-- COURSE ID -->
+                        <!-- ================================= -->
+
                         <td>
                             {{ course.course_id }}
                         </td>
+
+
+                        <!-- ================================= -->
+                        <!-- COURSE NAME -->
+                        <!-- ================================= -->
 
                         <td>
                             {{ course.course_name }}
                         </td>
 
+
+                        <!-- ================================= -->
+                        <!-- CATEGORY -->
+                        <!-- ================================= -->
+
                         <td>
                             {{ course.institution_category }}
                         </td>
 
-                        <td>
-                            {{ course.course_level or '-' }}
-                        </td>
 
-                        <td>
-                            {{ course.stream or '-' }}
-                        </td>
-
-                        <td>
-                            {{ course.specialization or '-' }}
-                        </td>
+                        <!-- ================================= -->
+                        <!-- STATUS -->
+                        <!-- ================================= -->
 
                         <td>
 
@@ -313,16 +247,44 @@
 
                         </td>
 
+
+                        <!-- ================================= -->
+                        <!-- ACTIONS -->
+                        <!-- ================================= -->
+
                         <td>
 
                             <a
-                                href="{{ url_for('admin.edit_course', course_id=course.course_id) }}"
+                                href="{{ url_for(
+                                    'admin.edit_course',
+                                    course_id=course.course_id
+                                ) }}"
                                 class="btn-edit"
                             >
                                 Edit
                             </a>
 
-                            <form action="{{ url_for('admin.delete_course', course_id=course.course_id) }}" method="POST" style="display:inline;" onsubmit="return confirmDelete('{{ course.course_name }}')" > <button type="submit" class="btn-delete" > Delete </button> </form>
+
+                            <form
+                                action="{{ url_for(
+                                    'admin.delete_course',
+                                    course_id=course.course_id
+                                ) }}"
+                                method="POST"
+                                style="display:inline;"
+                                onsubmit="return confirmDelete(
+                                    '{{ course.course_name|e }}'
+                                )"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="btn-delete"
+                                >
+                                    Delete
+                                </button>
+
+                            </form>
 
                         </td>
 
@@ -375,11 +337,6 @@
     background: white;
 }
 
-.form-control:disabled {
-    background-color: #eeeeee;
-    cursor: not-allowed;
-}
-
 .required {
     color: #dc3545;
 }
@@ -425,7 +382,7 @@
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 950px;
+    min-width: 750px;
     font-size: 14px;
 }
 
@@ -489,8 +446,9 @@
     background-color: #dc3545;
     color: white;
     padding: 6px 12px;
+    border: none;
     border-radius: 4px;
-    text-decoration: none;
+    cursor: pointer;
     font-size: 13px;
 }
 
@@ -540,268 +498,6 @@
 <script>
 
 /* ========================================================= */
-/* UPDATE COURSE FIELDS BASED ON CATEGORY */
-/* ========================================================= */
-
-function updateCourseFields() {
-
-    const category =
-        document.getElementById("institution_category").value;
-
-    const courseLevel =
-        document.getElementById("course_level");
-
-    const stream =
-        document.getElementById("stream");
-
-    const specialization =
-        document.getElementById("specialization");
-
-    const streamRequired =
-        document.getElementById("stream_required");
-
-    const specializationRequired =
-        document.getElementById("specialization_required");
-
-
-    /* Clear all dropdowns */
-
-    courseLevel.innerHTML =
-        '<option value="">-- Select Course Level --</option>';
-
-    stream.innerHTML =
-        '<option value="">-- Select Stream --</option>';
-
-    specialization.innerHTML =
-        '<option value="">-- Select Specialization --</option>';
-
-
-    /* Reset */
-
-    courseLevel.disabled = true;
-    stream.disabled = true;
-    specialization.disabled = true;
-
-    courseLevel.required = false;
-    stream.required = false;
-    specialization.required = false;
-
-    streamRequired.textContent = "";
-    specializationRequired.textContent = "";
-
-
-    /* ===================================================== */
-    /* SCHOOL */
-    /* ===================================================== */
-
-    if (category === "School") {
-
-        courseLevel.disabled = false;
-        courseLevel.required = true;
-
-        courseLevel.innerHTML = `
-            <option value="">-- Select Course Level --</option>
-            <option value="Primary">Primary</option>
-            <option value="Secondary">Secondary</option>
-        `;
-
-    }
-
-
-    /* ===================================================== */
-    /* JUNIOR COLLEGE */
-    /* ===================================================== */
-
-    else if (category === "Jr College") {
-
-        courseLevel.disabled = false;
-        courseLevel.required = true;
-
-        courseLevel.innerHTML = `
-            <option value="">-- Select Course Level --</option>
-            <option value="Higher Secondary">Higher Secondary</option>
-        `;
-
-
-        /* Stream */
-
-        stream.disabled = false;
-        stream.required = true;
-
-        streamRequired.textContent = "*";
-
-        stream.innerHTML = `
-            <option value="">-- Select Stream --</option>
-            <option value="Arts">Arts</option>
-            <option value="Commerce">Commerce</option>
-            <option value="Science">Science</option>
-        `;
-
-    }
-
-
-    /* ===================================================== */
-    /* DEGREE COLLEGE */
-    /* ===================================================== */
-
-    else if (category === "Degree College") {
-
-        courseLevel.disabled = false;
-        courseLevel.required = true;
-
-        courseLevel.innerHTML = `
-            <option value="">-- Select Course Level --</option>
-            <option value="Undergraduate">Undergraduate</option>
-            <option value="Postgraduate">Postgraduate</option>
-        `;
-
-
-        /* Stream */
-
-        stream.disabled = false;
-        stream.required = true;
-
-        streamRequired.textContent = "*";
-
-        stream.innerHTML = `
-            <option value="">-- Select Stream --</option>
-            <option value="B.Arts">B.Arts</option>
-            <option value="B.Commerce">B.Commerce</option>
-            <option value="B.Science">B.Science</option>
-        `;
-
-    }
-
-}
-
-
-/* ========================================================= */
-/* UPDATE SPECIALIZATION BASED ON STREAM */
-/* ========================================================= */
-
-function updateSpecializations() {
-
-    const category =
-        document.getElementById("institution_category").value;
-
-    const stream =
-        document.getElementById("stream").value;
-
-    const specialization =
-        document.getElementById("specialization");
-
-    const specializationRequired =
-        document.getElementById("specialization_required");
-
-
-    /* Clear existing options */
-
-    specialization.innerHTML =
-        '<option value="">-- Select Specialization --</option>';
-
-    specialization.disabled = true;
-    specialization.required = false;
-
-    specializationRequired.textContent = "";
-
-
-    /* ===================================================== */
-    /* JR COLLEGE */
-    /* ===================================================== */
-
-    if (category === "Jr College") {
-
-        /*
-           Your current Jr College master data does not
-           contain specializations.
-
-           Therefore specialization remains disabled.
-        */
-
-        return;
-    }
-
-
-    /* ===================================================== */
-    /* DEGREE COLLEGE */
-    /* ===================================================== */
-
-    if (category === "Degree College") {
-
-        specialization.disabled = false;
-        specialization.required = true;
-
-        specializationRequired.textContent = "*";
-
-
-        /* ------------------------------------------------- */
-        /* B.ARTS */
-        /* ------------------------------------------------- */
-
-        if (stream === "B.Arts") {
-
-            specialization.innerHTML = `
-                <option value="">-- Select Specialization --</option>
-
-                <option value="English Literature">
-                    English Literature
-                </option>
-
-                <option value="Journalism and Mass Communication">
-                    Journalism and Mass Communication
-                </option>
-            `;
-
-        }
-
-
-        /* ------------------------------------------------- */
-        /* B.COMMERCE */
-        /* ------------------------------------------------- */
-
-        else if (stream === "B.Commerce") {
-
-            specialization.innerHTML = `
-                <option value="">-- Select Specialization --</option>
-
-                <option value="Financial Accounting">
-                    Financial Accounting
-                </option>
-
-                <option value="Business Administration">
-                    Business Administration
-                </option>
-            `;
-
-        }
-
-
-        /* ------------------------------------------------- */
-        /* B.SCIENCE */
-        /* ------------------------------------------------- */
-
-        else if (stream === "B.Science") {
-
-            specialization.innerHTML = `
-                <option value="">-- Select Specialization --</option>
-
-                <option value="Computer Science">
-                    Computer Science
-                </option>
-
-                <option value="Information Technology">
-                    Information Technology
-                </option>
-            `;
-
-        }
-
-    }
-
-}
-
-
-/* ========================================================= */
 /* FORM VALIDATION */
 /* ========================================================= */
 
@@ -810,29 +506,41 @@ function validateCourseForm() {
     let valid = true;
 
 
-    /* Clear previous errors */
+    /* ----------------------------------------------------- */
+    /* CLEAR PREVIOUS ERRORS */
+    /* ----------------------------------------------------- */
 
-    document.getElementById("course_name_error").textContent = "";
-    document.getElementById("institution_category_error").textContent = "";
-    document.getElementById("course_level_error").textContent = "";
-    document.getElementById("stream_error").textContent = "";
-    document.getElementById("specialization_error").textContent = "";
+    document.getElementById(
+        "course_name_error"
+    ).textContent = "";
 
+    document.getElementById(
+        "institution_category_error"
+    ).textContent = "";
+
+    document.getElementById(
+        "status_error"
+    ).textContent = "";
+
+
+    /* ----------------------------------------------------- */
+    /* GET VALUES */
+    /* ----------------------------------------------------- */
 
     const courseName =
-        document.getElementById("course_name").value.trim();
+        document.getElementById(
+            "course_name"
+        ).value.trim();
 
     const category =
-        document.getElementById("institution_category").value;
+        document.getElementById(
+            "institution_category"
+        ).value;
 
-    const courseLevel =
-        document.getElementById("course_level").value;
-
-    const stream =
-        document.getElementById("stream").value;
-
-    const specialization =
-        document.getElementById("specialization").value;
+    const status =
+        document.getElementById(
+            "status"
+        ).value;
 
 
     /* ===================================================== */
@@ -841,7 +549,9 @@ function validateCourseForm() {
 
     if (courseName === "") {
 
-        document.getElementById("course_name_error").textContent =
+        document.getElementById(
+            "course_name_error"
+        ).textContent =
             "Course name is required.";
 
         valid = false;
@@ -849,7 +559,9 @@ function validateCourseForm() {
     }
     else if (courseName.length < 2) {
 
-        document.getElementById("course_name_error").textContent =
+        document.getElementById(
+            "course_name_error"
+        ).textContent =
             "Course name must contain at least 2 characters.";
 
         valid = false;
@@ -858,12 +570,14 @@ function validateCourseForm() {
 
 
     /* ===================================================== */
-    /* CATEGORY */
+    /* INSTITUTION CATEGORY */
     /* ===================================================== */
 
     if (category === "") {
 
-        document.getElementById("institution_category_error").textContent =
+        document.getElementById(
+            "institution_category_error"
+        ).textContent =
             "Please select an institution category.";
 
         valid = false;
@@ -872,50 +586,15 @@ function validateCourseForm() {
 
 
     /* ===================================================== */
-    /* COURSE LEVEL */
+    /* STATUS */
     /* ===================================================== */
 
-    if (category !== "" && courseLevel === "") {
+    if (status === "") {
 
-        document.getElementById("course_level_error").textContent =
-            "Please select a course level.";
-
-        valid = false;
-
-    }
-
-
-    /* ===================================================== */
-    /* JR COLLEGE / DEGREE COLLEGE STREAM */
-    /* ===================================================== */
-
-    if (
-        (category === "Jr College" ||
-         category === "Degree College")
-        &&
-        stream === ""
-    ) {
-
-        document.getElementById("stream_error").textContent =
-            "Please select a stream.";
-
-        valid = false;
-
-    }
-
-
-    /* ===================================================== */
-    /* DEGREE COLLEGE SPECIALIZATION */
-    /* ===================================================== */
-
-    if (
-        category === "Degree College"
-        &&
-        specialization === ""
-    ) {
-
-        document.getElementById("specialization_error").textContent =
-            "Please select a specialization.";
+        document.getElementById(
+            "status_error"
+        ).textContent =
+            "Please select a status.";
 
         valid = false;
 
@@ -934,7 +613,7 @@ function validateCourseForm() {
 function confirmDelete(courseName) {
 
     return confirm(
-        "Are you sure you want to delete the course \"" +
+        "Are you sure you want to permanently delete the course \"" +
         courseName +
         "\"?"
     );

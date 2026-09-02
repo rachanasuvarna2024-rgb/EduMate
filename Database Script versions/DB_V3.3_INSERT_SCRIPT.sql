@@ -1,12 +1,33 @@
 -- ============================================================
 -- EDUMATE DATABASE VERSION 3.3
--- COMPLETE INSERT / SAMPLE DATA SCRIPT
+-- INSERT / SAMPLE DATA
 -- ============================================================
 
 USE edumate_db3_3;
 
+
 -- ============================================================
--- 1. INSTITUTIONS
+-- 1. ADMIN
+-- ============================================================
+
+INSERT INTO admin
+(
+    admin_name,
+    email,
+    password,
+    status
+)
+VALUES
+(
+    'System Administrator',
+    'admin@edumate.com',
+    'admin123',
+    'Active'
+);
+
+
+-- ============================================================
+-- 2. INSTITUTIONS
 -- ============================================================
 
 INSERT INTO institution
@@ -21,486 +42,549 @@ INSERT INTO institution
     pincode,
     email,
     phone,
-    website
+    website,
+    status
 )
 VALUES
 (
     'Sunrise Public School',
     'SPS001',
     'School',
-    'Traditional',
-    '12 MG Road',
+    'OBE',
+    'MG Road',
     'Mumbai',
     'Maharashtra',
-    '400080',
+    '400001',
     'info@sunriseschool.edu',
     '9876543210',
-    'www.sunriseschool.edu'
-),
-(
-    'Bright Future College',
-    'BFC001',
-    'Degree College',
-    'OBE',
-    '45 College Road',
-    'Mumbai',
-    'Maharashtra',
-    '400070',
-    'info@brightfuture.edu',
-    '9876543211',
-    'www.brightfuture.edu'
+    'https://www.sunriseschool.edu',
+    'Active'
 ),
 (
     'Bright Junior College',
     'BJC001',
     'Jr College',
     'Traditional',
-    '25 College Road',
+    'College Road',
     'Mumbai',
     'Maharashtra',
-    '400071',
+    '400002',
     'info@brightjunior.edu',
+    '9876543211',
+    'https://www.brightjunior.edu',
+    'Active'
+),
+(
+    'Bright Future College',
+    'BFC001',
+    'Degree College',
+    'OBE',
+    'University Road',
+    'Mumbai',
+    'Maharashtra',
+    '400003',
+    'info@brightfuture.edu',
     '9876543212',
-    'www.brightjunior.edu'
+    'https://www.brightfuture.edu',
+    'Active'
 );
 
 
 -- ============================================================
--- 2. STREAM MASTER
+-- 3. STREAM MASTER
 -- ============================================================
 
 INSERT INTO stream_master
 (
     stream_name,
-    institution_category
+    institution_category,
+    status
 )
 VALUES
 
--- SCHOOL
-('English Medium', 'School'),
-('Hindi Medium', 'School'),
-('Marathi Medium', 'School'),
-('Kannada Medium', 'School'),
+-- SCHOOL STREAMS
+(
+    'English Medium',
+    'School',
+    'Active'
+),
+(
+    'Hindi Medium',
+    'School',
+    'Active'
+),
+(
+    'Marathi Medium',
+    'School',
+    'Active'
+),
+(
+    'Kannada Medium',
+    'School',
+    'Active'
+),
 
--- JR COLLEGE
-('Arts', 'Jr College'),
-('Science', 'Jr College'),
-('Commerce', 'Jr College'),
+-- JR COLLEGE STREAMS
+(
+    'Arts',
+    'Jr College',
+    'Active'
+),
+(
+    'Science',
+    'Jr College',
+    'Active'
+),
+(
+    'Commerce',
+    'Jr College',
+    'Active'
+),
 
--- DEGREE COLLEGE
-('Arts', 'Degree College'),
-('Science', 'Degree College'),
-('Commerce', 'Degree College');
+-- DEGREE COLLEGE STREAMS
+(
+    'Arts',
+    'Degree College',
+    'Active'
+),
+(
+    'Science',
+    'Degree College',
+    'Active'
+),
+(
+    'Commerce',
+    'Degree College',
+    'Active'
+);
 
 
 -- ============================================================
--- 3. COURSE MASTER
+-- 4. COURSE MASTER
+--
+-- IMPORTANT:
+-- School courses I-X are inserted ONLY ONCE.
 -- ============================================================
 
+INSERT INTO course_master
+(
+    course_name,
+    institution_category,
+    status
+)
+VALUES
 
--- ============================================================
 -- SCHOOL COURSES
--- ============================================================
+('I',   'School', 'Active'),
+('II',  'School', 'Active'),
+('III', 'School', 'Active'),
+('IV',  'School', 'Active'),
+('V',   'School', 'Active'),
+('VI',  'School', 'Active'),
+('VII', 'School', 'Active'),
+('VIII','School', 'Active'),
+('IX',  'School', 'Active'),
+('X',   'School', 'Active'),
 
-INSERT INTO course_master
-(
-    course_name,
-    stream_id,
-    institution_category
-)
-SELECT
-    c.course_name,
-    s.stream_id,
-    'School'
-FROM
-(
-    SELECT 'I' AS course_name
-    UNION ALL SELECT 'II'
-    UNION ALL SELECT 'III'
-    UNION ALL SELECT 'IV'
-    UNION ALL SELECT 'V'
-    UNION ALL SELECT 'VI'
-    UNION ALL SELECT 'VII'
-    UNION ALL SELECT 'VIII'
-    UNION ALL SELECT 'IX'
-    UNION ALL SELECT 'X'
-) c
-CROSS JOIN stream_master s
-WHERE s.institution_category = 'School';
-
-
--- ============================================================
 -- JR COLLEGE COURSES
--- ============================================================
+('FY JC Arts',     'Jr College', 'Active'),
+('SY JC Arts',     'Jr College', 'Active'),
+('FY JC Science',  'Jr College', 'Active'),
+('SY JC Science',  'Jr College', 'Active'),
+('FY JC Commerce', 'Jr College', 'Active'),
+('SY JC Commerce', 'Jr College', 'Active'),
 
-INSERT INTO course_master
-(
-    course_name,
-    stream_id,
-    institution_category
-)
-SELECT
-    c.course_name,
-    s.stream_id,
-    'Jr College'
-FROM
-(
-    SELECT 'FY JC Arts' AS course_name, 'Arts' AS stream_name
-    UNION ALL SELECT 'SY JC Arts', 'Arts'
-
-    UNION ALL SELECT 'FY JC Science', 'Science'
-    UNION ALL SELECT 'SY JC Science', 'Science'
-
-    UNION ALL SELECT 'FY JC Commerce', 'Commerce'
-    UNION ALL SELECT 'SY JC Commerce', 'Commerce'
-) c
-JOIN stream_master s
-    ON s.stream_name = c.stream_name
-    AND s.institution_category = 'Jr College';
-
-
--- ============================================================
 -- DEGREE COLLEGE COURSES
+('FY B Arts English Literature', 'Degree College', 'Active'),
+('SY B Arts English Literature', 'Degree College', 'Active'),
+('TY B Arts English Literature', 'Degree College', 'Active'),
+
+('FY B Science Computer Science', 'Degree College', 'Active'),
+('SY B Science Computer Science', 'Degree College', 'Active'),
+('TY B Science Computer Science', 'Degree College', 'Active'),
+
+('FY B Commerce Financial Accounting', 'Degree College', 'Active'),
+('SY B Commerce Financial Accounting', 'Degree College', 'Active'),
+('TY B Commerce Financial Accounting', 'Degree College', 'Active');
+
+
+-- ============================================================
+-- 5. COURSE - STREAM MAPPING
 -- ============================================================
 
-INSERT INTO course_master
+-- ------------------------------------------------------------
+-- SCHOOL COURSES
+-- Every school course can be offered in every school medium.
+-- ------------------------------------------------------------
+
+INSERT INTO course_stream
 (
-    course_name,
-    stream_id,
-    institution_category
+    course_id,
+    stream_id
 )
 SELECT
-    c.course_name,
-    s.stream_id,
-    'Degree College'
-FROM
+    c.course_id,
+    s.stream_id
+FROM course_master c
+CROSS JOIN stream_master s
+WHERE c.institution_category = 'School'
+  AND s.institution_category = 'School';
+
+
+-- ------------------------------------------------------------
+-- JR COLLEGE COURSES
+-- ------------------------------------------------------------
+
+INSERT INTO course_stream
 (
-    SELECT
-        'FY B Arts English Literature' AS course_name,
-        'Arts' AS stream_name
-
-    UNION ALL
-    SELECT
-        'SY B Arts English Literature',
-        'Arts'
-
-    UNION ALL
-    SELECT
-        'TY B Arts English Literature',
-        'Arts'
-
-    UNION ALL
-    SELECT
-        'FY B Science Computer Science',
-        'Science'
-
-    UNION ALL
-    SELECT
-        'SY B Science Computer Science',
-        'Science'
-
-    UNION ALL
-    SELECT
-        'TY B Science Computer Science',
-        'Science'
-
-    UNION ALL
-    SELECT
-        'FY B Commerce Financial Accounting',
-        'Commerce'
-
-    UNION ALL
-    SELECT
-        'SY B Commerce Financial Accounting',
-        'Commerce'
-
-    UNION ALL
-    SELECT
-        'TY B Commerce Financial Accounting',
-        'Commerce'
-) c
+    course_id,
+    stream_id
+)
+SELECT
+    c.course_id,
+    s.stream_id
+FROM course_master c
 JOIN stream_master s
-    ON s.stream_name = c.stream_name
-    AND s.institution_category = 'Degree College';
+    ON s.institution_category = 'Jr College'
+   AND (
+        (c.course_name IN ('FY JC Arts', 'SY JC Arts')
+         AND s.stream_name = 'Arts')
+
+        OR
+
+        (c.course_name IN ('FY JC Science', 'SY JC Science')
+         AND s.stream_name = 'Science')
+
+        OR
+
+        (c.course_name IN ('FY JC Commerce', 'SY JC Commerce')
+         AND s.stream_name = 'Commerce')
+   )
+WHERE c.institution_category = 'Jr College';
+
+
+-- ------------------------------------------------------------
+-- DEGREE COLLEGE COURSES
+-- ------------------------------------------------------------
+
+INSERT INTO course_stream
+(
+    course_id,
+    stream_id
+)
+SELECT
+    c.course_id,
+    s.stream_id
+FROM course_master c
+JOIN stream_master s
+    ON s.institution_category = 'Degree College'
+   AND (
+        (
+            c.course_name IN
+            (
+                'FY B Arts English Literature',
+                'SY B Arts English Literature',
+                'TY B Arts English Literature'
+            )
+            AND s.stream_name = 'Arts'
+        )
+
+        OR
+
+        (
+            c.course_name IN
+            (
+                'FY B Science Computer Science',
+                'SY B Science Computer Science',
+                'TY B Science Computer Science'
+            )
+            AND s.stream_name = 'Science'
+        )
+
+        OR
+
+        (
+            c.course_name IN
+            (
+                'FY B Commerce Financial Accounting',
+                'SY B Commerce Financial Accounting',
+                'TY B Commerce Financial Accounting'
+            )
+            AND s.stream_name = 'Commerce'
+        )
+   )
+WHERE c.institution_category = 'Degree College';
 
 
 -- ============================================================
--- 4. SUBJECT MASTER
+-- 6. SUBJECT MASTER
 -- ============================================================
 
-
--- ============================================================
+-- ------------------------------------------------------------
 -- SCHOOL SUBJECTS
---
--- English
--- Maths
--- Science
--- Social Science
--- Hindi
---
--- Applied to every school course.
--- ============================================================
+-- ------------------------------------------------------------
 
 INSERT INTO subject_master
 (
     subject_name,
     course_id,
-    institution_category
+    institution_category,
+    status
 )
 SELECT
     sub.subject_name,
     c.course_id,
-    'School'
+    'School',
+    'Active'
 FROM course_master c
-JOIN
+CROSS JOIN
 (
     SELECT 'English' AS subject_name
-    UNION ALL SELECT 'Maths'
-    UNION ALL SELECT 'Science'
-    UNION ALL SELECT 'Social Science'
-    UNION ALL SELECT 'Hindi'
+    UNION ALL
+    SELECT 'Mathematics'
+    UNION ALL
+    SELECT 'Science'
+    UNION ALL
+    SELECT 'Social Science'
+    UNION ALL
+    SELECT 'Hindi'
 ) sub
 WHERE c.institution_category = 'School';
 
 
--- ============================================================
+-- ------------------------------------------------------------
 -- JR COLLEGE SUBJECTS
--- ============================================================
+-- ------------------------------------------------------------
 
 INSERT INTO subject_master
 (
     subject_name,
     course_id,
-    institution_category
+    institution_category,
+    status
 )
 SELECT
-    sub.subject_name,
+    x.subject_name,
     c.course_id,
-    'Jr College'
+    'Jr College',
+    'Active'
 FROM course_master c
 JOIN
 (
-    SELECT 'FY JC Arts' AS course_name,
-           'JC Arts - Economics' AS subject_name
+    SELECT
+        'FY JC Arts' AS course_name,
+        'English' AS subject_name
+    UNION ALL
+    SELECT 'FY JC Arts', 'History'
+    UNION ALL
+    SELECT 'FY JC Arts', 'Political Science'
+    UNION ALL
+    SELECT 'FY JC Arts', 'Economics'
 
     UNION ALL
-    SELECT 'FY JC Arts',
-           'JC Arts - Political Science'
+    SELECT 'SY JC Arts', 'English'
+    UNION ALL
+    SELECT 'SY JC Arts', 'History'
+    UNION ALL
+    SELECT 'SY JC Arts', 'Political Science'
+    UNION ALL
+    SELECT 'SY JC Arts', 'Economics'
 
     UNION ALL
-    SELECT 'SY JC Arts',
-           'JC Arts - Economics'
+    SELECT 'FY JC Science', 'English'
+    UNION ALL
+    SELECT 'FY JC Science', 'Physics'
+    UNION ALL
+    SELECT 'FY JC Science', 'Chemistry'
+    UNION ALL
+    SELECT 'FY JC Science', 'Mathematics'
 
     UNION ALL
-    SELECT 'SY JC Arts',
-           'JC Arts - Political Science'
+    SELECT 'SY JC Science', 'English'
+    UNION ALL
+    SELECT 'SY JC Science', 'Physics'
+    UNION ALL
+    SELECT 'SY JC Science', 'Chemistry'
+    UNION ALL
+    SELECT 'SY JC Science', 'Mathematics'
 
     UNION ALL
-    SELECT 'FY JC Science',
-           'JC Science - Physics'
+    SELECT 'FY JC Commerce', 'English'
+    UNION ALL
+    SELECT 'FY JC Commerce', 'Economics'
+    UNION ALL
+    SELECT 'FY JC Commerce', 'Accountancy'
+    UNION ALL
+    SELECT 'FY JC Commerce', 'Organisation of Commerce'
 
     UNION ALL
-    SELECT 'FY JC Science',
-           'JC Science - Chemistry'
-
+    SELECT 'SY JC Commerce', 'English'
     UNION ALL
-    SELECT 'FY JC Science',
-           'JC Science - Biology'
-
+    SELECT 'SY JC Commerce', 'Economics'
     UNION ALL
-    SELECT 'SY JC Science',
-           'JC Science - Physics'
-
+    SELECT 'SY JC Commerce', 'Accountancy'
     UNION ALL
-    SELECT 'SY JC Science',
-           'JC Science - Chemistry'
-
-    UNION ALL
-    SELECT 'SY JC Science',
-           'JC Science - Biology'
-
-    UNION ALL
-    SELECT 'FY JC Commerce',
-           'JC Commerce - Organization of Commerce and Management'
-
-    UNION ALL
-    SELECT 'FY JC Commerce',
-           'JC Commerce - Book Keeping'
-
-    UNION ALL
-    SELECT 'SY JC Commerce',
-           'JC Commerce - Organization of Commerce and Management'
-
-    UNION ALL
-    SELECT 'SY JC Commerce',
-           'JC Commerce - Book Keeping'
-) sub
-    ON sub.course_name = c.course_name
+    SELECT 'SY JC Commerce', 'Organisation of Commerce'
+) x
+    ON x.course_name = c.course_name
 WHERE c.institution_category = 'Jr College';
 
 
--- ============================================================
+-- ------------------------------------------------------------
 -- DEGREE COLLEGE SUBJECTS
--- ============================================================
+-- ------------------------------------------------------------
 
 INSERT INTO subject_master
 (
     subject_name,
     course_id,
-    institution_category
+    institution_category,
+    status
 )
 SELECT
-    sub.subject_name,
+    x.subject_name,
     c.course_id,
-    'Degree College'
+    'Degree College',
+    'Active'
 FROM course_master c
 JOIN
 (
     SELECT
         'FY B Arts English Literature' AS course_name,
         'English Literature' AS subject_name
+    UNION ALL
+    SELECT 'FY B Arts English Literature', 'History'
+    UNION ALL
+    SELECT 'FY B Arts English Literature', 'Political Science'
 
     UNION ALL
-    SELECT
-        'SY B Arts English Literature',
-        'English Literature'
+    SELECT 'SY B Arts English Literature', 'English Literature'
+    UNION ALL
+    SELECT 'SY B Arts English Literature', 'History'
+    UNION ALL
+    SELECT 'SY B Arts English Literature', 'Political Science'
 
     UNION ALL
-    SELECT
-        'TY B Arts English Literature',
-        'English Literature'
+    SELECT 'TY B Arts English Literature', 'English Literature'
+    UNION ALL
+    SELECT 'TY B Arts English Literature', 'History'
+    UNION ALL
+    SELECT 'TY B Arts English Literature', 'Political Science'
 
     UNION ALL
-    SELECT
-        'FY B Science Computer Science',
-        'Computer Networks'
+    SELECT 'FY B Science Computer Science', 'Computer Science'
+    UNION ALL
+    SELECT 'FY B Science Computer Science', 'Mathematics'
+    UNION ALL
+    SELECT 'FY B Science Computer Science', 'Physics'
 
     UNION ALL
-    SELECT
-        'FY B Science Computer Science',
-        'Programming in Python'
+    SELECT 'SY B Science Computer Science', 'Computer Science'
+    UNION ALL
+    SELECT 'SY B Science Computer Science', 'Mathematics'
+    UNION ALL
+    SELECT 'SY B Science Computer Science', 'Physics'
 
     UNION ALL
-    SELECT
-        'FY B Science Computer Science',
-        'Database Management Systems'
+    SELECT 'TY B Science Computer Science', 'Computer Science'
+    UNION ALL
+    SELECT 'TY B Science Computer Science', 'Mathematics'
+    UNION ALL
+    SELECT 'TY B Science Computer Science', 'Physics'
 
     UNION ALL
-    SELECT
-        'SY B Science Computer Science',
-        'Computer Networks'
+    SELECT 'FY B Commerce Financial Accounting', 'Financial Accounting'
+    UNION ALL
+    SELECT 'FY B Commerce Financial Accounting', 'Economics'
+    UNION ALL
+    SELECT 'FY B Commerce Financial Accounting', 'Business Law'
 
     UNION ALL
-    SELECT
-        'SY B Science Computer Science',
-        'Programming in Python'
+    SELECT 'SY B Commerce Financial Accounting', 'Financial Accounting'
+    UNION ALL
+    SELECT 'SY B Commerce Financial Accounting', 'Economics'
+    UNION ALL
+    SELECT 'SY B Commerce Financial Accounting', 'Business Law'
 
     UNION ALL
-    SELECT
-        'SY B Science Computer Science',
-        'Database Management Systems'
-
+    SELECT 'TY B Commerce Financial Accounting', 'Financial Accounting'
     UNION ALL
-    SELECT
-        'TY B Science Computer Science',
-        'Computer Networks'
-
+    SELECT 'TY B Commerce Financial Accounting', 'Economics'
     UNION ALL
-    SELECT
-        'TY B Science Computer Science',
-        'Programming in Python'
-
-    UNION ALL
-    SELECT
-        'TY B Science Computer Science',
-        'Database Management Systems'
-
-    UNION ALL
-    SELECT
-        'FY B Commerce Financial Accounting',
-        'Financial Accounting'
-
-    UNION ALL
-    SELECT
-        'SY B Commerce Financial Accounting',
-        'Financial Accounting'
-
-    UNION ALL
-    SELECT
-        'TY B Commerce Financial Accounting',
-        'Financial Accounting'
-) sub
-    ON sub.course_name = c.course_name
+    SELECT 'TY B Commerce Financial Accounting', 'Business Law'
+) x
+    ON x.course_name = c.course_name
 WHERE c.institution_category = 'Degree College';
 
 
 -- ============================================================
--- 5. DEPARTMENT MASTER
+-- 7. DEPARTMENT MASTER
 -- ============================================================
 
 INSERT INTO department_master
 (
     department_name,
-    institution_category
+    institution_category,
+    status
 )
 VALUES
 
 -- SCHOOL
-('English', 'School'),
-('Hindi', 'School'),
-('Science', 'School'),
-('Mathematics', 'School'),
-('Social Studies', 'School'),
+('Primary Education', 'School', 'Active'),
+('Secondary Education', 'School', 'Active'),
 
 -- JR COLLEGE
-('Arts', 'Jr College'),
-('Science', 'Jr College'),
-('Commerce', 'Jr College'),
+('Arts', 'Jr College', 'Active'),
+('Science', 'Jr College', 'Active'),
+('Commerce', 'Jr College', 'Active'),
 
 -- DEGREE COLLEGE
-('Computer Science', 'Degree College'),
-('Information Technology', 'Degree College'),
-('Data Science', 'Degree College'),
-('BMS', 'Degree College');
+('English', 'Degree College', 'Active'),
+('Computer Science', 'Degree College', 'Active'),
+('Commerce', 'Degree College', 'Active');
 
 
 -- ============================================================
--- 6. DESIGNATION MASTER
+-- 8. DESIGNATION MASTER
 -- ============================================================
 
 INSERT INTO designation_master
 (
     designation_name,
-    institution_category
+    institution_category,
+    status
 )
 VALUES
 
 -- SCHOOL
-('Principal', 'School'),
-('Vice Principal', 'School'),
-('Head Master', 'School'),
-('Head Mistress', 'School'),
-('Teacher', 'School'),
+('Principal', 'School', 'Active'),
+('Vice Principal', 'School', 'Active'),
+('Teacher', 'School', 'Active'),
+('Head Teacher', 'School', 'Active'),
 
 -- JR COLLEGE
-('Principal', 'Jr College'),
-('Vice Principal', 'Jr College'),
-('Head Master', 'Jr College'),
-('Head Mistress', 'Jr College'),
-('Teacher', 'Jr College'),
+('Principal', 'Jr College', 'Active'),
+('Vice Principal', 'Jr College', 'Active'),
+('Lecturer', 'Jr College', 'Active'),
+('Head of Department', 'Jr College', 'Active'),
 
 -- DEGREE COLLEGE
-('Principal', 'Degree College'),
-('Vice Principal', 'Degree College'),
-('Head of Department', 'Degree College'),
-('Professor', 'Degree College'),
-('Assistant Professor', 'Degree College');
+('Principal', 'Degree College', 'Active'),
+('Vice Principal', 'Degree College', 'Active'),
+('Assistant Professor', 'Degree College', 'Active'),
+('Associate Professor', 'Degree College', 'Active'),
+('Professor', 'Degree College', 'Active'),
+('Head of Department', 'Degree College', 'Active');
 
 
 -- ============================================================
--- 7. INSTITUTION STREAM
+-- 9. INSTITUTION - STREAM MAPPING
+-- ============================================================
+
+-- ------------------------------------------------------------
 -- SUNRISE PUBLIC SCHOOL
--- ============================================================
+-- English Medium only
+-- ------------------------------------------------------------
 
 INSERT INTO institution_stream
 (
@@ -513,13 +597,14 @@ SELECT
 FROM institution i
 JOIN stream_master s
     ON s.stream_name = 'English Medium'
-    AND s.institution_category = 'School'
+   AND s.institution_category = 'School'
 WHERE i.institution_code = 'SPS001';
 
 
--- ============================================================
--- BRIGHT JUNIOR COLLEGE STREAMS
--- ============================================================
+-- ------------------------------------------------------------
+-- BRIGHT JUNIOR COLLEGE
+-- Arts + Science + Commerce
+-- ------------------------------------------------------------
 
 INSERT INTO institution_stream
 (
@@ -535,9 +620,10 @@ JOIN stream_master s
 WHERE i.institution_code = 'BJC001';
 
 
--- ============================================================
--- BRIGHT FUTURE COLLEGE STREAM
--- ============================================================
+-- ------------------------------------------------------------
+-- BRIGHT FUTURE COLLEGE
+-- Science
+-- ------------------------------------------------------------
 
 INSERT INTO institution_stream
 (
@@ -550,14 +636,18 @@ SELECT
 FROM institution i
 JOIN stream_master s
     ON s.stream_name = 'Science'
-    AND s.institution_category = 'Degree College'
+   AND s.institution_category = 'Degree College'
 WHERE i.institution_code = 'BFC001';
 
 
 -- ============================================================
--- 8. INSTITUTION COURSE
--- SUNRISE PUBLIC SCHOOL
+-- 10. INSTITUTION - COURSE MAPPING
 -- ============================================================
+
+-- ------------------------------------------------------------
+-- SUNRISE PUBLIC SCHOOL
+-- Courses IX and X
+-- ------------------------------------------------------------
 
 INSERT INTO institution_course
 (
@@ -570,15 +660,14 @@ SELECT
 FROM institution i
 JOIN course_master c
     ON c.course_name IN ('IX', 'X')
-JOIN stream_master s
-    ON s.stream_id = c.stream_id
-    AND s.stream_name = 'English Medium'
+   AND c.institution_category = 'School'
 WHERE i.institution_code = 'SPS001';
 
 
--- ============================================================
+-- ------------------------------------------------------------
 -- BRIGHT JUNIOR COLLEGE
--- ============================================================
+-- All six JC courses
+-- ------------------------------------------------------------
 
 INSERT INTO institution_course
 (
@@ -590,21 +679,14 @@ SELECT
     c.course_id
 FROM institution i
 JOIN course_master c
-    ON c.course_name IN
-    (
-        'FY JC Arts',
-        'SY JC Arts',
-        'FY JC Science',
-        'SY JC Science',
-        'FY JC Commerce',
-        'SY JC Commerce'
-    )
+    ON c.institution_category = 'Jr College'
 WHERE i.institution_code = 'BJC001';
 
 
--- ============================================================
+-- ------------------------------------------------------------
 -- BRIGHT FUTURE COLLEGE
--- ============================================================
+-- Science degree courses
+-- ------------------------------------------------------------
 
 INSERT INTO institution_course
 (
@@ -622,20 +704,25 @@ JOIN course_master c
         'SY B Science Computer Science',
         'TY B Science Computer Science'
     )
+   AND c.institution_category = 'Degree College'
 WHERE i.institution_code = 'BFC001';
 
 
 -- ============================================================
--- 9. INSTITUTION SUBJECT
--- SUNRISE PUBLIC SCHOOL
+-- 11. INSTITUTION - SUBJECT MAPPING
 -- ============================================================
+
+-- ------------------------------------------------------------
+-- SUNRISE PUBLIC SCHOOL
+-- Subjects for IX and X
+-- ------------------------------------------------------------
 
 INSERT INTO institution_subject
 (
     institution_id,
     subject_master_id
 )
-SELECT
+SELECT DISTINCT
     i.institution_id,
     sm.subject_master_id
 FROM institution i
@@ -643,70 +730,63 @@ JOIN subject_master sm
     ON sm.institution_category = 'School'
 JOIN course_master c
     ON c.course_id = sm.course_id
-    AND c.course_name IN ('IX', 'X')
-JOIN stream_master s
-    ON s.stream_id = c.stream_id
-    AND s.stream_name = 'English Medium'
-WHERE i.institution_code = 'SPS001';
+WHERE i.institution_code = 'SPS001'
+  AND c.course_name IN ('IX', 'X');
 
 
--- ============================================================
--- BRIGHT JUNIOR COLLEGE SUBJECTS
--- ============================================================
+-- ------------------------------------------------------------
+-- BRIGHT JUNIOR COLLEGE
+-- All subjects of all JC courses
+-- ------------------------------------------------------------
 
 INSERT INTO institution_subject
 (
     institution_id,
     subject_master_id
 )
-SELECT
+SELECT DISTINCT
     i.institution_id,
     sm.subject_master_id
 FROM institution i
 JOIN subject_master sm
+    ON sm.institution_category = 'Jr College'
 JOIN course_master c
     ON c.course_id = sm.course_id
-WHERE i.institution_code = 'BJC001'
-AND c.course_name IN
-(
-    'FY JC Arts',
-    'SY JC Arts',
-    'FY JC Science',
-    'SY JC Science',
-    'FY JC Commerce',
-    'SY JC Commerce'
-);
+WHERE i.institution_code = 'BJC001';
 
 
--- ============================================================
--- BRIGHT FUTURE COLLEGE SUBJECTS
--- ============================================================
+-- ------------------------------------------------------------
+-- BRIGHT FUTURE COLLEGE
+-- Computer Science degree subjects
+-- ------------------------------------------------------------
 
 INSERT INTO institution_subject
 (
     institution_id,
     subject_master_id
 )
-SELECT
+SELECT DISTINCT
     i.institution_id,
     sm.subject_master_id
 FROM institution i
 JOIN subject_master sm
+    ON sm.institution_category = 'Degree College'
 JOIN course_master c
     ON c.course_id = sm.course_id
 WHERE i.institution_code = 'BFC001'
-AND c.course_name IN
-(
-    'FY B Science Computer Science',
-    'SY B Science Computer Science',
-    'TY B Science Computer Science'
-);
+  AND c.course_name IN
+  (
+      'FY B Science Computer Science',
+      'SY B Science Computer Science',
+      'TY B Science Computer Science'
+  );
 
 
 -- ============================================================
--- 10. INSTITUTION DEPARTMENT
--- SUNRISE
+-- 12. INSTITUTION - DEPARTMENT MAPPING
 -- ============================================================
+
+-- SUNRISE PUBLIC SCHOOL
 
 INSERT INTO institution_department
 (
@@ -722,9 +802,7 @@ JOIN department_master d
 WHERE i.institution_code = 'SPS001';
 
 
--- ============================================================
 -- BRIGHT JUNIOR COLLEGE
--- ============================================================
 
 INSERT INTO institution_department
 (
@@ -740,9 +818,7 @@ JOIN department_master d
 WHERE i.institution_code = 'BJC001';
 
 
--- ============================================================
 -- BRIGHT FUTURE COLLEGE
--- ============================================================
 
 INSERT INTO institution_department
 (
@@ -759,8 +835,10 @@ WHERE i.institution_code = 'BFC001';
 
 
 -- ============================================================
--- 11. INSTITUTION DESIGNATIONS
+-- 13. INSTITUTION - DESIGNATION MAPPING
 -- ============================================================
+
+-- SUNRISE PUBLIC SCHOOL
 
 INSERT INTO institution_designation
 (
@@ -772,70 +850,149 @@ SELECT
     d.designation_id
 FROM institution i
 JOIN designation_master d
-    ON d.institution_category = i.institution_category
-WHERE i.institution_code IN
+    ON d.institution_category = 'School'
+WHERE i.institution_code = 'SPS001';
+
+
+-- BRIGHT JUNIOR COLLEGE
+
+INSERT INTO institution_designation
 (
-    'SPS001',
-    'BJC001',
-    'BFC001'
-);
+    institution_id,
+    designation_id
+)
+SELECT
+    i.institution_id,
+    d.designation_id
+FROM institution i
+JOIN designation_master d
+    ON d.institution_category = 'Jr College'
+WHERE i.institution_code = 'BJC001';
+
+
+-- BRIGHT FUTURE COLLEGE
+
+INSERT INTO institution_designation
+(
+    institution_id,
+    designation_id
+)
+SELECT
+    i.institution_id,
+    d.designation_id
+FROM institution i
+JOIN designation_master d
+    ON d.institution_category = 'Degree College'
+WHERE i.institution_code = 'BFC001';
 
 
 -- ============================================================
--- 12. ADMIN
+-- 14. STANDARD DATA
 -- ============================================================
 
-INSERT INTO admin
+-- ------------------------------------------------------------
+-- SUNRISE PUBLIC SCHOOL
+-- ------------------------------------------------------------
+
+INSERT INTO standard
 (
     institution_id,
-    name,
-    email,
-    password
+    course_id,
+    standard_name,
+    academic_year
 )
 SELECT
-    institution_id,
-    'Sunrise Admin',
-    'admin@sunrise.edu',
-    'admin123'
-FROM institution
-WHERE institution_code = 'SPS001';
+    i.institution_id,
+    c.course_id,
+    c.course_name,
+    '2026-27'
+FROM institution i
+JOIN course_master c
+    ON c.course_name IN ('IX', 'X')
+   AND c.institution_category = 'School'
+WHERE i.institution_code = 'SPS001';
 
 
-INSERT INTO admin
+-- ------------------------------------------------------------
+-- BRIGHT JUNIOR COLLEGE
+-- ------------------------------------------------------------
+
+INSERT INTO standard
 (
     institution_id,
-    name,
-    email,
-    password
+    course_id,
+    standard_name,
+    academic_year
 )
 SELECT
-    institution_id,
-    'Bright Future Admin',
-    'admin@brightfuture.edu',
-    'admin123'
-FROM institution
-WHERE institution_code = 'BFC001';
+    i.institution_id,
+    c.course_id,
+    c.course_name,
+    '2026-27'
+FROM institution i
+JOIN course_master c
+    ON c.institution_category = 'Jr College'
+WHERE i.institution_code = 'BJC001';
 
 
-INSERT INTO admin
+-- ------------------------------------------------------------
+-- BRIGHT FUTURE COLLEGE
+-- ------------------------------------------------------------
+
+INSERT INTO standard
 (
     institution_id,
-    name,
-    email,
-    password
+    course_id,
+    standard_name,
+    academic_year
 )
 SELECT
-    institution_id,
-    'Bright Junior Admin',
-    'admin@brightjunior.edu',
-    'admin123'
-FROM institution
-WHERE institution_code = 'BJC001';
+    i.institution_id,
+    c.course_id,
+    c.course_name,
+    '2026-27'
+FROM institution i
+JOIN course_master c
+    ON c.course_name IN
+    (
+        'FY B Science Computer Science',
+        'SY B Science Computer Science',
+        'TY B Science Computer Science'
+    )
+   AND c.institution_category = 'Degree College'
+WHERE i.institution_code = 'BFC001';
 
 
 -- ============================================================
--- 13. TEACHERS
--- SUNRISE
+-- 15. SUBJECT DATA
+-- ============================================================
+
+INSERT INTO subject
+(
+    institution_id,
+    standard_id,
+    subject_master_id,
+    subject_name,
+    assessment_type,
+    status
+)
+SELECT
+    st.institution_id,
+    st.standard_id,
+    sm.subject_master_id,
+    sm.subject_name,
+    i.institution_type,
+    'Active'
+FROM standard st
+JOIN institution i
+    ON i.institution_id = st.institution_id
+JOIN subject_master sm
+    ON sm.course_id = st.course_id
+WHERE sm.institution_category = i.institution_category;
+
+
+-- ============================================================
+-- 16. TEACHERS
 -- ============================================================
 
 INSERT INTO teacher
@@ -843,27 +1000,59 @@ INSERT INTO teacher
     institution_id,
     department_id,
     designation_id,
-    name,
+    teacher_name,
     email,
+    phone,
     password,
-    mobile
+    status
 )
 SELECT
     i.institution_id,
     d.department_id,
-    des.designation_id,
-    'Priya Sharma',
-    'priya@sunriseschool.edu',
+    dg.designation_id,
+    'Anita Sharma',
+    'anita@sunriseschool.edu',
+    '9876500001',
     'teacher123',
-    '9876500001'
+    'Active'
+FROM institution i
+JOIN department_master d
+    ON d.department_name = 'Secondary Education'
+   AND d.institution_category = 'School'
+JOIN designation_master dg
+    ON dg.designation_name = 'Teacher'
+   AND dg.institution_category = 'School'
+WHERE i.institution_code = 'SPS001';
+
+
+INSERT INTO teacher
+(
+    institution_id,
+    department_id,
+    designation_id,
+    teacher_name,
+    email,
+    phone,
+    password,
+    status
+)
+SELECT
+    i.institution_id,
+    d.department_id,
+    dg.designation_id,
+    'Rajesh Patil',
+    'rajesh@brightjunior.edu',
+    '9876500002',
+    'teacher123',
+    'Active'
 FROM institution i
 JOIN department_master d
     ON d.department_name = 'Science'
-    AND d.institution_category = 'School'
-JOIN designation_master des
-    ON des.designation_name = 'Teacher'
-    AND des.institution_category = 'School'
-WHERE i.institution_code = 'SPS001';
+   AND d.institution_category = 'Jr College'
+JOIN designation_master dg
+    ON dg.designation_name = 'Lecturer'
+   AND dg.institution_category = 'Jr College'
+WHERE i.institution_code = 'BJC001';
 
 
 INSERT INTO teacher
@@ -871,108 +1060,51 @@ INSERT INTO teacher
     institution_id,
     department_id,
     designation_id,
-    name,
+    teacher_name,
     email,
+    phone,
     password,
-    mobile
+    status
 )
 SELECT
     i.institution_id,
     d.department_id,
-    des.designation_id,
-    'Rahul Mehta',
-    'rahul@sunriseschool.edu',
+    dg.designation_id,
+    'Meera Kulkarni',
+    'meera@brightfuture.edu',
+    '9876500003',
     'teacher123',
-    '9876500002'
-FROM institution i
-JOIN department_master d
-    ON d.department_name = 'Mathematics'
-    AND d.institution_category = 'School'
-JOIN designation_master des
-    ON des.designation_name = 'Teacher'
-    AND des.institution_category = 'School'
-WHERE i.institution_code = 'SPS001';
-
-
--- ============================================================
--- 14. TEACHERS
--- BRIGHT FUTURE COLLEGE
--- ============================================================
-
-INSERT INTO teacher
-(
-    institution_id,
-    department_id,
-    designation_id,
-    name,
-    email,
-    password,
-    mobile
-)
-SELECT
-    i.institution_id,
-    d.department_id,
-    des.designation_id,
-    'Amit Patil',
-    'amit@brightfuture.edu',
-    'teacher123',
-    '9876500003'
+    'Active'
 FROM institution i
 JOIN department_master d
     ON d.department_name = 'Computer Science'
-    AND d.institution_category = 'Degree College'
-JOIN designation_master des
-    ON des.designation_name = 'Assistant Professor'
-    AND des.institution_category = 'Degree College'
-WHERE i.institution_code = 'BFC001';
-
-
-INSERT INTO teacher
-(
-    institution_id,
-    department_id,
-    designation_id,
-    name,
-    email,
-    password,
-    mobile
-)
-SELECT
-    i.institution_id,
-    d.department_id,
-    des.designation_id,
-    'Neha Joshi',
-    'neha@brightfuture.edu',
-    'teacher123',
-    '9876500004'
-FROM institution i
-JOIN department_master d
-    ON d.department_name = 'Information Technology'
-    AND d.institution_category = 'Degree College'
-JOIN designation_master des
-    ON des.designation_name = 'Assistant Professor'
-    AND des.institution_category = 'Degree College'
+   AND d.institution_category = 'Degree College'
+JOIN designation_master dg
+    ON dg.designation_name = 'Assistant Professor'
+   AND dg.institution_category = 'Degree College'
 WHERE i.institution_code = 'BFC001';
 
 
 -- ============================================================
--- 15. PARENTS
+-- 17. PARENTS
 -- ============================================================
 
 INSERT INTO parent
 (
     institution_id,
-    name,
+    parent_name,
     email,
+    phone,
     password,
-    mobile
+    status
 )
 SELECT
     institution_id,
-    'Ramesh Sharma',
-    'ramesh@example.com',
+    'Rohan Sharma',
+    'rohan.parent@sunriseschool.edu',
+    '9876600001',
     'parent123',
-    '9876510001'
+    'Active'
 FROM institution
 WHERE institution_code = 'SPS001';
 
@@ -980,214 +1112,92 @@ WHERE institution_code = 'SPS001';
 INSERT INTO parent
 (
     institution_id,
-    name,
+    parent_name,
     email,
+    phone,
     password,
-    mobile
+    status
 )
 SELECT
     institution_id,
-    'Sunita Mehta',
-    'sunita@example.com',
+    'Aarav Patil',
+    'aarav.parent@brightfuture.edu',
+    '9876600002',
     'parent123',
-    '9876510002'
-FROM institution
-WHERE institution_code = 'SPS001';
-
-
-INSERT INTO parent
-(
-    institution_id,
-    name,
-    email,
-    password,
-    mobile
-)
-SELECT
-    institution_id,
-    'Suresh Patil',
-    'suresh@example.com',
-    'parent123',
-    '9876510003'
+    'Active'
 FROM institution
 WHERE institution_code = 'BFC001';
 
 
 -- ============================================================
--- 16. STANDARDS
--- SUNRISE PUBLIC SCHOOL
+-- 18. STUDENTS
+-- IMPORTANT:
+-- Student records are included so test attempts and answers
+-- can reference valid students.
 -- ============================================================
 
-INSERT INTO standard
-(
-    institution_id,
-    course_id,
-    standard_name,
-    academic_year
-)
-SELECT
-    i.institution_id,
-    c.course_id,
-    'Standard IX',
-    '2026-27'
-FROM institution i
-JOIN course_master c
-    ON c.course_name = 'IX'
-JOIN stream_master s
-    ON s.stream_id = c.stream_id
-    AND s.stream_name = 'English Medium'
-WHERE i.institution_code = 'SPS001';
-
-
-INSERT INTO standard
-(
-    institution_id,
-    course_id,
-    standard_name,
-    academic_year
-)
-SELECT
-    i.institution_id,
-    c.course_id,
-    'Standard X',
-    '2026-27'
-FROM institution i
-JOIN course_master c
-    ON c.course_name = 'X'
-JOIN stream_master s
-    ON s.stream_id = c.stream_id
-    AND s.stream_name = 'English Medium'
-WHERE i.institution_code = 'SPS001';
-
-
--- ============================================================
--- 17. STANDARDS
--- BRIGHT FUTURE COLLEGE
--- ============================================================
-
-INSERT INTO standard
-(
-    institution_id,
-    course_id,
-    standard_name,
-    academic_year
-)
-SELECT
-    i.institution_id,
-    c.course_id,
-    'FY',
-    '2026-27'
-FROM institution i
-JOIN course_master c
-    ON c.course_name = 'FY B Science Computer Science'
-WHERE i.institution_code = 'BFC001';
-
-
-INSERT INTO standard
-(
-    institution_id,
-    course_id,
-    standard_name,
-    academic_year
-)
-SELECT
-    i.institution_id,
-    c.course_id,
-    'SY',
-    '2026-27'
-FROM institution i
-JOIN course_master c
-    ON c.course_name = 'SY B Science Computer Science'
-WHERE i.institution_code = 'BFC001';
-
-
-INSERT INTO standard
-(
-    institution_id,
-    course_id,
-    standard_name,
-    academic_year
-)
-SELECT
-    i.institution_id,
-    c.course_id,
-    'TY',
-    '2026-27'
-FROM institution i
-JOIN course_master c
-    ON c.course_name = 'TY B Science Computer Science'
-WHERE i.institution_code = 'BFC001';
-
-
--- ============================================================
--- 18. ACTUAL SUBJECTS
--- SUNRISE - STANDARD X
--- ============================================================
-
-INSERT INTO subject
+INSERT INTO student
 (
     institution_id,
     standard_id,
-    subject_master_id,
-    subject_name,
-    assessment_type
+    parent_id,
+    student_name,
+    email,
+    phone,
+    password,
+    status
 )
 SELECT
-    st.institution_id,
+    i.institution_id,
     st.standard_id,
-    sm.subject_master_id,
-    sm.subject_name,
-    'Traditional'
-FROM standard st
-JOIN course_master c
-    ON c.course_id = st.course_id
-JOIN subject_master sm
-    ON sm.course_id = c.course_id
-WHERE st.standard_name = 'Standard X'
-AND st.institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'SPS001'
-);
+    p.parent_id,
+    'Rohan Sharma',
+    'rohan@sunriseschool.edu',
+    '9876700001',
+    'student123',
+    'Active'
+FROM institution i
+JOIN standard st
+    ON st.institution_id = i.institution_id
+   AND st.standard_name = 'IX'
+JOIN parent p
+    ON p.institution_id = i.institution_id
+   AND p.email = 'rohan.parent@sunriseschool.edu'
+WHERE i.institution_code = 'SPS001';
 
 
--- ============================================================
--- 19. ACTUAL SUBJECTS
--- BRIGHT FUTURE COLLEGE - FY
--- ============================================================
-
-INSERT INTO subject
+INSERT INTO student
 (
     institution_id,
     standard_id,
-    subject_master_id,
-    subject_name,
-    assessment_type
+    parent_id,
+    student_name,
+    email,
+    phone,
+    password,
+    status
 )
 SELECT
-    st.institution_id,
+    i.institution_id,
     st.standard_id,
-    sm.subject_master_id,
-    sm.subject_name,
-    'OBE'
-FROM standard st
-JOIN course_master c
-    ON c.course_id = st.course_id
-JOIN subject_master sm
-    ON sm.course_id = c.course_id
-WHERE st.standard_name = 'FY'
-AND st.institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'BFC001'
-);
+    p.parent_id,
+    'Aarav Patil',
+    'aarav@brightfuture.edu',
+    '9876700002',
+    'student123',
+    'Active'
+FROM institution i
+JOIN standard st
+    ON st.institution_id = i.institution_id
+   AND st.standard_name = 'FY B Science Computer Science'
+JOIN parent p
+    ON p.institution_id = i.institution_id
+   AND p.email = 'aarav.parent@brightfuture.edu'
+WHERE i.institution_code = 'BFC001';
 
 
 -- ============================================================
--- 20. TEACHER SUBJECT
--- SUNRISE
+-- 19. TEACHER - SUBJECT MAPPING
 -- ============================================================
 
 INSERT INTO teacher_subject
@@ -1200,9 +1210,11 @@ SELECT
     s.subject_id
 FROM teacher t
 JOIN subject s
-    ON s.subject_name = 'Maths'
-    AND s.institution_id = t.institution_id
-WHERE t.email = 'rahul@sunriseschool.edu';
+    ON s.institution_id = t.institution_id
+JOIN standard st
+    ON st.standard_id = s.standard_id
+WHERE t.email = 'anita@sunriseschool.edu'
+  AND st.standard_name IN ('IX', 'X');
 
 
 INSERT INTO teacher_subject
@@ -1215,29 +1227,15 @@ SELECT
     s.subject_id
 FROM teacher t
 JOIN subject s
-    ON s.subject_name = 'Science'
-    AND s.institution_id = t.institution_id
-WHERE t.email = 'priya@sunriseschool.edu';
-
-
--- ============================================================
--- 21. TEACHER SUBJECT
--- BRIGHT FUTURE COLLEGE
--- ============================================================
-
-INSERT INTO teacher_subject
-(
-    teacher_id,
-    subject_id
-)
-SELECT
-    t.teacher_id,
-    s.subject_id
-FROM teacher t
-JOIN subject s
-    ON s.subject_name = 'Computer Networks'
-    AND s.institution_id = t.institution_id
-WHERE t.email = 'amit@brightfuture.edu';
+    ON s.institution_id = t.institution_id
+JOIN standard st
+    ON st.standard_id = s.standard_id
+WHERE t.email = 'rajesh@brightjunior.edu'
+  AND st.standard_name IN
+  (
+      'FY JC Science',
+      'SY JC Science'
+  );
 
 
 INSERT INTO teacher_subject
@@ -1250,137 +1248,60 @@ SELECT
     s.subject_id
 FROM teacher t
 JOIN subject s
-    ON s.subject_name = 'Programming in Python'
-    AND s.institution_id = t.institution_id
-WHERE t.email = 'neha@brightfuture.edu';
+    ON s.institution_id = t.institution_id
+JOIN standard st
+    ON st.standard_id = s.standard_id
+WHERE t.email = 'meera@brightfuture.edu'
+  AND st.standard_name IN
+  (
+      'FY B Science Computer Science',
+      'SY B Science Computer Science',
+      'TY B Science Computer Science'
+  );
 
 
 -- ============================================================
--- 22. CHAPTERS
+-- 20. CHAPTERS
 -- ============================================================
 
 INSERT INTO chapter
 (
     subject_id,
+    chapter_name,
     chapter_number,
-    chapter_name
+    status
 )
 SELECT
-    subject_id,
+    s.subject_id,
+    'Introduction',
     1,
-    'Real Numbers'
-FROM subject
-WHERE subject_name = 'Maths'
-AND institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'SPS001'
-);
+    'Active'
+FROM subject s
+JOIN standard st
+    ON st.standard_id = s.standard_id
+WHERE st.standard_name = 'IX';
 
 
 INSERT INTO chapter
 (
     subject_id,
+    chapter_name,
     chapter_number,
-    chapter_name
+    status
 )
 SELECT
-    subject_id,
-    2,
-    'Polynomials'
-FROM subject
-WHERE subject_name = 'Maths'
-AND institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'SPS001'
-);
-
-
-INSERT INTO chapter
-(
-    subject_id,
-    chapter_number,
-    chapter_name
-)
-SELECT
-    subject_id,
+    s.subject_id,
+    'Fundamentals',
     1,
-    'Chemical Reactions'
-FROM subject
-WHERE subject_name = 'Science'
-AND institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'SPS001'
-);
-
-
-INSERT INTO chapter
-(
-    subject_id,
-    chapter_number,
-    chapter_name
-)
-SELECT
-    subject_id,
-    1,
-    'Introduction to Computer Networks'
-FROM subject
-WHERE subject_name = 'Computer Networks'
-AND institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'BFC001'
-);
-
-
-INSERT INTO chapter
-(
-    subject_id,
-    chapter_number,
-    chapter_name
-)
-SELECT
-    subject_id,
-    2,
-    'Network Models'
-FROM subject
-WHERE subject_name = 'Computer Networks'
-AND institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'BFC001'
-);
-
-
-INSERT INTO chapter
-(
-    subject_id,
-    chapter_number,
-    chapter_name
-)
-SELECT
-    subject_id,
-    1,
-    'Python Basics'
-FROM subject
-WHERE subject_name = 'Programming in Python'
-AND institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'BFC001'
-);
+    'Active'
+FROM subject s
+JOIN standard st
+    ON st.standard_id = s.standard_id
+WHERE st.standard_name = 'FY B Science Computer Science';
 
 
 -- ============================================================
--- 23. COURSE OUTCOMES
+-- 21. COURSE OUTCOMES
 -- ============================================================
 
 INSERT INTO course_outcome
@@ -1390,17 +1311,13 @@ INSERT INTO course_outcome
     co_description
 )
 SELECT
-    subject_id,
+    s.subject_id,
     'CO1',
-    'Understand fundamental concepts of computer networks'
-FROM subject
-WHERE subject_name = 'Computer Networks'
-AND institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'BFC001'
-);
+    'Understand the fundamental concepts of the subject.'
+FROM subject s
+JOIN standard st
+    ON st.standard_id = s.standard_id
+WHERE st.standard_name = 'IX';
 
 
 INSERT INTO course_outcome
@@ -1410,47 +1327,22 @@ INSERT INTO course_outcome
     co_description
 )
 SELECT
-    subject_id,
-    'CO2',
-    'Explain different network models and protocols'
-FROM subject
-WHERE subject_name = 'Computer Networks'
-AND institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'BFC001'
-);
-
-
-INSERT INTO course_outcome
-(
-    subject_id,
-    co_code,
-    co_description
-)
-SELECT
-    subject_id,
-    'CO3',
-    'Apply networking concepts to solve basic problems'
-FROM subject
-WHERE subject_name = 'Computer Networks'
-AND institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'BFC001'
-);
+    s.subject_id,
+    'CO1',
+    'Understand fundamental concepts of Computer Science.'
+FROM subject s
+JOIN standard st
+    ON st.standard_id = s.standard_id
+WHERE st.standard_name = 'FY B Science Computer Science';
 
 
 -- ============================================================
--- 24. QUESTIONS
+-- 22. QUESTIONS
 -- ============================================================
 
 INSERT INTO question
 (
-    institution_id,
-    teacher_id,
+    subject_id,
     chapter_id,
     co_id,
     question_text,
@@ -1458,54 +1350,42 @@ INSERT INTO question
     option_b,
     option_c,
     option_d,
-    correct_option,
+    correct_answer,
     difficulty,
-    source,
-    marks
+    marks,
+    question_type,
+    is_pyq,
+    status
 )
 SELECT
-    i.institution_id,
-    t.teacher_id,
+    s.subject_id,
     ch.chapter_id,
     co.co_id,
-
-    'Which layer of the OSI model is responsible for routing?',
-
-    'Physical',
-    'Network',
-    'Transport',
-    'Session',
-
-    'B',
+    'Which of the following is a fundamental concept?',
+    'Option A',
+    'Option B',
+    'Option C',
+    'Option D',
+    'A',
     'Easy',
-    'Teacher',
-    1
-
-FROM institution i
-
-JOIN teacher t
-    ON t.institution_id = i.institution_id
-    AND t.email = 'amit@brightfuture.edu'
-
+    1,
+    'MCQ',
+    FALSE,
+    'Active'
+FROM subject s
+JOIN standard st
+    ON st.standard_id = s.standard_id
 JOIN chapter ch
-    ON ch.chapter_name = 'Network Models'
-
-JOIN subject s
-    ON s.subject_id = ch.subject_id
-    AND s.subject_name = 'Computer Networks'
-    AND s.institution_id = i.institution_id
-
+    ON ch.subject_id = s.subject_id
 JOIN course_outcome co
     ON co.subject_id = s.subject_id
-    AND co.co_code = 'CO2'
-
-WHERE i.institution_code = 'BFC001';
+WHERE st.standard_name = 'IX'
+LIMIT 1;
 
 
 INSERT INTO question
 (
-    institution_id,
-    teacher_id,
+    subject_id,
     chapter_id,
     co_id,
     question_text,
@@ -1513,351 +1393,304 @@ INSERT INTO question
     option_b,
     option_c,
     option_d,
-    correct_option,
+    correct_answer,
     difficulty,
-    source,
-    marks
+    marks,
+    question_type,
+    is_pyq,
+    status
 )
 SELECT
-    i.institution_id,
-    t.teacher_id,
+    s.subject_id,
     ch.chapter_id,
     co.co_id,
-
-    'Which protocol is connection oriented?',
-
-    'UDP',
-    'IP',
-    'TCP',
-    'ARP',
-
-    'C',
-    'Medium',
-    'Teacher',
-    1
-
-FROM institution i
-
-JOIN teacher t
-    ON t.institution_id = i.institution_id
-    AND t.email = 'amit@brightfuture.edu'
-
+    'What is the primary purpose of a computer program?',
+    'To process instructions',
+    'To store only images',
+    'To display advertisements',
+    'None of these',
+    'A',
+    'Easy',
+    1,
+    'MCQ',
+    FALSE,
+    'Active'
+FROM subject s
+JOIN standard st
+    ON st.standard_id = s.standard_id
 JOIN chapter ch
-    ON ch.chapter_name = 'Introduction to Computer Networks'
-
-JOIN subject s
-    ON s.subject_id = ch.subject_id
-    AND s.subject_name = 'Computer Networks'
-    AND s.institution_id = i.institution_id
-
+    ON ch.subject_id = s.subject_id
 JOIN course_outcome co
     ON co.subject_id = s.subject_id
-    AND co.co_code = 'CO1'
-
-WHERE i.institution_code = 'BFC001';
+WHERE st.standard_name = 'FY B Science Computer Science'
+LIMIT 1;
 
 
 -- ============================================================
--- 25. TEST
+-- 23. TEST
 -- ============================================================
 
 INSERT INTO test
 (
-    institution_id,
     teacher_id,
-    standard_id,
     subject_id,
     test_name,
-    total_questions,
+    description,
     total_marks,
-    easy_count,
-    medium_count,
-    hard_count,
-    duration,
-    instructions,
-    status,
-    test_date
+    duration_minutes,
+    start_datetime,
+    end_datetime,
+    status
 )
 SELECT
-    i.institution_id,
     t.teacher_id,
-    st.standard_id,
     s.subject_id,
-
-    'Computer Networks Unit Test 1',
-
-    2,
-    2,
-    1,
-    1,
-    0,
-
-    20,
-
-    'Answer all questions.',
-
-    'Published',
-
-    '2026-08-25 10:00:00'
-
-FROM institution i
-
-JOIN teacher t
-    ON t.institution_id = i.institution_id
-    AND t.email = 'amit@brightfuture.edu'
-
-JOIN standard st
-    ON st.institution_id = i.institution_id
-    AND st.standard_name = 'FY'
-
+    'Unit Test 1',
+    'Sample assessment test',
+    10,
+    30,
+    '2026-09-05 10:00:00',
+    '2026-09-05 11:00:00',
+    'Published'
+FROM teacher t
 JOIN subject s
-    ON s.standard_id = st.standard_id
-    AND s.subject_name = 'Computer Networks'
-
-WHERE i.institution_code = 'BFC001';
+    ON s.institution_id = t.institution_id
+JOIN standard st
+    ON st.standard_id = s.standard_id
+WHERE t.email = 'anita@sunriseschool.edu'
+  AND st.standard_name = 'IX'
+LIMIT 1;
 
 
 -- ============================================================
--- 26. TEST QUESTIONS
+-- 24. TEST - QUESTION
 -- ============================================================
 
 INSERT INTO test_question
 (
     test_id,
-    question_id
+    question_id,
+    question_order
 )
 SELECT
     t.test_id,
-    q.question_id
+    q.question_id,
+    1
 FROM test t
 JOIN question q
-    ON q.institution_id = t.institution_id
-JOIN chapter ch
-    ON ch.chapter_id = q.chapter_id
-JOIN subject s
-    ON s.subject_id = ch.subject_id
-    AND s.subject_id = t.subject_id
-WHERE t.test_name = 'Computer Networks Unit Test 1'
-AND t.institution_id =
-(
-    SELECT institution_id
-    FROM institution
-    WHERE institution_code = 'BFC001'
-)
-ORDER BY q.question_id
-LIMIT 2;
+    ON q.subject_id = t.subject_id
+LIMIT 1;
 
 
 -- ============================================================
--- 27. TEST ATTEMPT
+-- 25. TEST ATTEMPT
 -- ============================================================
 
 INSERT INTO test_attempt
 (
     test_id,
     student_id,
-    start_time,
-    end_time,
+    started_at,
+    submitted_at,
     score,
-    percentage,
-    attempt_status,
-    submitted_at
+    status
 )
 SELECT
     t.test_id,
     s.student_id,
-
-    '2026-08-25 10:00:00',
-    '2026-08-25 10:15:00',
-
-    2,
-    100,
-
-    'Completed',
-
-    '2026-08-25 10:15:00'
-
+    '2026-09-05 10:05:00',
+    '2026-09-05 10:20:00',
+    1,
+    'Submitted'
 FROM test t
-
 JOIN student s
-    ON s.institution_id = t.institution_id
-    AND s.email = 'rohan@brightfuture.edu'
-
-WHERE t.test_name = 'Computer Networks Unit Test 1';
+    ON s.email = 'rohan@sunriseschool.edu'
+LIMIT 1;
 
 
 -- ============================================================
--- 28. STUDENT ANSWERS
+-- 26. STUDENT ANSWER
 -- ============================================================
 
 INSERT INTO student_answer
 (
     attempt_id,
     question_id,
-    selected_option,
+    selected_answer,
     is_correct,
     marks_obtained
 )
 SELECT
     ta.attempt_id,
-    q.question_id,
-    q.correct_option,
+    tq.question_id,
+    q.correct_answer,
     TRUE,
     q.marks
-
 FROM test_attempt ta
-
 JOIN test_question tq
     ON tq.test_id = ta.test_id
-
 JOIN question q
     ON q.question_id = tq.question_id
-
-JOIN student s
-    ON s.student_id = ta.student_id
-
-WHERE s.email = 'rohan@brightfuture.edu'
-AND ta.test_id =
+WHERE ta.student_id =
 (
-    SELECT test_id
-    FROM test
-    WHERE test_name = 'Computer Networks Unit Test 1'
-);
+    SELECT student_id
+    FROM student
+    WHERE email = 'rohan@sunriseschool.edu'
+)
+LIMIT 1;
 
 
 -- ============================================================
--- 29. LOGIN HISTORY
+-- 27. LOGIN HISTORY
 -- ============================================================
 
 INSERT INTO login_history
 (
-    institution_id,
     user_role,
     user_id,
-    ip_address,
-    device_info
+    institution_id,
+    login_time,
+    logout_time,
+    ip_address
 )
 SELECT
-    i.institution_id,
     'Admin',
-    a.admin_id,
-    '127.0.0.1',
-    'Chrome on Windows'
-FROM institution i
-JOIN admin a
-    ON a.institution_id = i.institution_id
-WHERE i.institution_code = 'SPS001';
+    admin_id,
+    NULL,
+    '2026-09-01 09:00:00',
+    '2026-09-01 10:00:00',
+    '127.0.0.1'
+FROM admin
+WHERE email = 'admin@edumate.com';
 
 
 INSERT INTO login_history
 (
-    institution_id,
     user_role,
     user_id,
-    ip_address,
-    device_info
+    institution_id,
+    login_time,
+    logout_time,
+    ip_address
 )
 SELECT
-    i.institution_id,
     'Teacher',
     t.teacher_id,
-    '127.0.0.1',
-    'Chrome on Windows'
-FROM institution i
-JOIN teacher t
-    ON t.institution_id = i.institution_id
-    AND t.email = 'amit@brightfuture.edu'
-WHERE i.institution_code = 'BFC001';
-
-
-INSERT INTO login_history
-(
-    institution_id,
-    user_role,
-    user_id,
-    ip_address,
-    device_info
-)
-SELECT
-    i.institution_id,
-    'Student',
-    s.student_id,
-    '127.0.0.1',
-    'Chrome on Windows'
-FROM institution i
-JOIN student s
-    ON s.institution_id = i.institution_id
-    AND s.email = 'rohan@brightfuture.edu'
-WHERE i.institution_code = 'BFC001';
+    t.institution_id,
+    '2026-09-01 10:00:00',
+    '2026-09-01 11:00:00',
+    '127.0.0.1'
+FROM teacher t
+WHERE t.email = 'anita@sunriseschool.edu';
 
 
 -- ============================================================
--- 30. NOTIFICATIONS
+-- 28. NOTIFICATIONS
 -- ============================================================
 
 INSERT INTO notification
 (
-    institution_id,
     user_role,
     user_id,
+    institution_id,
     title,
-    message
+    message,
+    is_read
 )
 SELECT
-    i.institution_id,
+    'Teacher',
+    t.teacher_id,
+    t.institution_id,
+    'Welcome to EduMate',
+    'Your teacher account has been successfully created.',
+    FALSE
+FROM teacher t
+WHERE t.email = 'anita@sunriseschool.edu';
+
+
+INSERT INTO notification
+(
+    user_role,
+    user_id,
+    institution_id,
+    title,
+    message,
+    is_read
+)
+SELECT
     'Student',
     s.student_id,
+    s.institution_id,
     'New Test Available',
-    'Computer Networks Unit Test 1 is now available.'
-FROM institution i
-JOIN student s
-    ON s.institution_id = i.institution_id
-    AND s.email = 'rohan@brightfuture.edu'
-WHERE i.institution_code = 'BFC001';
-
-
-INSERT INTO notification
-(
-    institution_id,
-    user_role,
-    user_id,
-    title,
-    message
-)
-SELECT
-    i.institution_id,
-    'Teacher',
-    t.teacher_id,
-    'Test Published',
-    'Your Computer Networks Unit Test 1 has been published successfully.'
-FROM institution i
-JOIN teacher t
-    ON t.institution_id = i.institution_id
-    AND t.email = 'amit@brightfuture.edu'
-WHERE i.institution_code = 'BFC001';
-
-
-INSERT INTO notification
-(
-    institution_id,
-    user_role,
-    user_id,
-    title,
-    message
-)
-SELECT
-    i.institution_id,
-    'Student',
-    s.student_id,
-    'Welcome',
-    'Welcome to EduMate.'
-FROM institution i
-JOIN student s
-    ON s.institution_id = i.institution_id
-    AND s.email = 'aarav@sunriseschool.edu'
-WHERE i.institution_code = 'SPS001';
+    'A new test has been published for your subject.',
+    FALSE
+FROM student s
+WHERE s.email = 'rohan@sunriseschool.edu';
 
 
 -- ============================================================
--- END OF V3.3 INSERT SCRIPT
+-- VERIFICATION QUERIES
+-- ============================================================
+
+-- Courses should now show I-X only ONCE.
+
+SELECT
+    course_id,
+    course_name,
+    institution_category
+FROM course_master
+ORDER BY institution_category, course_id;
+
+
+-- Show course-stream mappings
+
+SELECT
+    c.course_name,
+    c.institution_category,
+    s.stream_name
+FROM course_stream cs
+JOIN course_master c
+    ON c.course_id = cs.course_id
+JOIN stream_master s
+    ON s.stream_id = cs.stream_id
+ORDER BY
+    c.institution_category,
+    c.course_id,
+    s.stream_name;
+
+
+-- Show institution-course mappings
+
+SELECT
+    i.institution_name,
+    i.institution_category,
+    c.course_name
+FROM institution_course ic
+JOIN institution i
+    ON i.institution_id = ic.institution_id
+JOIN course_master c
+    ON c.course_id = ic.course_id
+ORDER BY
+    i.institution_id,
+    c.course_id;
+
+
+-- Show institution-stream mappings
+
+SELECT
+    i.institution_name,
+    i.institution_category,
+    s.stream_name
+FROM institution_stream ins
+JOIN institution i
+    ON i.institution_id = ins.institution_id
+JOIN stream_master s
+    ON s.stream_id = ins.stream_id
+ORDER BY
+    i.institution_id,
+    s.stream_name;
+
+
+-- ============================================================
+-- INSERT DATA COMPLETE
 -- ============================================================

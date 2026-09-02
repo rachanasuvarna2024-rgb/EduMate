@@ -1,6 +1,6 @@
 -- ============================================================
 -- EDUMATE DATABASE VERSION 3.3
--- COMPLETE DATABASE CREATION SCRIPT
+-- Institution Management + Academic Structure
 -- ============================================================
 
 DROP DATABASE IF EXISTS edumate_db3_3;
@@ -11,7 +11,31 @@ USE edumate_db3_3;
 
 
 -- ============================================================
--- 1. INSTITUTION MASTER
+-- 1. ADMIN TABLE
+-- ============================================================
+
+CREATE TABLE admin
+(
+    admin_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    admin_name VARCHAR(100) NOT NULL,
+
+    email VARCHAR(150) NOT NULL UNIQUE,
+
+    password VARCHAR(255) NOT NULL,
+
+    status ENUM('Active','Inactive')
+        DEFAULT 'Active',
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+-- ============================================================
+-- 2. INSTITUTION MASTER TABLE
 -- ============================================================
 
 CREATE TABLE institution
@@ -33,17 +57,17 @@ CREATE TABLE institution
         'OBE'
     ) NOT NULL,
 
-    address VARCHAR(255) NOT NULL,
+    address VARCHAR(255),
 
-    city VARCHAR(100) NOT NULL,
+    city VARCHAR(100),
 
-    state VARCHAR(100) NOT NULL,
+    state VARCHAR(100),
 
-    pincode VARCHAR(10) NOT NULL,
+    pincode VARCHAR(10),
 
-    email VARCHAR(150) NOT NULL UNIQUE,
+    email VARCHAR(150) UNIQUE,
 
-    phone VARCHAR(20) NOT NULL,
+    phone VARCHAR(20),
 
     website VARCHAR(200),
 
@@ -62,24 +86,7 @@ CREATE TABLE institution
 
 
 -- ============================================================
--- 2. STREAM MASTER
--- Global list of streams
---
--- School:
---   English Medium
---   Hindi Medium
---   Marathi Medium
---   Kannada Medium
---
--- Jr College:
---   Arts
---   Science
---   Commerce
---
--- Degree College:
---   Arts
---   Science
---   Commerce
+-- 3. STREAM MASTER TABLE
 -- ============================================================
 
 CREATE TABLE stream_master
@@ -112,9 +119,13 @@ CREATE TABLE stream_master
 
 
 -- ============================================================
--- 3. COURSE MASTER
--- Global list of courses
--- Every course belongs to a stream.
+-- 4. COURSE MASTER TABLE
+-- IMPORTANT:
+-- A course is NOT directly linked to one stream.
+-- A course can belong to multiple streams.
+-- Example:
+-- I can belong to English Medium, Hindi Medium,
+-- Marathi Medium and Kannada Medium.
 -- ============================================================
 
 CREATE TABLE course_master
@@ -122,8 +133,6 @@ CREATE TABLE course_master
     course_id INT AUTO_INCREMENT PRIMARY KEY,
 
     course_name VARCHAR(200) NOT NULL,
-
-    stream_id INT NOT NULL,
 
     institution_category ENUM(
         'School',
@@ -141,22 +150,48 @@ CREATE TABLE course_master
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
 
+    UNIQUE (
+        course_name,
+        institution_category
+    )
+);
+
+
+-- ============================================================
+-- 5. COURSE - STREAM MAPPING TABLE
+-- Many-to-Many relationship
+--
+-- One course can belong to many streams.
+-- One stream can contain many courses.
+-- ============================================================
+
+CREATE TABLE course_stream
+(
+    course_stream_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    course_id INT NOT NULL,
+
+    stream_id INT NOT NULL,
+
+    FOREIGN KEY (course_id)
+        REFERENCES course_master(course_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
     FOREIGN KEY (stream_id)
         REFERENCES stream_master(stream_id)
         ON UPDATE CASCADE
         ON DELETE RESTRICT,
 
     UNIQUE (
-        course_name,
+        course_id,
         stream_id
     )
 );
 
 
 -- ============================================================
--- 4. SUBJECT MASTER
--- Global list of subjects
--- Every subject belongs to a course.
+-- 6. SUBJECT MASTER TABLE
 -- ============================================================
 
 CREATE TABLE subject_master
@@ -196,7 +231,7 @@ CREATE TABLE subject_master
 
 
 -- ============================================================
--- 5. DEPARTMENT MASTER
+-- 7. DEPARTMENT MASTER TABLE
 -- ============================================================
 
 CREATE TABLE department_master
@@ -229,7 +264,7 @@ CREATE TABLE department_master
 
 
 -- ============================================================
--- 6. DESIGNATION MASTER
+-- 8. DESIGNATION MASTER TABLE
 -- ============================================================
 
 CREATE TABLE designation_master
@@ -262,8 +297,7 @@ CREATE TABLE designation_master
 
 
 -- ============================================================
--- 7. INSTITUTION STREAM
--- Which streams are offered by an institution
+-- 9. INSTITUTION - STREAM MAPPING
 -- ============================================================
 
 CREATE TABLE institution_stream
@@ -276,13 +310,13 @@ CREATE TABLE institution_stream
 
     FOREIGN KEY (institution_id)
         REFERENCES institution(institution_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
 
     FOREIGN KEY (stream_id)
         REFERENCES stream_master(stream_id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE,
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
 
     UNIQUE (
         institution_id,
@@ -292,8 +326,7 @@ CREATE TABLE institution_stream
 
 
 -- ============================================================
--- 8. INSTITUTION COURSE
--- Which courses are offered by an institution
+-- 10. INSTITUTION - COURSE MAPPING
 -- ============================================================
 
 CREATE TABLE institution_course
@@ -306,13 +339,13 @@ CREATE TABLE institution_course
 
     FOREIGN KEY (institution_id)
         REFERENCES institution(institution_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
 
     FOREIGN KEY (course_id)
         REFERENCES course_master(course_id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE,
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
 
     UNIQUE (
         institution_id,
@@ -322,8 +355,7 @@ CREATE TABLE institution_course
 
 
 -- ============================================================
--- 9. INSTITUTION SUBJECT
--- Which subjects are offered by an institution
+-- 11. INSTITUTION - SUBJECT MAPPING
 -- ============================================================
 
 CREATE TABLE institution_subject
@@ -336,13 +368,13 @@ CREATE TABLE institution_subject
 
     FOREIGN KEY (institution_id)
         REFERENCES institution(institution_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
 
     FOREIGN KEY (subject_master_id)
         REFERENCES subject_master(subject_master_id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE,
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
 
     UNIQUE (
         institution_id,
@@ -352,7 +384,7 @@ CREATE TABLE institution_subject
 
 
 -- ============================================================
--- 10. INSTITUTION DEPARTMENT
+-- 12. INSTITUTION - DEPARTMENT MAPPING
 -- ============================================================
 
 CREATE TABLE institution_department
@@ -365,10 +397,12 @@ CREATE TABLE institution_department
 
     FOREIGN KEY (institution_id)
         REFERENCES institution(institution_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     FOREIGN KEY (department_id)
         REFERENCES department_master(department_id)
+        ON UPDATE CASCADE
         ON DELETE RESTRICT,
 
     UNIQUE (
@@ -379,7 +413,7 @@ CREATE TABLE institution_department
 
 
 -- ============================================================
--- 11. INSTITUTION DESIGNATION
+-- 13. INSTITUTION - DESIGNATION MAPPING
 -- ============================================================
 
 CREATE TABLE institution_designation
@@ -392,10 +426,12 @@ CREATE TABLE institution_designation
 
     FOREIGN KEY (institution_id)
         REFERENCES institution(institution_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     FOREIGN KEY (designation_id)
         REFERENCES designation_master(designation_id)
+        ON UPDATE CASCADE
         ON DELETE RESTRICT,
 
     UNIQUE (
@@ -406,98 +442,7 @@ CREATE TABLE institution_designation
 
 
 -- ============================================================
--- 12. ADMIN
--- ============================================================
-
-CREATE TABLE admin
-(
-    admin_id INT AUTO_INCREMENT PRIMARY KEY,
-
-    institution_id INT NOT NULL,
-
-    name VARCHAR(100) NOT NULL,
-
-    email VARCHAR(100) NOT NULL UNIQUE,
-
-    password VARCHAR(255) NOT NULL,
-
-    FOREIGN KEY (institution_id)
-        REFERENCES institution(institution_id)
-        ON DELETE CASCADE
-);
-
-
--- ============================================================
--- 13. TEACHER
--- ============================================================
-
-CREATE TABLE teacher
-(
-    teacher_id INT AUTO_INCREMENT PRIMARY KEY,
-
-    institution_id INT NOT NULL,
-
-    department_id INT,
-
-    designation_id INT,
-
-    name VARCHAR(100) NOT NULL,
-
-    email VARCHAR(100) NOT NULL UNIQUE,
-
-    password VARCHAR(255) NOT NULL,
-
-    mobile VARCHAR(15),
-
-    FOREIGN KEY (institution_id)
-        REFERENCES institution(institution_id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (department_id)
-        REFERENCES department_master(department_id)
-        ON DELETE SET NULL,
-
-    FOREIGN KEY (designation_id)
-        REFERENCES designation_master(designation_id)
-        ON DELETE SET NULL
-);
-
-
--- ============================================================
--- 14. PARENT
--- ============================================================
-
-CREATE TABLE parent
-(
-    parent_id INT AUTO_INCREMENT PRIMARY KEY,
-
-    institution_id INT NOT NULL,
-
-    name VARCHAR(100) NOT NULL,
-
-    email VARCHAR(100) NOT NULL UNIQUE,
-
-    password VARCHAR(255) NOT NULL,
-
-    mobile VARCHAR(15),
-
-    FOREIGN KEY (institution_id)
-        REFERENCES institution(institution_id)
-        ON DELETE CASCADE
-);
-
-
--- ============================================================
--- 15. STANDARD
---
--- Represents the actual academic class/year inside
--- an institution.
---
--- Example:
--- Institution = Sunrise Public School
--- Course = IX
--- Standard = Standard IX
--- Academic Year = 2026-27
+-- 14. STANDARD TABLE
 -- ============================================================
 
 CREATE TABLE standard
@@ -514,10 +459,12 @@ CREATE TABLE standard
 
     FOREIGN KEY (institution_id)
         REFERENCES institution(institution_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     FOREIGN KEY (course_id)
         REFERENCES course_master(course_id)
+        ON UPDATE CASCADE
         ON DELETE RESTRICT,
 
     UNIQUE (
@@ -529,13 +476,8 @@ CREATE TABLE standard
 
 
 -- ============================================================
--- 16. SUBJECT
---
--- Actual subject configured for a particular institution
--- and standard.
---
--- subject_master = global definition
--- subject        = institution-specific implementation
+-- 15. SUBJECT TABLE
+-- Institution-specific subject
 -- ============================================================
 
 CREATE TABLE subject
@@ -544,7 +486,7 @@ CREATE TABLE subject
 
     institution_id INT NOT NULL,
 
-    standard_id INT NOT NULL,
+    standard_id INT,
 
     subject_master_id INT,
 
@@ -555,27 +497,104 @@ CREATE TABLE subject
         'OBE'
     ) DEFAULT 'Traditional',
 
+    status ENUM(
+        'Active',
+        'Inactive'
+    ) DEFAULT 'Active',
+
     FOREIGN KEY (institution_id)
         REFERENCES institution(institution_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     FOREIGN KEY (standard_id)
         REFERENCES standard(standard_id)
-        ON DELETE CASCADE,
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
 
     FOREIGN KEY (subject_master_id)
         REFERENCES subject_master(subject_master_id)
-        ON DELETE SET NULL,
-
-    UNIQUE (
-        standard_id,
-        subject_name
-    )
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
 );
 
 
 -- ============================================================
--- 17. STUDENT
+-- 16. TEACHER TABLE
+-- ============================================================
+
+CREATE TABLE teacher
+(
+    teacher_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    institution_id INT NOT NULL,
+
+    department_id INT,
+
+    designation_id INT,
+
+    teacher_name VARCHAR(100) NOT NULL,
+
+    email VARCHAR(150) NOT NULL UNIQUE,
+
+    phone VARCHAR(20),
+
+    password VARCHAR(255) NOT NULL,
+
+    status ENUM(
+        'Active',
+        'Inactive'
+    ) DEFAULT 'Active',
+
+    FOREIGN KEY (institution_id)
+        REFERENCES institution(institution_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (department_id)
+        REFERENCES department_master(department_id)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+
+    FOREIGN KEY (designation_id)
+        REFERENCES designation_master(designation_id)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
+);
+
+
+-- ============================================================
+-- 17. PARENT TABLE
+-- ============================================================
+
+CREATE TABLE parent
+(
+    parent_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    institution_id INT NOT NULL,
+
+    parent_name VARCHAR(100) NOT NULL,
+
+    email VARCHAR(150) NOT NULL UNIQUE,
+
+    phone VARCHAR(20),
+
+    password VARCHAR(255) NOT NULL,
+
+    status ENUM(
+        'Active',
+        'Inactive'
+    ) DEFAULT 'Active',
+
+    FOREIGN KEY (institution_id)
+        REFERENCES institution(institution_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+);
+
+
+-- ============================================================
+-- 18. STUDENT TABLE
 -- ============================================================
 
 CREATE TABLE student
@@ -584,40 +603,42 @@ CREATE TABLE student
 
     institution_id INT NOT NULL,
 
-    parent_id INT NOT NULL,
+    standard_id INT,
 
-    standard_id INT NOT NULL,
+    parent_id INT,
 
-    admission_no VARCHAR(30) UNIQUE,
+    student_name VARCHAR(100) NOT NULL,
 
-    roll_no VARCHAR(20) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
 
-    division VARCHAR(10),
-
-    name VARCHAR(100) NOT NULL,
-
-    email VARCHAR(100) NOT NULL UNIQUE,
+    phone VARCHAR(20),
 
     password VARCHAR(255) NOT NULL,
 
-    mobile VARCHAR(15),
+    status ENUM(
+        'Active',
+        'Inactive'
+    ) DEFAULT 'Active',
 
     FOREIGN KEY (institution_id)
         REFERENCES institution(institution_id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (parent_id)
-        REFERENCES parent(parent_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     FOREIGN KEY (standard_id)
         REFERENCES standard(standard_id)
-        ON DELETE CASCADE
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+
+    FOREIGN KEY (parent_id)
+        REFERENCES parent(parent_id)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
 );
 
 
 -- ============================================================
--- 18. TEACHER_SUBJECT
+-- 19. TEACHER - SUBJECT MAPPING
 -- ============================================================
 
 CREATE TABLE teacher_subject
@@ -630,10 +651,12 @@ CREATE TABLE teacher_subject
 
     FOREIGN KEY (teacher_id)
         REFERENCES teacher(teacher_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     FOREIGN KEY (subject_id)
         REFERENCES subject(subject_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     UNIQUE (
@@ -644,7 +667,7 @@ CREATE TABLE teacher_subject
 
 
 -- ============================================================
--- 19. CHAPTER
+-- 20. CHAPTER TABLE
 -- ============================================================
 
 CREATE TABLE chapter
@@ -653,23 +676,24 @@ CREATE TABLE chapter
 
     subject_id INT NOT NULL,
 
+    chapter_name VARCHAR(200) NOT NULL,
+
     chapter_number INT,
 
-    chapter_name VARCHAR(200) NOT NULL,
+    status ENUM(
+        'Active',
+        'Inactive'
+    ) DEFAULT 'Active',
 
     FOREIGN KEY (subject_id)
         REFERENCES subject(subject_id)
-        ON DELETE CASCADE,
-
-    UNIQUE (
-        subject_id,
-        chapter_number
-    )
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
 );
 
 
 -- ============================================================
--- 20. COURSE OUTCOME
+-- 21. COURSE OUTCOME TABLE
 -- ============================================================
 
 CREATE TABLE course_outcome
@@ -680,10 +704,11 @@ CREATE TABLE course_outcome
 
     co_code VARCHAR(20) NOT NULL,
 
-    co_description VARCHAR(255) NOT NULL,
+    co_description VARCHAR(500) NOT NULL,
 
     FOREIGN KEY (subject_id)
         REFERENCES subject(subject_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     UNIQUE (
@@ -694,101 +719,93 @@ CREATE TABLE course_outcome
 
 
 -- ============================================================
--- 21. QUESTION
+-- 22. QUESTION TABLE
 -- ============================================================
 
 CREATE TABLE question
 (
     question_id INT AUTO_INCREMENT PRIMARY KEY,
 
-    institution_id INT NOT NULL,
+    subject_id INT NOT NULL,
 
-    teacher_id INT NOT NULL,
+    chapter_id INT,
 
-    chapter_id INT NOT NULL,
-
-    co_id INT NULL,
+    co_id INT,
 
     question_text TEXT NOT NULL,
 
-    option_a VARCHAR(255) NOT NULL,
+    option_a VARCHAR(500),
 
-    option_b VARCHAR(255) NOT NULL,
+    option_b VARCHAR(500),
 
-    option_c VARCHAR(255) NOT NULL,
+    option_c VARCHAR(500),
 
-    option_d VARCHAR(255) NOT NULL,
+    option_d VARCHAR(500),
 
-    correct_option CHAR(1) NOT NULL,
+    correct_answer CHAR(1),
 
     difficulty ENUM(
         'Easy',
         'Medium',
         'Hard'
-    ) NOT NULL,
+    ) DEFAULT 'Medium',
 
-    source ENUM(
-        'Teacher',
-        'PYQ'
-    ) DEFAULT 'Teacher',
+    marks DECIMAL(5,2) DEFAULT 1,
 
-    marks INT DEFAULT 1,
+    question_type ENUM(
+        'MCQ',
+        'True/False',
+        'Short Answer',
+        'Long Answer'
+    ) DEFAULT 'MCQ',
 
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_pyq BOOLEAN DEFAULT FALSE,
 
-    FOREIGN KEY (institution_id)
-        REFERENCES institution(institution_id)
-        ON DELETE CASCADE,
+    status ENUM(
+        'Active',
+        'Inactive'
+    ) DEFAULT 'Active',
 
-    FOREIGN KEY (teacher_id)
-        REFERENCES teacher(teacher_id)
+    FOREIGN KEY (subject_id)
+        REFERENCES subject(subject_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     FOREIGN KEY (chapter_id)
         REFERENCES chapter(chapter_id)
-        ON DELETE CASCADE,
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
 
     FOREIGN KEY (co_id)
         REFERENCES course_outcome(co_id)
-        ON DELETE SET NULL,
-
-    CHECK (
-        correct_option IN ('A','B','C','D')
-    )
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
 );
 
 
 -- ============================================================
--- 22. TEST
+-- 23. TEST TABLE
 -- ============================================================
 
 CREATE TABLE test
 (
     test_id INT AUTO_INCREMENT PRIMARY KEY,
 
-    institution_id INT NOT NULL,
-
     teacher_id INT NOT NULL,
-
-    standard_id INT NOT NULL,
 
     subject_id INT NOT NULL,
 
-    test_name VARCHAR(150) NOT NULL,
+    test_name VARCHAR(200) NOT NULL,
 
-    total_questions INT NOT NULL,
+    description TEXT,
 
-    total_marks INT NOT NULL,
+    total_marks DECIMAL(7,2),
 
-    easy_count INT DEFAULT 0,
+    duration_minutes INT,
 
-    medium_count INT DEFAULT 0,
+    start_datetime DATETIME,
 
-    hard_count INT DEFAULT 0,
-
-    duration INT NOT NULL,
-
-    instructions TEXT,
+    end_datetime DATETIME,
 
     status ENUM(
         'Draft',
@@ -796,44 +813,40 @@ CREATE TABLE test
         'Closed'
     ) DEFAULT 'Draft',
 
-    test_date DATETIME,
-
-    FOREIGN KEY (institution_id)
-        REFERENCES institution(institution_id)
-        ON DELETE CASCADE,
-
     FOREIGN KEY (teacher_id)
         REFERENCES teacher(teacher_id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (standard_id)
-        REFERENCES standard(standard_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     FOREIGN KEY (subject_id)
         REFERENCES subject(subject_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE
 );
 
 
 -- ============================================================
--- 23. TEST_QUESTION
+-- 24. TEST - QUESTION MAPPING
 -- ============================================================
 
 CREATE TABLE test_question
 (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    test_question_id INT AUTO_INCREMENT PRIMARY KEY,
 
     test_id INT NOT NULL,
 
     question_id INT NOT NULL,
 
+    question_order INT,
+
     FOREIGN KEY (test_id)
         REFERENCES test(test_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     FOREIGN KEY (question_id)
         REFERENCES question(question_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     UNIQUE (
@@ -844,7 +857,7 @@ CREATE TABLE test_question
 
 
 -- ============================================================
--- 24. TEST_ATTEMPT
+-- 25. TEST ATTEMPT TABLE
 -- ============================================================
 
 CREATE TABLE test_attempt
@@ -855,33 +868,31 @@ CREATE TABLE test_attempt
 
     student_id INT NOT NULL,
 
-    start_time DATETIME,
+    started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    end_time DATETIME,
+    submitted_at DATETIME,
 
-    score DECIMAL(5,2),
+    score DECIMAL(7,2),
 
-    percentage DECIMAL(5,2),
-
-    attempt_status ENUM(
-        'Completed',
-        'Auto Submitted'
-    ) DEFAULT 'Completed',
-
-    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status ENUM(
+        'In Progress',
+        'Submitted'
+    ) DEFAULT 'In Progress',
 
     FOREIGN KEY (test_id)
         REFERENCES test(test_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     FOREIGN KEY (student_id)
         REFERENCES student(student_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE
 );
 
 
 -- ============================================================
--- 25. STUDENT_ANSWER
+-- 26. STUDENT ANSWER TABLE
 -- ============================================================
 
 CREATE TABLE student_answer
@@ -892,7 +903,7 @@ CREATE TABLE student_answer
 
     question_id INT NOT NULL,
 
-    selected_option CHAR(1),
+    selected_answer CHAR(1),
 
     is_correct BOOLEAN,
 
@@ -900,23 +911,28 @@ CREATE TABLE student_answer
 
     FOREIGN KEY (attempt_id)
         REFERENCES test_attempt(attempt_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE,
 
     FOREIGN KEY (question_id)
         REFERENCES question(question_id)
-        ON DELETE CASCADE
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    UNIQUE (
+        attempt_id,
+        question_id
+    )
 );
 
 
 -- ============================================================
--- 26. LOGIN_HISTORY
+-- 27. LOGIN HISTORY
 -- ============================================================
 
 CREATE TABLE login_history
 (
     login_id INT AUTO_INCREMENT PRIMARY KEY,
-
-    institution_id INT,
 
     user_role ENUM(
         'Admin',
@@ -927,29 +943,31 @@ CREATE TABLE login_history
 
     user_id INT NOT NULL,
 
+    institution_id INT,
+
     login_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    logout_time DATETIME,
 
     ip_address VARCHAR(45),
 
-    device_info VARCHAR(255),
-
     FOREIGN KEY (institution_id)
         REFERENCES institution(institution_id)
+        ON UPDATE CASCADE
         ON DELETE SET NULL
 );
 
 
 -- ============================================================
--- 27. NOTIFICATION
+-- 28. NOTIFICATION
 -- ============================================================
 
 CREATE TABLE notification
 (
     notification_id INT AUTO_INCREMENT PRIMARY KEY,
 
-    institution_id INT NOT NULL,
-
     user_role ENUM(
+        'Admin',
         'Teacher',
         'Student',
         'Parent'
@@ -957,7 +975,9 @@ CREATE TABLE notification
 
     user_id INT NOT NULL,
 
-    title VARCHAR(100) NOT NULL,
+    institution_id INT,
+
+    title VARCHAR(200) NOT NULL,
 
     message TEXT NOT NULL,
 
@@ -967,10 +987,11 @@ CREATE TABLE notification
 
     FOREIGN KEY (institution_id)
         REFERENCES institution(institution_id)
-        ON DELETE CASCADE
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
 );
 
 
 -- ============================================================
--- END OF DATABASE CREATION SCRIPT
+-- DATABASE CREATION COMPLETE
 -- ============================================================

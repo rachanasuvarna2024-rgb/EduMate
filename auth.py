@@ -9,20 +9,23 @@ from flask import (
 
 from db import conn, cursor
 
+
 # ---------------------------------
 # AUTH BLUEPRINT
 # ---------------------------------
 auth_bp = Blueprint("auth", __name__)
 
+
 # ---------------------------------
 # ROLE TO TABLE MAPPING
 # ---------------------------------
 ROLE_MAP = {
-    "Admin": ("admin", "admin_id"),
-    "Teacher": ("teacher", "teacher_id"),
-    "Student": ("student", "student_id"),
-    "Parent": ("parent", "parent_id")
+    "Admin": ("admin", "admin_id", "admin_name"),
+    "Teacher": ("teacher", "teacher_id", "teacher_name"),
+    "Student": ("student", "student_id", "student_name"),
+    "Parent": ("parent", "parent_id", "parent_name")
 }
+
 
 # ---------------------------------
 # LOGIN PAGE
@@ -57,66 +60,120 @@ def process_login():
     username = request.form["username"]
     password = request.form["password"]
 
+    # Validate role
     if role not in ROLE_MAP:
+
         return render_template(
             "login.html",
             error="Invalid role selected."
         )
 
-    table, id_column = ROLE_MAP[role]
+    table, id_column, name_column = ROLE_MAP[role]
+
+
+    # ---------------------------------
+    # FETCH USER
+    # ---------------------------------
+    # The actual database tables have:
+    #
+    # admin    -> admin_name
+    # teacher  -> teacher_name
+    # student  -> student_name
+    # parent   -> parent_name
+    #
+    # We alias the appropriate column as "name"
+    # so the rest of the application can use
+    # user["name"] consistently.
+    # ---------------------------------
 
     query = f"""
-        SELECT *
+        SELECT
+            *,
+            {name_column} AS name
         FROM {table}
-        WHERE email=%s
-        AND password=%s
+        WHERE email = %s
+        AND password = %s
     """
 
-    cursor.execute(query, (username, password))
+    cursor.execute(
+        query,
+        (username, password)
+    )
+
     user = cursor.fetchone()
 
+
+    # ---------------------------------
+    # USER FOUND
+    # ---------------------------------
     if user:
 
-        # Create Session
+        # ---------------------------------
+        # CREATE SESSION
+        # ---------------------------------
+
         session["role"] = role
         session["user_id"] = user[id_column]
         session["user_name"] = user["name"]
 
-        # Store Login History
+
+        # ---------------------------------
+        # STORE LOGIN HISTORY
+        # ---------------------------------
+
         ip_address = request.remote_addr
-        device_info = request.user_agent.string
 
         cursor.execute("""
             INSERT INTO login_history
             (
                 user_role,
                 user_id,
-                ip_address,
-                device_info
+                ip_address
             )
-            VALUES (%s,%s,%s,%s)
+            VALUES (%s, %s, %s)
         """,
         (
             role,
             user[id_column],
-            ip_address,
-            device_info
+            ip_address
         ))
+
 
         conn.commit()
 
-        # Redirect according to role
+
+        # ---------------------------------
+        # REDIRECT ACCORDING TO ROLE
+        # ---------------------------------
+
         if role == "Admin":
-            return redirect(url_for("admin.admin_home"))
+
+            return redirect(
+                url_for("admin.admin_home")
+            )
 
         elif role == "Teacher":
-            return redirect(url_for("teacher.teacher_home"))
+
+            return redirect(
+                url_for("teacher.teacher_home")
+            )
 
         elif role == "Student":
-            return redirect(url_for("student.student_home"))
+
+            return redirect(
+                url_for("student.student_home")
+            )
 
         else:
-            return redirect(url_for("parent.parent_home"))
+
+            return redirect(
+                url_for("parent.parent_home")
+            )
+
+
+    # ---------------------------------
+    # INVALID LOGIN
+    # ---------------------------------
 
     return render_template(
         "login.html",
@@ -132,7 +189,9 @@ def logout():
 
     session.clear()
 
-    return redirect(url_for("auth.login_page"))
+    return redirect(
+        url_for("auth.login_page")
+    )
 
 
 # ---------------------------------
@@ -141,8 +200,12 @@ def logout():
 @auth_bp.after_request
 def add_header(response):
 
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Cache-Control"] = (
+        "no-cache, no-store, must-revalidate"
+    )
+
     response.headers["Pragma"] = "no-cache"
+
     response.headers["Expires"] = "0"
 
     return response

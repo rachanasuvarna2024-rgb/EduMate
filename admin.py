@@ -1562,6 +1562,7 @@ def toggle_stream(stream_id):
                 err="Unable to update stream status: " + str(e)
             )
         )
+
 # ============================================================
 # ============================================================
 # COURSE MASTER
@@ -1585,17 +1586,9 @@ def course_master():
             "institution_category", ""
         ).strip()
 
-        course_level = request.form.get(
-            "course_level", ""
-        ).strip()
-
-        stream = request.form.get(
-            "stream", ""
-        ).strip()
-
-        specialization = request.form.get(
-            "specialization", ""
-        ).strip()
+        # ----------------------------------------------------
+        # VALIDATION
+        # ----------------------------------------------------
 
         if not course_name:
 
@@ -1613,6 +1606,10 @@ def course_master():
 
             try:
 
+                # ------------------------------------------------
+                # CHECK DUPLICATE COURSE
+                # ------------------------------------------------
+
                 cursor.execute("""
                     SELECT course_id
                     FROM course_master
@@ -1623,28 +1620,31 @@ def course_master():
                     institution_category
                 ))
 
-                if cursor.fetchone():
+                existing_course = cursor.fetchone()
 
-                    err = "This course already exists for the selected institution category."
+                if existing_course:
+
+                    err = (
+                        "This course already exists for the "
+                        "selected institution category."
+                    )
 
                 else:
+
+                    # --------------------------------------------
+                    # INSERT COURSE
+                    # --------------------------------------------
 
                     cursor.execute("""
                         INSERT INTO course_master
                         (
                             course_name,
-                            institution_category,
-                            course_level,
-                            stream,
-                            specialization
+                            institution_category
                         )
-                        VALUES (%s, %s, %s, %s, %s)
+                        VALUES (%s, %s)
                     """, (
                         course_name,
-                        institution_category,
-                        course_level or None,
-                        stream or None,
-                        specialization or None
+                        institution_category
                     ))
 
                     conn.commit()
@@ -1657,14 +1657,15 @@ def course_master():
 
                 err = "Unable to add course: " + str(e)
 
+    # ========================================================
+    # FETCH COURSES
+    # ========================================================
+
     cursor.execute("""
         SELECT
             course_id,
             course_name,
             institution_category,
-            course_level,
-            stream,
-            specialization,
             status
         FROM course_master
         ORDER BY course_id ASC
@@ -1681,7 +1682,9 @@ def course_master():
 
 
 # ============================================================
+# ============================================================
 # EDIT COURSE
+# ============================================================
 # ============================================================
 
 @admin_bp.route(
@@ -1693,6 +1696,10 @@ def edit_course(course_id):
 
     err = None
 
+    # ========================================================
+    # POST - UPDATE COURSE
+    # ========================================================
+
     if request.method == "POST":
 
         course_name = request.form.get(
@@ -1703,17 +1710,9 @@ def edit_course(course_id):
             "institution_category", ""
         ).strip()
 
-        course_level = request.form.get(
-            "course_level", ""
-        ).strip()
-
-        stream = request.form.get(
-            "stream", ""
-        ).strip()
-
-        specialization = request.form.get(
-            "specialization", ""
-        ).strip()
+        # ----------------------------------------------------
+        # VALIDATION
+        # ----------------------------------------------------
 
         if not course_name:
 
@@ -1731,6 +1730,10 @@ def edit_course(course_id):
 
             try:
 
+                # ------------------------------------------------
+                # CHECK DUPLICATE COURSE
+                # ------------------------------------------------
+
                 cursor.execute("""
                     SELECT course_id
                     FROM course_master
@@ -1743,27 +1746,27 @@ def edit_course(course_id):
                     course_id
                 ))
 
-                if cursor.fetchone():
+                existing_course = cursor.fetchone()
+
+                if existing_course:
 
                     err = "This course already exists."
 
                 else:
 
+                    # --------------------------------------------
+                    # UPDATE COURSE
+                    # --------------------------------------------
+
                     cursor.execute("""
                         UPDATE course_master
                         SET
                             course_name = %s,
-                            institution_category = %s,
-                            course_level = %s,
-                            stream = %s,
-                            specialization = %s
+                            institution_category = %s
                         WHERE course_id = %s
                     """, (
                         course_name,
                         institution_category,
-                        course_level or None,
-                        stream or None,
-                        specialization or None,
                         course_id
                     ))
 
@@ -1782,8 +1785,16 @@ def edit_course(course_id):
 
                 err = "Unable to update course: " + str(e)
 
+    # ========================================================
+    # FETCH COURSE
+    # ========================================================
+
     cursor.execute("""
-        SELECT *
+        SELECT
+            course_id,
+            course_name,
+            institution_category,
+            status
         FROM course_master
         WHERE course_id = %s
     """, (course_id,))
@@ -1804,7 +1815,9 @@ def edit_course(course_id):
 
 
 # ============================================================
+# ============================================================
 # DELETE COURSE
+# ============================================================
 # ============================================================
 
 @admin_bp.route(
@@ -1815,6 +1828,34 @@ def edit_course(course_id):
 def delete_course(course_id):
 
     try:
+
+        # ----------------------------------------------------
+        # CHECK WHETHER COURSE EXISTS
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            SELECT course_id
+            FROM course_master
+            WHERE course_id = %s
+        """, (course_id,))
+
+        course = cursor.fetchone()
+
+        if not course:
+
+            return redirect(
+                url_for(
+                    "admin.course_master",
+                    err="Course not found."
+                )
+            )
+
+        # ----------------------------------------------------
+        # DELETE COURSE
+        #
+        # course_stream mappings will be deleted automatically
+        # because course_stream.course_id has ON DELETE CASCADE.
+        # ----------------------------------------------------
 
         cursor.execute("""
             DELETE FROM course_master
@@ -1830,15 +1871,16 @@ def delete_course(course_id):
             )
         )
 
-    except Exception:
+    except Exception as e:
 
         conn.rollback()
 
-    return redirect(
-        url_for("admin.course_master"),
-        err="Unable to delete course."
-    )
-
+        return redirect(
+            url_for(
+                "admin.course_master",
+                err="Unable to delete course: " + str(e)
+            )
+        )
 
 # ============================================================
 # ============================================================
