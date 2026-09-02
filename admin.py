@@ -274,185 +274,7 @@ def admin_home():
 # ============================================================
 # INSTITUTION MANAGEMENT
 # ============================================================
-# ============================================================
-# ============================================================
-# VIEW INSTITUTIONS
-# ============================================================
 
-@admin_bp.route("/view_institutions")
-@role_required("Admin")
-def view_institutions():
-
-    try:
-
-        # ====================================================
-        # GET ALL INSTITUTIONS
-        # ====================================================
-
-        cursor.execute("""
-            SELECT
-                institution_id,
-                institution_name,
-                institution_code,
-                institution_category,
-                institution_type,
-                address,
-                city,
-                state,
-                pincode,
-                email,
-                phone,
-                website,
-                status
-            FROM institution
-            ORDER BY institution_name ASC
-        """)
-
-        institutions = cursor.fetchall()
-
-
-        # ====================================================
-        # DISPLAY PAGE
-        # ====================================================
-
-        return render_template(
-            "view_institutions.html",
-            institutions=institutions
-        )
-
-
-    # ========================================================
-    # ERROR HANDLING
-    # ========================================================
-
-    except Exception as e:
-
-        return render_template(
-            "view_institutions.html",
-
-            institutions=[],
-
-            err="Database error: " + str(e)
-        )
-
-# ============================================================
-# DELETE INSTITUTION
-# ============================================================
-
-@admin_bp.route(
-    "/delete_institution/<int:institution_id>",
-    methods=["POST"]
-)
-@role_required("Admin")
-def delete_institution(institution_id):
-
-    try:
-
-        # ====================================================
-        # CHECK IF INSTITUTION EXISTS
-        # ====================================================
-
-        cursor.execute("""
-            SELECT
-                institution_id,
-                institution_name
-            FROM institution
-            WHERE institution_id = %s
-        """, (
-            institution_id,
-        ))
-
-        institution = cursor.fetchone()
-
-
-        if not institution:
-
-            return redirect(
-                url_for("admin.view_institutions")
-            )
-
-
-        # ====================================================
-        # DELETE COURSE ASSIGNMENTS
-        # ====================================================
-
-        cursor.execute("""
-            DELETE FROM institution_course
-            WHERE institution_id = %s
-        """, (
-            institution_id,
-        ))
-
-
-        # ====================================================
-        # DELETE DEPARTMENT ASSIGNMENTS
-        # ====================================================
-
-        cursor.execute("""
-            DELETE FROM institution_department
-            WHERE institution_id = %s
-        """, (
-            institution_id,
-        ))
-
-
-        # ====================================================
-        # DELETE DESIGNATION ASSIGNMENTS
-        # ====================================================
-
-        cursor.execute("""
-            DELETE FROM institution_designation
-            WHERE institution_id = %s
-        """, (
-            institution_id,
-        ))
-
-
-        # ====================================================
-        # DELETE INSTITUTION
-        # ====================================================
-
-        cursor.execute("""
-            DELETE FROM institution
-            WHERE institution_id = %s
-        """, (
-            institution_id,
-        ))
-
-
-        # ====================================================
-        # COMMIT
-        # ====================================================
-
-        conn.commit()
-
-
-        # ====================================================
-        # REDIRECT TO VIEW PAGE
-        # ====================================================
-
-        return redirect(
-            url_for(
-                "admin.view_institutions",
-                msg="Institution deleted successfully."
-            )
-        )
-
-
-    # ========================================================
-    # ERROR HANDLING
-    # ========================================================
-
-    except Exception as e:
-
-        conn.rollback()
-
-        return redirect(
-            url_for(
-                "admin.view_institutions",
-                err="Unable to delete institution: " + str(e)
-            )
-        )
 # ============================================================
 # ADD INSTITUTION
 # ============================================================
@@ -1147,6 +969,188 @@ def manage_institution():
 
             err="Database error: " + str(e)
         )
+
+# ============================================================
+# ============================================================
+# VIEW INSTITUTIONS
+# ============================================================
+
+@admin_bp.route("/view_institutions")
+@role_required("Admin")
+def view_institutions():
+
+    try:
+
+        # ====================================================
+        # GET ALL INSTITUTIONS
+        # ====================================================
+
+        cursor.execute("""
+            SELECT
+                institution_id,
+                institution_name,
+                institution_code,
+                institution_category,
+                institution_type,
+                address,
+                city,
+                state,
+                pincode,
+                email,
+                phone,
+                website,
+                status
+            FROM institution
+            ORDER BY institution_name ASC
+        """)
+
+        institutions = cursor.fetchall()
+
+
+        # ====================================================
+        # DISPLAY PAGE
+        # ====================================================
+
+        return render_template(
+            "view_institutions.html",
+            institutions=institutions
+        )
+
+
+    # ========================================================
+    # ERROR HANDLING
+    # ========================================================
+
+    except Exception as e:
+
+        return render_template(
+            "view_institutions.html",
+
+            institutions=[],
+
+            err="Database error: " + str(e)
+        )
+
+# ============================================================
+# DELETE INSTITUTION
+# ============================================================
+
+@admin_bp.route(
+    "/delete_institution/<int:institution_id>",
+    methods=["POST"]
+)
+@role_required("Admin")
+def delete_institution(institution_id):
+
+    try:
+
+        # ====================================================
+        # CHECK IF INSTITUTION EXISTS
+        # ====================================================
+
+        cursor.execute("""
+            SELECT
+                institution_id,
+                institution_name
+            FROM institution
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+        institution = cursor.fetchone()
+
+
+        if not institution:
+
+            return redirect(
+                url_for("admin.view_institutions")
+            )
+
+
+        # ====================================================
+        # DELETE COURSE ASSIGNMENTS
+        # ====================================================
+
+        cursor.execute("""
+            DELETE FROM institution_course
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+
+        # ====================================================
+        # DELETE DEPARTMENT ASSIGNMENTS
+        # ====================================================
+
+        cursor.execute("""
+            DELETE FROM institution_department
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+
+        # ====================================================
+        # DELETE DESIGNATION ASSIGNMENTS
+        # ====================================================
+
+        cursor.execute("""
+            DELETE FROM institution_designation
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+
+        # ====================================================
+        # DELETE INSTITUTION
+        # ====================================================
+
+        cursor.execute("""
+            DELETE FROM institution
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+
+        # ====================================================
+        # COMMIT
+        # ====================================================
+
+        conn.commit()
+
+
+        # ====================================================
+        # REDIRECT TO VIEW PAGE
+        # ====================================================
+
+        return redirect(
+            url_for(
+                "admin.view_institutions",
+                msg="Institution deleted successfully."
+            )
+        )
+
+
+    # ========================================================
+    # ERROR HANDLING
+    # ========================================================
+
+    except Exception as e:
+
+        conn.rollback()
+
+        return redirect(
+            url_for(
+                "admin.view_institutions",
+                err="Unable to delete institution: " + str(e)
+            )
+        )
+    
+    
 # ============================================================
 # ============================================================
 # STREAM MASTER
@@ -1564,9 +1568,7 @@ def toggle_stream(stream_id):
         )
 
 # ============================================================
-# ============================================================
 # COURSE MASTER
-# ============================================================
 # ============================================================
 
 @admin_bp.route("/course_master", methods=["GET", "POST"])
@@ -1574,25 +1576,95 @@ def toggle_stream(stream_id):
 def course_master():
 
     msg = request.args.get("msg")
-    err = request.args.get("err")
+    err = None
+
+    # ========================================================
+    # VALID ACADEMIC YEARS BY INSTITUTION CATEGORY
+    # ========================================================
+    #
+    # School:
+    #     Not Applicable
+    #
+    # Jr College:
+    #     FY
+    #     SY
+    #
+    # Degree College:
+    #     FY
+    #     SY
+    #     TY
+    #     4th Year
+    #
+    # ========================================================
+
+    valid_academic_years = {
+
+        "School": [
+            "Not Applicable"
+        ],
+
+        "Jr College": [
+            "FY",
+            "SY"
+        ],
+
+        "Degree College": [
+            "FY",
+            "SY",
+            "TY",
+            "4th Year"
+        ]
+
+    }
+
+
+    # ========================================================
+    # ADD COURSE
+    # ========================================================
 
     if request.method == "POST":
 
+        # ----------------------------------------------------
+        # GET FORM DATA
+        # ----------------------------------------------------
+
         course_name = request.form.get(
-            "course_name", ""
+            "course_name",
+            ""
         ).strip()
 
         institution_category = request.form.get(
-            "institution_category", ""
+            "institution_category",
+            ""
         ).strip()
 
-        # ----------------------------------------------------
+        academic_year = request.form.get(
+            "academic_year",
+            ""
+        ).strip()
+
+        status = request.form.get(
+            "status",
+            "Active"
+        ).strip()
+
+
+        # ====================================================
         # VALIDATION
+        # ====================================================
+
+        # ----------------------------------------------------
+        # COURSE NAME
         # ----------------------------------------------------
 
         if not course_name:
 
             err = "Course name is required."
+
+
+        # ----------------------------------------------------
+        # INSTITUTION CATEGORY
+        # ----------------------------------------------------
 
         elif institution_category not in [
             "School",
@@ -1600,78 +1672,293 @@ def course_master():
             "Degree College"
         ]:
 
-            err = "Please select a valid institution category."
+            err = "Invalid institution category."
 
-        else:
+
+        # ----------------------------------------------------
+        # ACADEMIC YEAR
+        # ----------------------------------------------------
+
+        elif not academic_year:
+
+            err = "Please select an academic year."
+
+
+        # ----------------------------------------------------
+        # CATEGORY + ACADEMIC YEAR
+        # ----------------------------------------------------
+
+        elif academic_year not in valid_academic_years[
+            institution_category
+        ]:
+
+            err = (
+                "Invalid academic year selected for "
+                + institution_category
+                + "."
+            )
+
+
+        # ----------------------------------------------------
+        # STATUS
+        # ----------------------------------------------------
+
+        elif status not in [
+            "Active",
+            "Inactive"
+        ]:
+
+            err = "Invalid status."
+
+
+        # ====================================================
+        # INSERT INTO DATABASE
+        # ====================================================
+
+        if not err:
 
             try:
 
                 # ------------------------------------------------
-                # CHECK DUPLICATE COURSE
+                # CHECK WHETHER COURSE ALREADY EXISTS
                 # ------------------------------------------------
 
-                cursor.execute("""
-                    SELECT course_id
+                cursor.execute(
+                    """
+                    SELECT
+                        course_id
+
                     FROM course_master
+
                     WHERE LOWER(course_name) = LOWER(%s)
+
                       AND institution_category = %s
-                """, (
-                    course_name,
-                    institution_category
-                ))
+                    """,
+                    (
+                        course_name,
+                        institution_category
+                    )
+                )
 
                 existing_course = cursor.fetchone()
+
+
+                # ------------------------------------------------
+                # DUPLICATE COURSE
+                # ------------------------------------------------
 
                 if existing_course:
 
                     err = (
-                        "This course already exists for the "
-                        "selected institution category."
+                        "This course already exists for "
+                        "this institution category."
                     )
+
 
                 else:
 
-                    # --------------------------------------------
-                    # INSERT COURSE
-                    # --------------------------------------------
+                    # ============================================
+                    # INSERT INTO COURSE MASTER
+                    # ============================================
 
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         INSERT INTO course_master
                         (
                             course_name,
-                            institution_category
+                            institution_category,
+                            status
                         )
-                        VALUES (%s, %s)
-                    """, (
-                        course_name,
-                        institution_category
-                    ))
+
+                        VALUES
+                        (
+                            %s,
+                            %s,
+                            %s
+                        )
+                        """,
+                        (
+                            course_name,
+                            institution_category,
+                            status
+                        )
+                    )
+
+
+                    # ------------------------------------------------
+                    # GET NEW COURSE ID
+                    # ------------------------------------------------
+
+                    course_id = cursor.lastrowid
+
+
+                    # ============================================
+                    # INSERT ACADEMIC YEAR
+                    # ============================================
+
+                    cursor.execute(
+                        """
+                        INSERT INTO course_academic_year
+                        (
+                            course_id,
+                            academic_year,
+                            status
+                        )
+
+                        VALUES
+                        (
+                            %s,
+                            %s,
+                            %s
+                        )
+                        """,
+                        (
+                            course_id,
+                            academic_year,
+                            status
+                        )
+                    )
+
+
+                    # ============================================
+                    # COMMIT
+                    # ============================================
 
                     conn.commit()
 
-                    msg = "Course added successfully!"
+
+                    # ============================================
+                    # SUCCESS
+                    # ============================================
+
+                    return redirect(
+                        url_for(
+                            "admin.course_master",
+                            msg="Course has been added successfully."
+                        )
+                    )
+
 
             except Exception as e:
 
+                # ------------------------------------------------
+                # ROLLBACK IF ANY ERROR OCCURS
+                # ------------------------------------------------
+
                 conn.rollback()
 
-                err = "Unable to add course: " + str(e)
+                err = (
+                    "Unable to add course: "
+                    + str(e)
+                )
+
 
     # ========================================================
-    # FETCH COURSES
+    # LOAD ALL EXISTING COURSES
     # ========================================================
 
-    cursor.execute("""
-        SELECT
-            course_id,
-            course_name,
-            institution_category,
-            status
-        FROM course_master
-        ORDER BY course_id ASC
-    """)
+    try:
 
-    courses = cursor.fetchall()
+        cursor.execute(
+            """
+            SELECT
+
+                c.course_id,
+
+                c.course_name,
+
+                c.institution_category,
+
+                c.status,
+
+                GROUP_CONCAT(
+                    cay.academic_year
+                    ORDER BY
+                        CASE cay.academic_year
+
+                            WHEN 'Not Applicable'
+                                THEN 1
+
+                            WHEN 'FY'
+                                THEN 2
+
+                            WHEN 'SY'
+                                THEN 3
+
+                            WHEN 'TY'
+                                THEN 4
+
+                            WHEN '4th Year'
+                                THEN 5
+
+                            ELSE 6
+
+                        END
+
+                    SEPARATOR ', '
+                ) AS academic_years
+
+
+            FROM course_master AS c
+
+
+            LEFT JOIN course_academic_year AS cay
+
+                ON c.course_id = cay.course_id
+
+
+            GROUP BY
+
+                c.course_id,
+
+                c.course_name,
+
+                c.institution_category,
+
+                c.status
+
+
+            ORDER BY
+
+                c.course_id ASC
+            """
+        )
+
+
+        courses = cursor.fetchall()
+
+
+    except Exception as e:
+
+        err = (
+            "Unable to load courses: "
+            + str(e)
+        )
+
+        courses = []
+
+
+    # ========================================================
+    # CONVERT GROUP_CONCAT STRING INTO LIST
+    # ========================================================
+
+    for course in courses:
+
+        if course["academic_years"]:
+
+            course["academic_years"] = (
+                course["academic_years"]
+                .split(", ")
+            )
+
+        else:
+
+            course["academic_years"] = []
+
+
+    # ========================================================
+    # RENDER COURSE MASTER
+    # ========================================================
 
     return render_template(
         "course_master.html",
@@ -1682,9 +1969,7 @@ def course_master():
 
 
 # ============================================================
-# ============================================================
 # EDIT COURSE
-# ============================================================
 # ============================================================
 
 @admin_bp.route(
@@ -1696,27 +1981,79 @@ def edit_course(course_id):
 
     err = None
 
+
     # ========================================================
-    # POST - UPDATE COURSE
+    # VALID ACADEMIC YEARS BY INSTITUTION CATEGORY
+    # ========================================================
+
+    valid_academic_years = {
+
+        "School": [
+            "Not Applicable"
+        ],
+
+        "Jr College": [
+            "FY",
+            "SY"
+        ],
+
+        "Degree College": [
+            "FY",
+            "SY",
+            "TY",
+            "4th Year"
+        ]
+
+    }
+
+
+    # ========================================================
+    # UPDATE COURSE
     # ========================================================
 
     if request.method == "POST":
 
+        # ----------------------------------------------------
+        # GET FORM DATA
+        # ----------------------------------------------------
+
         course_name = request.form.get(
-            "course_name", ""
+            "course_name",
+            ""
         ).strip()
 
         institution_category = request.form.get(
-            "institution_category", ""
+            "institution_category",
+            ""
         ).strip()
 
-        # ----------------------------------------------------
+        academic_year = request.form.get(
+            "academic_year",
+            ""
+        ).strip()
+
+        status = request.form.get(
+            "status",
+            "Active"
+        ).strip()
+
+
+        # ====================================================
         # VALIDATION
+        # ====================================================
+
+        # ----------------------------------------------------
+        # COURSE NAME
         # ----------------------------------------------------
 
         if not course_name:
 
             err = "Course name is required."
+
+
+        # ----------------------------------------------------
+        # INSTITUTION CATEGORY
+        # ----------------------------------------------------
 
         elif institution_category not in [
             "School",
@@ -1726,143 +2063,432 @@ def edit_course(course_id):
 
             err = "Invalid institution category."
 
-        else:
+
+        # ----------------------------------------------------
+        # ACADEMIC YEAR
+        # ----------------------------------------------------
+
+        elif not academic_year:
+
+            err = "Please select an academic year."
+
+
+        # ----------------------------------------------------
+        # CATEGORY + ACADEMIC YEAR
+        # ----------------------------------------------------
+
+        elif academic_year not in valid_academic_years[
+            institution_category
+        ]:
+
+            err = (
+                "Invalid academic year selected for "
+                + institution_category
+                + "."
+            )
+
+
+        # ----------------------------------------------------
+        # STATUS
+        # ----------------------------------------------------
+
+        elif status not in [
+            "Active",
+            "Inactive"
+        ]:
+
+            err = "Invalid status."
+
+
+        # ====================================================
+        # UPDATE DATABASE
+        # ====================================================
+
+        if not err:
 
             try:
 
-                # ------------------------------------------------
-                # CHECK DUPLICATE COURSE
-                # ------------------------------------------------
+                # ============================================
+                # CHECK COURSE EXISTS
+                # ============================================
 
-                cursor.execute("""
-                    SELECT course_id
+                cursor.execute(
+                    """
+                    SELECT
+                        course_id
+
                     FROM course_master
-                    WHERE LOWER(course_name) = LOWER(%s)
-                      AND institution_category = %s
-                      AND course_id != %s
-                """, (
-                    course_name,
-                    institution_category,
-                    course_id
-                ))
 
-                existing_course = cursor.fetchone()
+                    WHERE course_id = %s
+                    """,
+                    (course_id,)
+                )
 
-                if existing_course:
+                course_exists = cursor.fetchone()
 
-                    err = "This course already exists."
+
+                if not course_exists:
+
+                    err = "Course not found."
+
 
                 else:
 
-                    # --------------------------------------------
-                    # UPDATE COURSE
-                    # --------------------------------------------
+                    # ========================================
+                    # CHECK DUPLICATE COURSE
+                    # ========================================
 
-                    cursor.execute("""
-                        UPDATE course_master
-                        SET
-                            course_name = %s,
-                            institution_category = %s
-                        WHERE course_id = %s
-                    """, (
-                        course_name,
-                        institution_category,
-                        course_id
-                    ))
+                    cursor.execute(
+                        """
+                        SELECT
+                            course_id
 
-                    conn.commit()
+                        FROM course_master
 
-                    return redirect(
-                        url_for(
-                            "admin.course_master",
-                            msg="Course has been updated successfully."
+                        WHERE LOWER(course_name) = LOWER(%s)
+
+                          AND institution_category = %s
+
+                          AND course_id != %s
+                        """,
+                        (
+                            course_name,
+                            institution_category,
+                            course_id
                         )
                     )
 
+                    duplicate_course = cursor.fetchone()
+
+
+                    if duplicate_course:
+
+                        err = (
+                            "This course already exists for "
+                            "this institution category."
+                        )
+
+
+                    else:
+
+                        # ====================================
+                        # UPDATE COURSE MASTER
+                        # ====================================
+
+                        cursor.execute(
+                            """
+                            UPDATE course_master
+
+                            SET
+
+                                course_name = %s,
+
+                                institution_category = %s,
+
+                                status = %s
+
+                            WHERE course_id = %s
+                            """,
+                            (
+                                course_name,
+                                institution_category,
+                                status,
+                                course_id
+                            )
+                        )
+
+
+                        # ====================================
+                        # DELETE OLD ACADEMIC YEAR
+                        # ====================================
+
+                        cursor.execute(
+                            """
+                            DELETE FROM course_academic_year
+
+                            WHERE course_id = %s
+                            """,
+                            (course_id,)
+                        )
+
+
+                        # ====================================
+                        # INSERT UPDATED ACADEMIC YEAR
+                        # ====================================
+
+                        cursor.execute(
+                            """
+                            INSERT INTO course_academic_year
+                            (
+                                course_id,
+                                academic_year,
+                                status
+                            )
+
+                            VALUES
+                            (
+                                %s,
+                                %s,
+                                %s
+                            )
+                            """,
+                            (
+                                course_id,
+                                academic_year,
+                                status
+                            )
+                        )
+
+
+                        # ====================================
+                        # COMMIT
+                        # ====================================
+
+                        conn.commit()
+
+
+                        # ====================================
+                        # SUCCESS
+                        # ====================================
+
+                        return redirect(
+                            url_for(
+                                "admin.course_master",
+                                msg="Course has been updated successfully."
+                            )
+                        )
+
+
             except Exception as e:
+
+                # ------------------------------------------------
+                # ROLLBACK
+                # ------------------------------------------------
 
                 conn.rollback()
 
-                err = "Unable to update course: " + str(e)
+                err = (
+                    "Unable to update course: "
+                    + str(e)
+                )
+
 
     # ========================================================
-    # FETCH COURSE
+    # LOAD COURSE DETAILS
     # ========================================================
 
-    cursor.execute("""
-        SELECT
-            course_id,
-            course_name,
-            institution_category,
-            status
-        FROM course_master
-        WHERE course_id = %s
-    """, (course_id,))
+    try:
 
-    course = cursor.fetchone()
+        cursor.execute(
+            """
+            SELECT
+
+                course_id,
+
+                course_name,
+
+                institution_category,
+
+                status
+
+            FROM course_master
+
+            WHERE course_id = %s
+            """,
+            (course_id,)
+        )
+
+        course = cursor.fetchone()
+
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "admin.course_master",
+                msg="Unable to load course: " + str(e)
+            )
+        )
+
+
+    # ========================================================
+    # COURSE NOT FOUND
+    # ========================================================
 
     if not course:
 
         return redirect(
-            url_for("admin.course_master")
+            url_for(
+                "admin.course_master",
+                msg="Course not found."
+            )
         )
+
+
+    # ========================================================
+    # LOAD ACADEMIC YEAR
+    # ========================================================
+
+    try:
+
+        cursor.execute(
+            """
+            SELECT
+
+                academic_year
+
+            FROM course_academic_year
+
+            WHERE course_id = %s
+
+            ORDER BY
+
+                CASE academic_year
+
+                    WHEN 'Not Applicable'
+                        THEN 1
+
+                    WHEN 'FY'
+                        THEN 2
+
+                    WHEN 'SY'
+                        THEN 3
+
+                    WHEN 'TY'
+                        THEN 4
+
+                    WHEN '4th Year'
+                        THEN 5
+
+                    ELSE 6
+
+                END
+            """,
+            (course_id,)
+        )
+
+        academic_year_row = cursor.fetchone()
+
+
+    except Exception as e:
+
+        academic_year_row = None
+
+        if not err:
+
+            err = (
+                "Unable to load academic year: "
+                + str(e)
+            )
+
+
+    # ========================================================
+    # GET ACADEMIC YEAR VALUE
+    # ========================================================
+
+    if academic_year_row:
+
+        academic_year = academic_year_row[
+            "academic_year"
+        ]
+
+    else:
+
+        academic_year = ""
+
+
+    # ========================================================
+    # RENDER EDIT COURSE
+    # ========================================================
 
     return render_template(
         "edit_course.html",
         course=course,
+        academic_year=academic_year,
         err=err
     )
 
 
 # ============================================================
-# ============================================================
 # DELETE COURSE
-# ============================================================
 # ============================================================
 
 @admin_bp.route(
     "/delete_course/<int:course_id>",
-    methods=["POST"]
+    methods=["GET"]
 )
 @role_required("Admin")
 def delete_course(course_id):
 
     try:
 
-        # ----------------------------------------------------
-        # CHECK WHETHER COURSE EXISTS
-        # ----------------------------------------------------
+        # ====================================================
+        # CHECK COURSE EXISTS
+        # ====================================================
 
-        cursor.execute("""
-            SELECT course_id
+        cursor.execute(
+            """
+            SELECT
+                course_id,
+                course_name
+
             FROM course_master
+
             WHERE course_id = %s
-        """, (course_id,))
+            """,
+            (course_id,)
+        )
 
         course = cursor.fetchone()
+
+
+        # ----------------------------------------------------
+        # COURSE NOT FOUND
+        # ----------------------------------------------------
 
         if not course:
 
             return redirect(
                 url_for(
                     "admin.course_master",
-                    err="Course not found."
+                    msg="Course not found."
                 )
             )
 
-        # ----------------------------------------------------
-        # DELETE COURSE
-        #
-        # course_stream mappings will be deleted automatically
-        # because course_stream.course_id has ON DELETE CASCADE.
-        # ----------------------------------------------------
 
-        cursor.execute("""
+        # ====================================================
+        # DELETE COURSE
+        # ====================================================
+        #
+        # course_academic_year has:
+        #
+        # ON DELETE CASCADE
+        #
+        # Therefore, deleting the course automatically
+        # deletes its academic-year mapping.
+        #
+        # ====================================================
+
+        cursor.execute(
+            """
             DELETE FROM course_master
+
             WHERE course_id = %s
-        """, (course_id,))
+            """,
+            (course_id,)
+        )
+
+
+        # ====================================================
+        # COMMIT
+        # ====================================================
 
         conn.commit()
+
+
+        # ====================================================
+        # SUCCESS
+        # ====================================================
 
         return redirect(
             url_for(
@@ -1871,14 +2497,24 @@ def delete_course(course_id):
             )
         )
 
+
     except Exception as e:
 
+        # ====================================================
+        # ROLLBACK
+        # ====================================================
+
         conn.rollback()
+
+
+        # ====================================================
+        # ERROR
+        # ====================================================
 
         return redirect(
             url_for(
                 "admin.course_master",
-                err="Unable to delete course: " + str(e)
+                msg="Unable to delete course: " + str(e)
             )
         )
 

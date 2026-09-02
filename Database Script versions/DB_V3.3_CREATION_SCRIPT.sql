@@ -189,6 +189,46 @@ CREATE TABLE course_stream
     )
 );
 
+-- ============================================================
+-- 5. COURSE - ACADEMIC YEAR MAPPING TABLE
+-- ============================================================
+-- One course can be offered in multiple academic years.
+--
+-- Example:
+-- B.Sc. Computer Science -> 2025-26
+-- B.Sc. Computer Science -> 2026-27
+--
+-- The course itself remains in course_master only once.
+-- ============================================================
+
+CREATE TABLE course_academic_year
+(
+    course_academic_year_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    course_id INT NOT NULL,
+
+    academic_year VARCHAR(20) NOT NULL,
+
+    status ENUM(
+        'Active',
+        'Inactive'
+    ) DEFAULT 'Active',
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (course_id)
+        REFERENCES course_master(course_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    UNIQUE (
+        course_id,
+        academic_year
+    )
+);
 
 -- ============================================================
 -- 6. SUBJECT MASTER TABLE

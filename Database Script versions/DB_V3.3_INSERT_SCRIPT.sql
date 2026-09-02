@@ -315,6 +315,217 @@ JOIN stream_master s
    )
 WHERE c.institution_category = 'Degree College';
 
+-- ============================================================
+-- 5. COURSE ACADEMIC YEAR
+--
+-- Maps each course to its academic year/level.
+--
+-- IMPORTANT:
+-- Academic year here means the academic level of the course,
+-- NOT the calendar academic year such as 2026-27.
+--
+-- School:
+--     Not Applicable
+--
+-- Jr College:
+--     FY
+--     SY
+--
+-- Degree College:
+--     FY
+--     SY
+--     TY
+--     4th Year
+--
+-- Academic year is NOT stored in course_master.
+-- It is stored separately in course_academic_year.
+-- ============================================================
+
+-- ============================================================
+-- SCHOOL COURSES
+-- ============================================================
+-- School courses from I to X do not have FY/SY/TY etc.
+-- Therefore, their academic year is "Not Applicable".
+-- ============================================================
+
+INSERT INTO course_academic_year
+(
+    course_id,
+    academic_year,
+    status
+)
+SELECT
+    course_id,
+    'Not Applicable',
+    'Active'
+FROM course_master
+WHERE institution_category = 'School'
+  AND course_name IN
+  (
+      'I',
+      'II',
+      'III',
+      'IV',
+      'V',
+      'VI',
+      'VII',
+      'VIII',
+      'IX',
+      'X'
+  );
+
+
+-- ============================================================
+-- JR COLLEGE COURSES
+-- ============================================================
+-- FY JC courses → FY
+-- SY JC courses → SY
+-- ============================================================
+
+INSERT INTO course_academic_year
+(
+    course_id,
+    academic_year,
+    status
+)
+SELECT
+    course_id,
+    'FY',
+    'Active'
+FROM course_master
+WHERE institution_category = 'Jr College'
+  AND course_name IN
+  (
+      'FY JC Arts',
+      'FY JC Science',
+      'FY JC Commerce'
+  );
+
+
+INSERT INTO course_academic_year
+(
+    course_id,
+    academic_year,
+    status
+)
+SELECT
+    course_id,
+    'SY',
+    'Active'
+FROM course_master
+WHERE institution_category = 'Jr College'
+  AND course_name IN
+  (
+      'SY JC Arts',
+      'SY JC Science',
+      'SY JC Commerce'
+  );
+
+
+-- ============================================================
+-- DEGREE COLLEGE COURSES
+-- ============================================================
+-- FY Degree College courses → FY
+-- SY Degree College courses → SY
+-- TY Degree College courses → TY
+-- 4th Year Degree College courses → 4th Year
+-- ============================================================
+
+
+-- ------------------------------------------------------------
+-- FY DEGREE COLLEGE
+-- ------------------------------------------------------------
+
+INSERT INTO course_academic_year
+(
+    course_id,
+    academic_year,
+    status
+)
+SELECT
+    course_id,
+    'FY',
+    'Active'
+FROM course_master
+WHERE institution_category = 'Degree College'
+  AND course_name IN
+  (
+      'FY B Arts English Literature',
+      'FY B Science Computer Science',
+      'FY B Commerce Financial Accounting'
+  );
+
+
+-- ------------------------------------------------------------
+-- SY DEGREE COLLEGE
+-- ------------------------------------------------------------
+
+INSERT INTO course_academic_year
+(
+    course_id,
+    academic_year,
+    status
+)
+SELECT
+    course_id,
+    'SY',
+    'Active'
+FROM course_master
+WHERE institution_category = 'Degree College'
+  AND course_name IN
+  (
+      'SY B Arts English Literature',
+      'SY B Science Computer Science',
+      'SY B Commerce Financial Accounting'
+  );
+
+
+-- ------------------------------------------------------------
+-- TY DEGREE COLLEGE
+-- ------------------------------------------------------------
+
+INSERT INTO course_academic_year
+(
+    course_id,
+    academic_year,
+    status
+)
+SELECT
+    course_id,
+    'TY',
+    'Active'
+FROM course_master
+WHERE institution_category = 'Degree College'
+  AND course_name IN
+  (
+      'TY B Arts English Literature',
+      'TY B Science Computer Science',
+      'TY B Commerce Financial Accounting'
+  );
+
+
+-- ------------------------------------------------------------
+-- 4TH YEAR DEGREE COLLEGE
+-- ------------------------------------------------------------
+-- This will insert mappings only if 4th Year courses exist
+-- in course_master.
+--
+-- Example course names can be added later.
+-- ------------------------------------------------------------
+
+INSERT INTO course_academic_year
+(
+    course_id,
+    academic_year,
+    status
+)
+SELECT
+    course_id,
+    '4th Year',
+    'Active'
+FROM course_master
+WHERE institution_category = 'Degree College'
+  AND course_name LIKE '4th Year%';
 
 -- ============================================================
 -- 6. SUBJECT MASTER

@@ -2,15 +2,181 @@
 
 {% block content %}
 
+<style>
+
+.container {
+    width: 90%;
+    margin: 30px auto;
+}
+
+h2 {
+    margin-bottom: 25px;
+}
+
+.card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #555;
+}
+
+.btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #333;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #222;
+}
+
+.btn-edit {
+    background: #444;
+    color: white;
+    text-decoration: none;
+    padding: 7px 12px;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.btn-delete {
+    background: #b00020;
+    color: white;
+    text-decoration: none;
+    padding: 7px 12px;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.success-message {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.error-message {
+    background: #ffebee;
+    color: #c62828;
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.info-message {
+    background: #f5f5f5;
+    color: #555;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table th,
+table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+    vertical-align: middle;
+}
+
+table th {
+    background: #f5f5f5;
+    font-weight: 600;
+}
+
+table tr:hover {
+    background: #fafafa;
+}
+
+.status-active {
+    color: #2e7d32;
+    font-weight: 600;
+}
+
+.status-inactive {
+    color: #c62828;
+    font-weight: 600;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.no-data {
+    text-align: center;
+    padding: 20px;
+    color: #777;
+}
+
+</style>
+
+
 <div class="container">
 
     <h2>Course Master</h2>
+
+
+    <!-- ===================================================== -->
+    <!-- SUCCESS MESSAGE -->
+    <!-- ===================================================== -->
 
     {% if msg %}
     <div class="success-message">
         {{ msg }}
     </div>
     {% endif %}
+
+
+    <!-- ===================================================== -->
+    <!-- ERROR MESSAGE -->
+    <!-- ===================================================== -->
 
     {% if err %}
     <div class="error-message">
@@ -28,10 +194,9 @@
         <h3>Add Course</h3>
 
         <form
-            action="{{ url_for('admin.course_master') }}"
             method="POST"
-            id="courseForm"
-            onsubmit="return validateCourseForm()"
+            action="{{ url_for('admin.course_master') }}"
+            onsubmit="return validateCourseForm();"
         >
 
             <!-- ================================================= -->
@@ -42,23 +207,16 @@
 
                 <label for="course_name">
                     Course Name
-                    <span class="required">*</span>
                 </label>
 
                 <input
                     type="text"
                     id="course_name"
                     name="course_name"
-                    class="form-control"
-                    placeholder="Enter course name"
                     maxlength="200"
+                    placeholder="Enter course name"
                     required
                 >
-
-                <small
-                    class="field-error"
-                    id="course_name_error"
-                ></small>
 
             </div>
 
@@ -71,14 +229,13 @@
 
                 <label for="institution_category">
                     Institution Category
-                    <span class="required">*</span>
                 </label>
 
                 <select
                     id="institution_category"
                     name="institution_category"
-                    class="form-control"
                     required
+                    onchange="updateAcademicYearOptions();"
                 >
 
                     <option value="">
@@ -99,10 +256,36 @@
 
                 </select>
 
-                <small
-                    class="field-error"
-                    id="institution_category_error"
-                ></small>
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- ACADEMIC YEAR -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="academic_year">
+                    Academic Year
+                </label>
+
+                <select
+                    id="academic_year"
+                    name="academic_year"
+                    required
+                    disabled
+                >
+
+                    <option value="">
+                        -- Select Institution Category First --
+                    </option>
+
+                </select>
+
+                <div class="info-message" id="academicYearInfo">
+                    Academic year options will be shown according
+                    to the selected institution category.
+                </div>
 
             </div>
 
@@ -115,13 +298,11 @@
 
                 <label for="status">
                     Status
-                    <span class="required">*</span>
                 </label>
 
                 <select
                     id="status"
                     name="status"
-                    class="form-control"
                     required
                 >
 
@@ -135,11 +316,6 @@
 
                 </select>
 
-                <small
-                    class="field-error"
-                    id="status_error"
-                ></small>
-
             </div>
 
 
@@ -149,7 +325,7 @@
 
             <button
                 type="submit"
-                class="btn-submit"
+                class="btn btn-primary"
             >
                 Add Course
             </button>
@@ -160,32 +336,44 @@
 
 
     <!-- ===================================================== -->
-    <!-- COURSE MASTER TABLE -->
+    <!-- EXISTING COURSES -->
     <!-- ===================================================== -->
 
     <div class="card">
 
         <h3>Existing Courses</h3>
 
-        {% if courses %}
-
         <div class="table-container">
 
-            <table class="data-table">
+            <table>
 
                 <thead>
 
                     <tr>
 
-                        <th>Course ID</th>
+                        <th>
+                            Course ID
+                        </th>
 
-                        <th>Course Name</th>
+                        <th>
+                            Course Name
+                        </th>
 
-                        <th>Institution Category</th>
+                        <th>
+                            Institution Category
+                        </th>
 
-                        <th>Status</th>
+                        <th>
+                            Academic Year
+                        </th>
 
-                        <th>Actions</th>
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Actions
+                        </th>
 
                     </tr>
 
@@ -194,103 +382,127 @@
 
                 <tbody>
 
-                    {% for course in courses %}
+                    {% if courses %}
 
-                    <tr>
+                        {% for course in courses %}
 
-                        <!-- ================================= -->
-                        <!-- COURSE ID -->
-                        <!-- ================================= -->
+                        <tr>
 
-                        <td>
-                            {{ course.course_id }}
-                        </td>
+                            <!-- ================================= -->
+                            <!-- COURSE ID -->
+                            <!-- ================================= -->
 
-
-                        <!-- ================================= -->
-                        <!-- COURSE NAME -->
-                        <!-- ================================= -->
-
-                        <td>
-                            {{ course.course_name }}
-                        </td>
+                            <td>
+                                {{ course.course_id }}
+                            </td>
 
 
-                        <!-- ================================= -->
-                        <!-- CATEGORY -->
-                        <!-- ================================= -->
+                            <!-- ================================= -->
+                            <!-- COURSE NAME -->
+                            <!-- ================================= -->
 
-                        <td>
-                            {{ course.institution_category }}
-                        </td>
-
-
-                        <!-- ================================= -->
-                        <!-- STATUS -->
-                        <!-- ================================= -->
-
-                        <td>
-
-                            {% if course.status == 'Active' %}
-
-                                <span class="status-active">
-                                    Active
-                                </span>
-
-                            {% else %}
-
-                                <span class="status-inactive">
-                                    Inactive
-                                </span>
-
-                            {% endif %}
-
-                        </td>
+                            <td>
+                                {{ course.course_name }}
+                            </td>
 
 
-                        <!-- ================================= -->
-                        <!-- ACTIONS -->
-                        <!-- ================================= -->
+                            <!-- ================================= -->
+                            <!-- INSTITUTION CATEGORY -->
+                            <!-- ================================= -->
 
-                        <td>
+                            <td>
+                                {{ course.institution_category }}
+                            </td>
 
-                            <a
-                                href="{{ url_for(
-                                    'admin.edit_course',
-                                    course_id=course.course_id
-                                ) }}"
-                                class="btn-edit"
+
+                            <!-- ================================= -->
+                            <!-- ACADEMIC YEAR -->
+                            <!-- ================================= -->
+
+                            <td>
+
+                                {% if course.academic_years %}
+
+                                    {{ course.academic_years | join(', ') }}
+
+                                {% else %}
+
+                                    Not Assigned
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- ================================= -->
+                            <!-- STATUS -->
+                            <!-- ================================= -->
+
+                            <td>
+
+                                {% if course.status == 'Active' %}
+
+                                    <span class="status-active">
+                                        Active
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="status-inactive">
+                                        Inactive
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- ================================= -->
+                            <!-- ACTIONS -->
+                            <!-- ================================= -->
+
+                            <td>
+
+                                <div class="actions">
+
+                                    <a
+                                        href="{{ url_for('admin.edit_course', course_id=course.course_id) }}"
+                                        class="btn-edit"
+                                    >
+                                        Edit
+                                    </a>
+
+
+                                    <a
+                                        href="{{ url_for('admin.delete_course', course_id=course.course_id) }}"
+                                        class="btn-delete"
+                                        onclick='return confirmDelete({{ course.course_name | tojson }});'
+                                    >
+                                        Delete
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <tr>
+
+                            <td
+                                colspan="6"
+                                class="no-data"
                             >
-                                Edit
-                            </a>
+                                No courses available.
+                            </td>
 
+                        </tr>
 
-                            <form
-                                action="{{ url_for(
-                                    'admin.delete_course',
-                                    course_id=course.course_id
-                                ) }}"
-                                method="POST"
-                                style="display:inline;"
-                                onsubmit="return confirmDelete(
-                                    '{{ course.course_name|e }}'
-                                )"
-                            >
-
-                                <button
-                                    type="submit"
-                                    class="btn-delete"
-                                >
-                                    Delete
-                                </button>
-
-                            </form>
-
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
+                    {% endif %}
 
                 </tbody>
 
@@ -298,324 +510,335 @@
 
         </div>
 
-        {% else %}
-
-        <div class="no-records">
-            No courses found in the course master.
-        </div>
-
-        {% endif %}
-
     </div>
 
 </div>
 
 
-<!-- ========================================================= -->
-<!-- CSS -->
-<!-- ========================================================= -->
-
-<style>
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-.form-control {
-    width: 100%;
-    padding: 9px 10px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
-    background: white;
-}
-
-.required {
-    color: #dc3545;
-}
-
-.field-error {
-    display: block;
-    color: #dc3545;
-    font-size: 13px;
-    margin-top: 4px;
-    min-height: 16px;
-}
-
-
-/* ========================================================= */
-/* BUTTON */
-/* ========================================================= */
-
-.btn-submit {
-    background-color: #0d6efd;
-    color: white;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 15px;
-}
-
-.btn-submit:hover {
-    opacity: 0.9;
-}
-
-
-/* ========================================================= */
-/* TABLE */
-/* ========================================================= */
-
-.table-container {
-    width: 100%;
-    overflow-x: auto;
-    margin-top: 15px;
-}
-
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 750px;
-    font-size: 14px;
-}
-
-.data-table th {
-    background-color: #f1f1f1;
-    color: #222;
-    font-weight: 700;
-    padding: 12px 10px;
-    border: 1px solid #ccc;
-    text-align: left;
-    white-space: nowrap;
-}
-
-.data-table td {
-    padding: 10px;
-    border: 1px solid #ddd;
-    vertical-align: middle;
-}
-
-.data-table tbody tr:hover {
-    background-color: #f8f8f8;
-}
-
-
-/* ========================================================= */
-/* STATUS */
-/* ========================================================= */
-
-.status-active {
-    color: #198754;
-    font-weight: 600;
-}
-
-.status-inactive {
-    color: #dc3545;
-    font-weight: 600;
-}
-
-
-/* ========================================================= */
-/* ACTION BUTTONS */
-/* ========================================================= */
-
-.btn-edit {
-    display: inline-block;
-    background-color: #0d6efd;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 13px;
-    margin-right: 5px;
-}
-
-.btn-edit:hover {
-    opacity: 0.9;
-}
-
-.btn-delete {
-    display: inline-block;
-    background-color: #dc3545;
-    color: white;
-    padding: 6px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-}
-
-.btn-delete:hover {
-    opacity: 0.9;
-}
-
-
-/* ========================================================= */
-/* MESSAGES */
-/* ========================================================= */
-
-.success-message {
-    color: #155724;
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    padding: 9px 12px;
-    margin-bottom: 12px;
-    border-radius: 4px;
-}
-
-.error-message {
-    color: #721c24;
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
-    padding: 9px 12px;
-    margin-bottom: 12px;
-    border-radius: 4px;
-}
-
-.no-records {
-    padding: 15px;
-    text-align: center;
-    color: #666;
-    background: #f8f8f8;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-</style>
-
-
-<!-- ========================================================= -->
-<!-- JAVASCRIPT -->
-<!-- ========================================================= -->
-
 <script>
 
-/* ========================================================= */
-/* FORM VALIDATION */
-/* ========================================================= */
+/* ============================================================
+   ACADEMIC YEAR OPTIONS
+   ============================================================
+
+   School
+       → Not Applicable
+
+   Jr College
+       → FY
+       → SY
+
+   Degree College
+       → FY
+       → SY
+       → TY
+       → 4th Year
+   ============================================================ */
+
+function updateAcademicYearOptions() {
+
+    const category =
+        document.getElementById("institution_category").value;
+
+    const academicYear =
+        document.getElementById("academic_year");
+
+    const info =
+        document.getElementById("academicYearInfo");
+
+
+    /* Clear existing options */
+
+    academicYear.innerHTML = "";
+
+
+    /* ========================================================
+       NO CATEGORY SELECTED
+       ======================================================== */
+
+    if (!category) {
+
+        academicYear.disabled = true;
+
+        const option = document.createElement("option");
+
+        option.value = "";
+
+        option.textContent =
+            "-- Select Institution Category First --";
+
+        academicYear.appendChild(option);
+
+        info.textContent =
+            "Academic year options will be shown according " +
+            "to the selected institution category.";
+
+        return;
+    }
+
+
+    /* ========================================================
+       SCHOOL
+       ======================================================== */
+
+    if (category === "School") {
+
+        academicYear.disabled = false;
+
+        const option = document.createElement("option");
+
+        option.value = "Not Applicable";
+
+        option.textContent = "Not Applicable";
+
+        academicYear.appendChild(option);
+
+        info.textContent =
+            "School courses use 'Not Applicable' as the academic year.";
+
+        return;
+    }
+
+
+    /* ========================================================
+       JR COLLEGE
+       ======================================================== */
+
+    if (category === "Jr College") {
+
+        academicYear.disabled = false;
+
+        addAcademicYearOption(
+            academicYear,
+            "FY",
+            "FY"
+        );
+
+        addAcademicYearOption(
+            academicYear,
+            "SY",
+            "SY"
+        );
+
+        info.textContent =
+            "Jr College courses can be offered in FY or SY.";
+
+        return;
+    }
+
+
+    /* ========================================================
+       DEGREE COLLEGE
+       ======================================================== */
+
+    if (category === "Degree College") {
+
+        academicYear.disabled = false;
+
+        addAcademicYearOption(
+            academicYear,
+            "FY",
+            "FY"
+        );
+
+        addAcademicYearOption(
+            academicYear,
+            "SY",
+            "SY"
+        );
+
+        addAcademicYearOption(
+            academicYear,
+            "TY",
+            "TY"
+        );
+
+        addAcademicYearOption(
+            academicYear,
+            "4th Year",
+            "4th Year"
+        );
+
+        info.textContent =
+            "Degree College courses can be offered in FY, SY, TY or 4th Year.";
+
+        return;
+    }
+
+}
+
+
+/* ============================================================
+   ADD ACADEMIC YEAR OPTION
+   ============================================================ */
+
+function addAcademicYearOption(
+    selectElement,
+    value,
+    text
+) {
+
+    const option = document.createElement("option");
+
+    option.value = value;
+
+    option.textContent = text;
+
+    selectElement.appendChild(option);
+
+}
+
+
+/* ============================================================
+   FORM VALIDATION
+   ============================================================ */
 
 function validateCourseForm() {
 
-    let valid = true;
-
-
-    /* ----------------------------------------------------- */
-    /* CLEAR PREVIOUS ERRORS */
-    /* ----------------------------------------------------- */
-
-    document.getElementById(
-        "course_name_error"
-    ).textContent = "";
-
-    document.getElementById(
-        "institution_category_error"
-    ).textContent = "";
-
-    document.getElementById(
-        "status_error"
-    ).textContent = "";
-
-
-    /* ----------------------------------------------------- */
-    /* GET VALUES */
-    /* ----------------------------------------------------- */
-
     const courseName =
-        document.getElementById(
-            "course_name"
-        ).value.trim();
+        document.getElementById("course_name").value.trim();
 
     const category =
-        document.getElementById(
-            "institution_category"
-        ).value;
+        document.getElementById("institution_category").value;
+
+    const academicYear =
+        document.getElementById("academic_year").value;
 
     const status =
-        document.getElementById(
-            "status"
-        ).value;
+        document.getElementById("status").value;
 
 
-    /* ===================================================== */
-    /* COURSE NAME */
-    /* ===================================================== */
+    /* ========================================================
+       COURSE NAME
+       ======================================================== */
 
-    if (courseName === "") {
+    if (!courseName) {
 
-        document.getElementById(
-            "course_name_error"
-        ).textContent =
-            "Course name is required.";
+        alert("Course name is required.");
 
-        valid = false;
+        document.getElementById("course_name").focus();
 
-    }
-    else if (courseName.length < 2) {
-
-        document.getElementById(
-            "course_name_error"
-        ).textContent =
-            "Course name must contain at least 2 characters.";
-
-        valid = false;
-
+        return false;
     }
 
 
-    /* ===================================================== */
-    /* INSTITUTION CATEGORY */
-    /* ===================================================== */
+    /* ========================================================
+       INSTITUTION CATEGORY
+       ======================================================== */
 
-    if (category === "") {
+    if (
+        category !== "School" &&
+        category !== "Jr College" &&
+        category !== "Degree College"
+    ) {
 
-        document.getElementById(
-            "institution_category_error"
-        ).textContent =
-            "Please select an institution category.";
+        alert("Please select a valid institution category.");
 
-        valid = false;
+        document
+            .getElementById("institution_category")
+            .focus();
 
+        return false;
     }
 
 
-    /* ===================================================== */
-    /* STATUS */
-    /* ===================================================== */
+    /* ========================================================
+       ACADEMIC YEAR
+       ======================================================== */
 
-    if (status === "") {
+    if (!academicYear) {
 
-        document.getElementById(
-            "status_error"
-        ).textContent =
-            "Please select a status.";
+        alert("Please select an academic year.");
 
-        valid = false;
+        document
+            .getElementById("academic_year")
+            .focus();
 
+        return false;
     }
 
 
-    return valid;
+    /* ========================================================
+       CATEGORY + ACADEMIC YEAR VALIDATION
+       ======================================================== */
 
+    if (
+        category === "School" &&
+        academicYear !== "Not Applicable"
+    ) {
+
+        alert(
+            "School courses must have Academic Year " +
+            "'Not Applicable'."
+        );
+
+        return false;
+    }
+
+
+    if (
+        category === "Jr College" &&
+        academicYear !== "FY" &&
+        academicYear !== "SY"
+    ) {
+
+        alert(
+            "Jr College courses must have Academic Year " +
+            "FY or SY."
+        );
+
+        return false;
+    }
+
+
+    if (
+        category === "Degree College" &&
+        academicYear !== "FY" &&
+        academicYear !== "SY" &&
+        academicYear !== "TY" &&
+        academicYear !== "4th Year"
+    ) {
+
+        alert(
+            "Degree College courses must have Academic Year " +
+            "FY, SY, TY or 4th Year."
+        );
+
+        return false;
+    }
+
+
+    /* ========================================================
+       STATUS
+       ======================================================== */
+
+    if (
+        status !== "Active" &&
+        status !== "Inactive"
+    ) {
+
+        alert("Please select a valid status.");
+
+        document.getElementById("status").focus();
+
+        return false;
+    }
+
+
+    return true;
 }
 
 
-/* ========================================================= */
-/* DELETE CONFIRMATION */
-/* ========================================================= */
+/* ============================================================
+   DELETE CONFIRMATION
+   ============================================================ */
 
 function confirmDelete(courseName) {
 
     return confirm(
-        "Are you sure you want to permanently delete the course \"" +
+        "Are you sure you want to delete the course '" +
         courseName +
-        "\"?"
+        "'?"
     );
 
 }
