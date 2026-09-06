@@ -1,0 +1,2100 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<style>
+
+    /* =========================================================
+       PAGE
+       ========================================================= */
+
+    .container {
+        max-width: 1200px;
+        margin: 30px auto;
+        padding: 0 20px;
+    }
+
+    .page-title {
+        margin-bottom: 25px;
+    }
+
+    .page-title h2 {
+        margin: 0;
+        font-size: 28px;
+        color: #222;
+    }
+
+    .page-title p {
+        margin-top: 6px;
+        color: #777;
+        font-size: 14px;
+    }
+
+
+    /* =========================================================
+       MESSAGES
+       ========================================================= */
+
+    .success-message {
+        background: #e8f7ee;
+        color: #187a43;
+        border: 1px solid #b9e5c9;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .error-message {
+        background: #fdecec;
+        color: #b42318;
+        border: 1px solid #f3baba;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+
+    /* =========================================================
+       FORM CARD
+       ========================================================= */
+
+    .form-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 30px;
+    }
+
+    .form-card h3 {
+        margin-top: 0;
+        margin-bottom: 22px;
+        font-size: 21px;
+        color: #333;
+    }
+
+
+    /* =========================================================
+       FORM GRID
+       ========================================================= */
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #444;
+        margin-bottom: 7px;
+        font-size: 14px;
+    }
+
+    .required {
+        color: #d93025;
+    }
+
+    select {
+        width: 100%;
+        padding: 11px 13px;
+        border: 1px solid #d0d5dd;
+        border-radius: 7px;
+        background: #fff;
+        font-size: 14px;
+        outline: none;
+        transition: 0.2s;
+        box-sizing: border-box;
+    }
+
+    select:focus {
+        border-color: #6c63ff;
+        box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.10);
+    }
+
+    select:disabled {
+        background: #f4f4f4;
+        color: #999;
+        cursor: not-allowed;
+    }
+
+
+    /* =========================================================
+       SUBJECT SECTION
+       ========================================================= */
+
+    .subject-section {
+        margin-top: 25px;
+        border-top: 1px solid #eeeeee;
+        padding-top: 22px;
+    }
+
+    .subject-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        gap: 15px;
+    }
+
+    .subject-header h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #333;
+    }
+
+    .subject-count {
+        background: #f1efff;
+        color: #5148c7;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .subject-info {
+        color: #777;
+        font-size: 13px;
+        margin-bottom: 15px;
+    }
+
+
+    /* =========================================================
+       SUBJECT CHECKLIST
+       ========================================================= */
+
+    .subject-box {
+        border: 1px solid #e1e1e1;
+        border-radius: 10px;
+        padding: 15px;
+        background: #fafafa;
+        min-height: 100px;
+    }
+
+    .subject-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .subject-item {
+        position: relative;
+    }
+
+    .subject-item input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .subject-label {
+        display: flex;
+        align-items: center;
+        min-height: 52px;
+        padding: 10px 13px;
+        border: 1px solid #dddddd;
+        border-radius: 9px;
+        background: #ffffff;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .subject-label:hover {
+        border-color: #8c86ff;
+        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.06);
+    }
+
+    .subject-check {
+        width: 19px;
+        height: 19px;
+        border: 2px solid #b8b8b8;
+        border-radius: 5px;
+        margin-right: 11px;
+        flex-shrink: 0;
+        position: relative;
+        background: #fff;
+        transition: all 0.2s ease;
+    }
+
+    .subject-name {
+        font-size: 14px;
+        color: #333;
+        font-weight: 500;
+        line-height: 1.35;
+    }
+
+    .subject-item input[type="checkbox"]:checked + .subject-label {
+        border-color: #6c63ff;
+        background: #f5f3ff;
+    }
+
+    .subject-item input[type="checkbox"]:checked + .subject-label
+    .subject-check {
+        background: #6c63ff;
+        border-color: #6c63ff;
+    }
+
+    .subject-item input[type="checkbox"]:checked + .subject-label
+    .subject-check::after {
+        content: "";
+        position: absolute;
+        left: 5px;
+        top: 1px;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    .no-subjects {
+        text-align: center;
+        padding: 30px 15px;
+        color: #888;
+        font-size: 14px;
+    }
+
+
+    /* =========================================================
+       BUTTONS
+       ========================================================= */
+
+    .button-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 25px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 7px;
+        padding: 11px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: 0.2s;
+    }
+
+    .btn-primary {
+        background: #6c63ff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #584ff0;
+    }
+
+    .btn-secondary {
+        background: #eeeeee;
+        color: #444;
+    }
+
+    .btn-secondary:hover {
+        background: #dddddd;
+    }
+
+
+    /* =========================================================
+       PREVIEW
+       ========================================================= */
+
+    .preview-card {
+        margin-top: 25px;
+        border: 1px solid #e4e4e4;
+        border-radius: 10px;
+        padding: 18px;
+        background: #fafafa;
+    }
+
+    .preview-card h4 {
+        margin: 0 0 12px 0;
+        font-size: 16px;
+        color: #333;
+    }
+
+    .preview-content {
+        color: #555;
+        font-size: 14px;
+        line-height: 1.7;
+    }
+
+    .preview-content strong {
+        color: #333;
+    }
+
+
+    /* =========================================================
+       EXISTING SETUPS
+       ========================================================= */
+
+    .existing-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .existing-card h3 {
+        margin-top: 0;
+        margin-bottom: 6px;
+        font-size: 21px;
+        color: #333;
+    }
+
+    .existing-description {
+        color: #777;
+        font-size: 13px;
+        margin-bottom: 20px;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    .setup-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .setup-table th {
+        background: #f6f6f8;
+        color: #444;
+        font-weight: 600;
+        padding: 12px 10px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+    }
+
+    .setup-table td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #eeeeee;
+        color: #555;
+        vertical-align: top;
+    }
+
+    .setup-table tr:hover {
+        background: #fafafa;
+    }
+
+    .subject-tag {
+        display: inline-block;
+        background: #f0efff;
+        color: #5148c7;
+        padding: 4px 9px;
+        border-radius: 15px;
+        margin: 2px 4px 2px 0;
+        font-size: 12px;
+    }
+
+    .edit-btn {
+        background: #eeeeee;
+        color: #333;
+        border: none;
+        padding: 7px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .edit-btn:hover {
+        background: #dddddd;
+    }
+
+    .no-setups {
+        padding: 30px;
+        text-align: center;
+        color: #888;
+        background: #fafafa;
+        border-radius: 8px;
+        border: 1px dashed #ddd;
+    }
+
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @media (max-width: 900px) {
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .subject-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 600px) {
+
+        .container {
+            padding: 0 12px;
+        }
+
+        .form-card,
+        .existing-card {
+            padding: 18px;
+        }
+
+        .subject-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .button-row {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+    }
+
+</style>
+
+<div class="container">
+
+<!-- =====================================================
+     PAGE TITLE
+     ===================================================== -->
+
+<div class="page-title">
+
+    <h2>Assign Academic Setup</h2>
+
+    <p>
+        Assign courses, departments, semesters and subjects
+        to an institution according to its academic structure.
+    </p>
+
+</div>
+
+
+<!-- =====================================================
+     MESSAGES
+     ===================================================== -->
+
+{% if msg %}
+    <div class="success-message">
+        {{ msg }}
+    </div>
+{% endif %}
+
+{% if err %}
+    <div class="error-message">
+        {{ err }}
+    </div>
+{% endif %}
+
+
+<!-- =====================================================
+     ASSIGNMENT FORM
+     ===================================================== -->
+
+<div class="form-card">
+
+    <h3>Academic Setup Details</h3>
+
+    <form method="POST"
+          action="{{ url_for('admin.assign_academic_setup') }}"
+          id="academicSetupForm">
+
+        <div class="form-grid">
+
+
+            <!-- =========================================
+                 1. INSTITUTION
+                 ========================================= -->
+
+            <div class="form-group">
+
+                <label for="institution_id">
+                    Institution <span class="required">*</span>
+                </label>
+
+                <select
+                    name="institution_id"
+                    id="institution_id"
+                    required>
+
+                    <option value="">
+                        -- Select Institution --
+                    </option>
+
+                    {% for institution in institutions %}
+
+                        <option
+                            value="{{ institution.institution_id }}"
+                            data-category="{{ institution.institution_category }}"
+                            data-type="{{ institution.institution_type }}"
+                            {% if selected_institution_id|string ==
+                                  institution.institution_id|string %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ institution.institution_name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- =========================================
+                 2. ACADEMIC YEAR
+                 ========================================= -->
+
+            <div class="form-group">
+
+                <label for="academic_year">
+                    Academic Year <span class="required">*</span>
+                </label>
+
+                <select
+                    name="academic_year"
+                    id="academic_year"
+                    required
+                    disabled>
+
+                    <option value="">
+                        -- Select Academic Year --
+                    </option>
+
+                    {% for year in academic_years %}
+
+                        <option
+                            value="{{ year.academic_year }}"
+                            data-institutions="{{ year.institution_ids or '' }}"
+                            {% if selected_academic_year ==
+                                  year.academic_year %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ year.academic_year }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- =========================================
+                 3. COURSE
+                 ========================================= -->
+
+            <div class="form-group">
+
+                <label for="course_id">
+                    Course <span class="required">*</span>
+                </label>
+
+                <select
+                    name="course_id"
+                    id="course_id"
+                    required
+                    disabled>
+
+                    <option value="">
+                        -- Select Course --
+                    </option>
+
+                    {% for course in courses %}
+
+                        <option
+                            value="{{ course.course_id }}"
+                            data-category="{{ course.institution_category }}"
+                            data-academic-years="{{ course.academic_years or '' }}"
+                            data-academic-year-map="{{ course.academic_year_map or '' }}"
+                            data-institutions="{{ course.institution_ids or '' }}"
+                            {% if selected_course_id|string ==
+                                  course.course_id|string %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ course.course_name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- =========================================
+                 4. DEPARTMENT
+                 MANUAL SELECTION
+                 ========================================= -->
+
+            <div class="form-group">
+
+                <label for="department_id">
+                    Department <span class="required">*</span>
+                </label>
+
+                <select
+                    name="department_id"
+                    id="department_id"
+                    required
+                    disabled>
+
+                    <option value="">
+                        -- Select Department --
+                    </option>
+
+                    {% for department in departments %}
+
+                        <option
+                            value="{{ department.department_id }}"
+                            data-category="{{ department.institution_category }}"
+                            data-institutions="{{ department.institution_ids or '' }}"
+                            {% if selected_department_id|string ==
+                                  department.department_id|string %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ department.department_name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- =========================================
+                 5. SEMESTER
+                 ========================================= -->
+
+            <div class="form-group">
+
+                <label for="semester_id">
+                    Semester <span class="required">*</span>
+                </label>
+
+                <select
+                    name="semester_id"
+                    id="semester_id"
+                    required
+                    disabled>
+
+                    <option value="">
+                        -- Select Semester --
+                    </option>
+
+                    {% for semester in semesters %}
+
+                        <option
+                            value="{{ semester.semester_id }}"
+                            data-academic-year="{{ semester.academic_year }}"
+                            data-category="{{ semester.institution_category }}"
+                            {% if selected_semester_id|string ==
+                                  semester.semester_id|string %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ semester.semester_name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             SUBJECTS
+             ================================================= -->
+
+        <div class="subject-section">
+
+            <div class="subject-header">
+
+                <h3>
+                    Subjects <span class="required">*</span>
+                </h3>
+
+                <div
+                    class="subject-count"
+                    id="subjectCount">
+                    0 selected
+                </div>
+
+            </div>
+
+            <div class="subject-info">
+                Select all subjects that belong to the selected
+                course and semester.
+            </div>
+
+
+            <div class="subject-box">
+
+                <div
+                    id="subjectGrid"
+                    class="subject-grid">
+
+                    <!-- Subjects generated by JavaScript -->
+
+                </div>
+
+                <div
+                    id="noSubjects"
+                    class="no-subjects"
+                    style="display: none;">
+
+                    Please select an institution and course
+                    to view available subjects.
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             PREVIEW
+             ================================================= -->
+
+        <div
+            class="preview-card"
+            id="previewCard"
+            style="display: none;">
+
+            <h4>Academic Setup Preview</h4>
+
+            <div
+                class="preview-content"
+                id="previewContent">
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             BUTTONS
+             ================================================= -->
+
+        <div class="button-row">
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+                id="saveButton">
+
+                Assign Academic Setup
+
+            </button>
+
+            <button
+                type="button"
+                class="btn btn-secondary"
+                id="resetButton">
+
+                Clear
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- =====================================================
+     EXISTING ACADEMIC SETUPS
+     ===================================================== -->
+
+<div class="existing-card">
+
+    <h3>Existing Academic Setups</h3>
+
+    <div class="existing-description">
+
+        Existing assignments are shown here. Select an existing
+        setup to edit its subjects instead of creating a duplicate.
+
+    </div>
+
+
+    <div
+        class="table-wrapper"
+        id="existingSetupsWrapper">
+
+        <!-- Generated by JavaScript -->
+
+    </div>
+
+</div>
+
+</div>
+
+<!-- =========================================================
+     JAVASCRIPT DATA
+     ========================================================= -->
+
+<script>
+
+    const existingSetups =
+        {{ existing_setups | tojson }};
+
+    const initialSelection = {
+        institution_id:
+            "{{ selected_institution_id or '' }}",
+
+        academic_year:
+            "{{ selected_academic_year or '' }}",
+
+        department_id:
+            "{{ selected_department_id or '' }}",
+
+        course_id:
+            "{{ selected_course_id or '' }}",
+
+        semester_id:
+            "{{ selected_semester_id or '' }}",
+
+        subject_master_ids:
+            {{ selected_subject_master_ids | tojson }}
+    };
+
+
+    /* =========================================================
+       ELEMENTS
+       ========================================================= */
+
+    const institutionSelect =
+        document.getElementById("institution_id");
+
+    const academicYearSelect =
+        document.getElementById("academic_year");
+
+    const courseSelect =
+        document.getElementById("course_id");
+
+    const departmentSelect =
+        document.getElementById("department_id");
+
+    const semesterSelect =
+        document.getElementById("semester_id");
+
+    const subjectGrid =
+        document.getElementById("subjectGrid");
+
+    const noSubjects =
+        document.getElementById("noSubjects");
+
+    const subjectCount =
+        document.getElementById("subjectCount");
+
+    const previewCard =
+        document.getElementById("previewCard");
+
+    const previewContent =
+        document.getElementById("previewContent");
+
+    const saveButton =
+        document.getElementById("saveButton");
+
+    const resetButton =
+        document.getElementById("resetButton");
+
+    const existingSetupsWrapper =
+        document.getElementById("existingSetupsWrapper");
+
+
+    /* =========================================================
+       SUBJECT DATA
+       ========================================================= */
+
+    const subjects = [
+    {% for subject in subjects %}
+    {
+        id: "{{ subject.subject_master_id }}",
+        name: {{ subject.subject_name | tojson }},
+        courseId: "{{ subject.course_id }}",
+        category: "{{ subject.institution_category }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+
+    /* =========================================================
+       GET SELECTED INSTITUTION CATEGORY
+       ========================================================= */
+
+    function getSelectedInstitutionCategory() {
+
+        const option =
+            institutionSelect.options[
+                institutionSelect.selectedIndex
+            ];
+
+        if (!option) {
+            return "";
+        }
+
+        return option.dataset.category || "";
+    }
+
+
+    /* =========================================================
+       CHECK INSTITUTION MAPPING
+       ========================================================= */
+
+    function belongsToInstitution(
+        institutionList,
+        institutionId
+    ) {
+
+        if (!institutionList || !institutionId) {
+            return false;
+        }
+
+        return institutionList
+            .split(",")
+            .map(x => x.trim())
+            .includes(String(institutionId));
+    }
+
+
+    /* =========================================================
+       FILTER ACADEMIC YEARS
+       ========================================================= */
+
+    function filterAcademicYears() {
+
+        const institutionId =
+            institutionSelect.value;
+
+        academicYearSelect.disabled =
+            !institutionId;
+
+        Array.from(
+            academicYearSelect.options
+        ).forEach(option => {
+
+            if (!option.value) {
+                option.hidden = false;
+                return;
+            }
+
+            const valid =
+                belongsToInstitution(
+                    option.dataset.institutions,
+                    institutionId
+                );
+
+            option.hidden = !valid;
+
+        });
+
+        if (
+            academicYearSelect.value &&
+            academicYearSelect.selectedOptions[0].hidden
+        ) {
+
+            academicYearSelect.value = "";
+        }
+    }
+
+
+    /* =========================================================
+       FILTER COURSES
+       Institution + Academic Year
+       ========================================================= */
+
+    function filterCourses() {
+
+        const institutionId =
+            institutionSelect.value;
+
+        const academicYear =
+            academicYearSelect.value;
+
+        courseSelect.disabled =
+            !(institutionId && academicYear);
+
+        Array.from(
+            courseSelect.options
+        ).forEach(option => {
+
+            if (!option.value) {
+                option.hidden = false;
+                return;
+            }
+
+            const institutionMatch =
+                belongsToInstitution(
+                    option.dataset.institutions,
+                    institutionId
+                );
+
+            const academicYears =
+                option.dataset.academicYears
+                    ? option.dataset.academicYears
+                        .split(",")
+                        .map(x => x.trim())
+                    : [];
+
+            const academicYearMatch =
+                academicYears.includes(
+                    academicYear
+                );
+
+            const categoryMatch =
+                option.dataset.category ===
+                getSelectedInstitutionCategory();
+
+            option.hidden =
+                !(
+                    institutionMatch &&
+                    academicYearMatch &&
+                    categoryMatch
+                );
+
+        });
+
+        if (
+            courseSelect.value &&
+            courseSelect.selectedOptions[0].hidden
+        ) {
+
+            courseSelect.value = "";
+        }
+    }
+
+
+    /* =========================================================
+       FILTER DEPARTMENTS
+       Institution ONLY
+       Manual selection
+       ========================================================= */
+
+    function filterDepartments() {
+
+        const institutionId =
+            institutionSelect.value;
+
+        const category =
+            getSelectedInstitutionCategory();
+
+        departmentSelect.disabled =
+            !institutionId;
+
+        Array.from(
+            departmentSelect.options
+        ).forEach(option => {
+
+            if (!option.value) {
+                option.hidden = false;
+                return;
+            }
+
+            const institutionMatch =
+                belongsToInstitution(
+                    option.dataset.institutions,
+                    institutionId
+                );
+
+            const categoryMatch =
+                option.dataset.category === category;
+
+            option.hidden =
+                !(
+                    institutionMatch &&
+                    categoryMatch
+                );
+
+        });
+
+        if (
+            departmentSelect.value &&
+            departmentSelect.selectedOptions[0].hidden
+        ) {
+
+            departmentSelect.value = "";
+        }
+    }
+
+
+    /* =========================================================
+       FILTER SEMESTERS
+       Academic Year + Institution Category
+       ========================================================= */
+
+    function filterSemesters() {
+
+        const academicYear =
+            academicYearSelect.value;
+
+        const category =
+            getSelectedInstitutionCategory();
+
+        semesterSelect.disabled =
+            !(academicYear && category);
+
+        Array.from(
+            semesterSelect.options
+        ).forEach(option => {
+
+            if (!option.value) {
+                option.hidden = false;
+                return;
+            }
+
+            const yearMatch =
+                option.dataset.academicYear ===
+                academicYear;
+
+            const categoryMatch =
+                option.dataset.category ===
+                category;
+
+            option.hidden =
+                !(
+                    yearMatch &&
+                    categoryMatch
+                );
+
+        });
+
+        if (
+            semesterSelect.value &&
+            semesterSelect.selectedOptions[0].hidden
+        ) {
+
+            semesterSelect.value = "";
+        }
+    }
+
+
+    /* =========================================================
+       FIND EXISTING SETUP
+       ========================================================= */
+
+    function findExistingSetup() {
+
+        const institutionId =
+            institutionSelect.value;
+
+        const academicYear =
+            academicYearSelect.value;
+
+        const courseId =
+            courseSelect.value;
+
+        const departmentId =
+            departmentSelect.value;
+
+        const semesterId =
+            semesterSelect.value;
+
+        if (
+            !institutionId ||
+            !academicYear ||
+            !courseId ||
+            !departmentId ||
+            !semesterId
+        ) {
+
+            return null;
+        }
+
+        return existingSetups.find(setup =>
+
+            String(setup.institution_id) ===
+                String(institutionId)
+
+            && String(setup.academic_year) ===
+                String(academicYear)
+
+            && String(setup.course_id) ===
+                String(courseId)
+
+            && String(setup.department_id) ===
+                String(departmentId)
+
+            && String(setup.semester_id) ===
+                String(semesterId)
+
+        ) || null;
+    }
+
+
+    /* =========================================================
+       SHOW SUBJECTS
+       Institution + Course
+       ========================================================= */
+
+    function showSubjects(
+        subjectsToSelect = null
+    ) {
+
+        const institutionId =
+            institutionSelect.value;
+
+        const courseId =
+            courseSelect.value;
+
+        subjectGrid.innerHTML = "";
+
+        if (!institutionId || !courseId) {
+
+            noSubjects.style.display =
+                "block";
+
+            subjectCount.textContent =
+                "0 selected";
+
+            return;
+        }
+
+        const category =
+            getSelectedInstitutionCategory();
+
+        const availableSubjects =
+            subjects.filter(subject => {
+
+                const courseMatch =
+    String(subject.courseId) ===
+    String(courseId);
+
+    const categoryMatch =
+        subject.category === category;
+
+    return (
+        courseMatch &&
+        categoryMatch
+    );
+            });
+
+
+        if (availableSubjects.length === 0) {
+
+            noSubjects.style.display =
+                "block";
+
+            noSubjects.textContent =
+                "No subjects are mapped to this institution for the selected course.";
+
+            updateSubjectCount();
+
+            return;
+        }
+
+
+        noSubjects.style.display =
+            "none";
+
+
+        availableSubjects.forEach(subject => {
+
+            const item =
+                document.createElement("div");
+
+            item.className =
+                "subject-item";
+
+
+            const checkbox =
+                document.createElement("input");
+
+            checkbox.type =
+                "checkbox";
+
+            checkbox.name =
+                "subject_master_ids";
+
+            checkbox.value =
+                subject.id;
+
+            checkbox.id =
+                "subject_" + subject.id;
+
+
+            if (
+                subjectsToSelect &&
+                subjectsToSelect
+                    .map(String)
+                    .includes(String(subject.id))
+            ) {
+
+                checkbox.checked = true;
+            }
+
+
+            const label =
+                document.createElement("label");
+
+            label.className =
+                "subject-label";
+
+            label.htmlFor =
+                checkbox.id;
+
+
+            const check =
+                document.createElement("span");
+
+            check.className =
+                "subject-check";
+
+
+            const name =
+                document.createElement("span");
+
+            name.className =
+                "subject-name";
+
+            name.textContent =
+                subject.name;
+
+
+            label.appendChild(check);
+            label.appendChild(name);
+
+            item.appendChild(checkbox);
+            item.appendChild(label);
+
+            subjectGrid.appendChild(item);
+
+        });
+
+
+        document
+            .querySelectorAll(
+                'input[name="subject_master_ids"]'
+            )
+            .forEach(checkbox => {
+
+                checkbox.addEventListener(
+                    "change",
+                    function() {
+
+                        updateSubjectCount();
+                        updatePreview();
+                        updateSaveButton();
+
+                    }
+                );
+
+            });
+
+
+        updateSubjectCount();
+    }
+
+
+    /* =========================================================
+       GET SELECTED SUBJECTS
+       ========================================================= */
+
+    function getSelectedSubjects() {
+
+        return Array.from(
+            document.querySelectorAll(
+                'input[name="subject_master_ids"]:checked'
+            )
+        ).map(
+            checkbox => checkbox.value
+        );
+    }
+
+
+    /* =========================================================
+       SUBJECT COUNT
+       ========================================================= */
+
+    function updateSubjectCount() {
+
+        const count =
+            getSelectedSubjects().length;
+
+        subjectCount.textContent =
+            count + (
+                count === 1
+                    ? " subject selected"
+                    : " subjects selected"
+            );
+    }
+
+
+    /* =========================================================
+       UPDATE SAVE BUTTON
+       ========================================================= */
+
+    function updateSaveButton() {
+
+        const existing =
+            findExistingSetup();
+
+        if (existing) {
+
+            saveButton.textContent =
+                "Update Academic Setup";
+
+        } else {
+
+            saveButton.textContent =
+                "Assign Academic Setup";
+        }
+    }
+
+
+    /* =========================================================
+       PREVIEW
+       ========================================================= */
+
+    function updatePreview() {
+
+        const institutionText =
+            institutionSelect.selectedOptions[0]
+                ?.text || "";
+
+        const academicYearText =
+            academicYearSelect.selectedOptions[0]
+                ?.text || "";
+
+        const courseText =
+            courseSelect.selectedOptions[0]
+                ?.text || "";
+
+        const departmentText =
+            departmentSelect.selectedOptions[0]
+                ?.text || "";
+
+        const semesterText =
+            semesterSelect.selectedOptions[0]
+                ?.text || "";
+
+        const selectedSubjects =
+            getSelectedSubjects();
+
+
+        if (
+            !institutionSelect.value ||
+            !academicYearSelect.value ||
+            !courseSelect.value ||
+            !departmentSelect.value ||
+            !semesterSelect.value
+        ) {
+
+            previewCard.style.display =
+                "none";
+
+            return;
+        }
+
+
+        const subjectNames =
+            selectedSubjects.map(id => {
+
+                const subject =
+                    subjects.find(
+                        s => String(s.id) ===
+                        String(id)
+                    );
+
+                return subject
+                    ? subject.name
+                    : "";
+            });
+
+
+        previewContent.innerHTML =
+
+            "<strong>Institution:</strong> "
+            + institutionText
+
+            + "<br><strong>Academic Year:</strong> "
+            + academicYearText
+
+            + "<br><strong>Course:</strong> "
+            + courseText
+
+            + "<br><strong>Department:</strong> "
+            + departmentText
+
+            + "<br><strong>Semester:</strong> "
+            + semesterText
+
+            + "<br><strong>Subjects:</strong> "
+            + (
+                subjectNames.length
+                    ? subjectNames.join(", ")
+                    : "None selected"
+            );
+
+
+        previewCard.style.display =
+            "block";
+    }
+
+
+    /* =========================================================
+       RENDER EXISTING SETUPS
+       ========================================================= */
+
+    function renderExistingSetups() {
+
+        const institutionId =
+            institutionSelect.value;
+
+        const academicYear =
+            academicYearSelect.value;
+
+
+        const filtered =
+            existingSetups.filter(setup => {
+
+                const institutionMatch =
+                    !institutionId ||
+                    String(setup.institution_id) ===
+                    String(institutionId);
+
+                const yearMatch =
+                    !academicYear ||
+                    String(setup.academic_year) ===
+                    String(academicYear);
+
+                return (
+                    institutionMatch &&
+                    yearMatch
+                );
+            });
+
+
+        if (filtered.length === 0) {
+
+            existingSetupsWrapper.innerHTML =
+
+                '<div class="no-setups">' +
+                'No academic setups found for the selected criteria.' +
+                '</div>';
+
+            return;
+        }
+
+
+        let html =
+
+            '<table class="setup-table">' +
+
+                '<thead>' +
+
+                    '<tr>' +
+
+                        '<th>Academic Year</th>' +
+                        '<th>Course</th>' +
+                        '<th>Department</th>' +
+                        '<th>Semester</th>' +
+                        '<th>Subjects</th>' +
+                        '<th>Action</th>' +
+
+                    '</tr>' +
+
+                '</thead>' +
+
+                '<tbody>';
+
+
+        filtered.forEach(setup => {
+
+            html +=
+
+                '<tr>' +
+
+                    '<td>' +
+                        escapeHtml(
+                            setup.academic_year
+                        ) +
+                    '</td>' +
+
+                    '<td>' +
+                        escapeHtml(
+                            setup.course_name
+                        ) +
+                    '</td>' +
+
+                    '<td>' +
+                        escapeHtml(
+                            setup.department_name ||
+                            "Not Applicable"
+                        ) +
+                    '</td>' +
+
+                    '<td>' +
+                        escapeHtml(
+                            setup.semester_name ||
+                            "Not Applicable"
+                        ) +
+                    '</td>' +
+
+                    '<td>';
+
+
+            setup.subjects.forEach(
+                subjectName => {
+
+                    html +=
+                        '<span class="subject-tag">' +
+                        escapeHtml(
+                            subjectName
+                        ) +
+                        '</span>';
+
+                }
+            );
+
+
+            html +=
+
+                    '</td>' +
+
+                    '<td>' +
+
+                        '<button ' +
+                            'type="button" ' +
+                            'class="edit-btn" ' +
+                            'onclick="loadExistingSetup(' +
+                                '\'' +
+                                escapeHtml(
+                                    setup.setup_key
+                                ) +
+                                '\'' +
+                            ')">' +
+
+                            'Load / Edit' +
+
+                        '</button>' +
+
+                    '</td>' +
+
+                '</tr>';
+
+        });
+
+
+        html +=
+
+                '</tbody>' +
+
+            '</table>';
+
+
+        existingSetupsWrapper.innerHTML =
+            html;
+    }
+
+
+    /* =========================================================
+       LOAD EXISTING SETUP
+       ========================================================= */
+
+    function loadExistingSetup(
+        setupKey
+    ) {
+
+        const setup =
+            existingSetups.find(
+                item =>
+                    item.setup_key ===
+                    setupKey
+            );
+
+
+        if (!setup) {
+            return;
+        }
+
+
+        institutionSelect.value =
+            String(setup.institution_id);
+
+        filterAcademicYears();
+
+
+        academicYearSelect.value =
+            String(setup.academic_year);
+
+        filterCourses();
+        filterDepartments();
+        filterSemesters();
+
+
+        courseSelect.value =
+            String(setup.course_id);
+
+        departmentSelect.value =
+            String(setup.department_id);
+
+        semesterSelect.value =
+            String(setup.semester_id);
+
+
+        showSubjects(
+            setup.subject_master_ids
+        );
+
+
+        updateSubjectCount();
+        updateSaveButton();
+        updatePreview();
+
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    }
+
+
+    /* =========================================================
+       ESCAPE HTML
+       ========================================================= */
+
+    function escapeHtml(value) {
+
+        if (value === null ||
+            value === undefined) {
+
+            return "";
+        }
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
+    /* =========================================================
+       INSTITUTION CHANGE
+       ========================================================= */
+
+    institutionSelect.addEventListener(
+        "change",
+        function() {
+
+            academicYearSelect.value = "";
+            courseSelect.value = "";
+            departmentSelect.value = "";
+            semesterSelect.value = "";
+
+            subjectGrid.innerHTML = "";
+
+            noSubjects.style.display =
+                "block";
+
+            noSubjects.textContent =
+                "Please select a course to view available subjects.";
+
+            filterAcademicYears();
+            filterCourses();
+            filterDepartments();
+            filterSemesters();
+
+            updateSubjectCount();
+            updateSaveButton();
+            updatePreview();
+            renderExistingSetups();
+
+        }
+    );
+
+
+    /* =========================================================
+       ACADEMIC YEAR CHANGE
+       ========================================================= */
+
+    academicYearSelect.addEventListener(
+        "change",
+        function() {
+
+            courseSelect.value = "";
+            semesterSelect.value = "";
+
+            subjectGrid.innerHTML = "";
+
+            noSubjects.style.display =
+                "block";
+
+            noSubjects.textContent =
+                "Please select a course to view available subjects.";
+
+            filterCourses();
+            filterSemesters();
+
+            updateSubjectCount();
+            updateSaveButton();
+            updatePreview();
+            renderExistingSetups();
+
+        }
+    );
+
+
+    /* =========================================================
+       COURSE CHANGE
+       ========================================================= */
+
+    courseSelect.addEventListener(
+        "change",
+        function() {
+
+            subjectGrid.innerHTML = "";
+
+            noSubjects.style.display =
+                "block";
+
+            noSubjects.textContent =
+                "Loading subjects...";
+
+            showSubjects();
+
+            updateSaveButton();
+            updatePreview();
+
+        }
+    );
+
+
+    /* =========================================================
+       DEPARTMENT CHANGE
+       ========================================================= */
+
+    departmentSelect.addEventListener(
+        "change",
+        function() {
+
+            semesterSelect.value =
+                semesterSelect.value;
+
+            updateSaveButton();
+            updatePreview();
+
+        }
+    );
+
+
+    /* =========================================================
+       SEMESTER CHANGE
+       ========================================================= */
+
+    semesterSelect.addEventListener(
+        "change",
+        function() {
+
+            updateSaveButton();
+            updatePreview();
+
+        }
+    );
+
+
+    /* =========================================================
+       RESET
+       ========================================================= */
+
+    resetButton.addEventListener(
+        "click",
+        function() {
+
+            institutionSelect.value = "";
+
+            academicYearSelect.value = "";
+            academicYearSelect.disabled = true;
+
+            courseSelect.value = "";
+            courseSelect.disabled = true;
+
+            departmentSelect.value = "";
+            departmentSelect.disabled = true;
+
+            semesterSelect.value = "";
+            semesterSelect.disabled = true;
+
+            subjectGrid.innerHTML = "";
+
+            noSubjects.style.display =
+                "block";
+
+            noSubjects.textContent =
+                "Please select an institution and course to view available subjects.";
+
+            previewCard.style.display =
+                "none";
+
+            updateSubjectCount();
+
+            saveButton.textContent =
+                "Assign Academic Setup";
+
+            renderExistingSetups();
+
+        }
+    );
+
+
+    /* =========================================================
+       FORM VALIDATION
+       ========================================================= */
+
+    document
+        .getElementById("academicSetupForm")
+        .addEventListener(
+            "submit",
+            function(event) {
+
+                const selectedSubjects =
+                    getSelectedSubjects();
+
+
+                if (
+                    !institutionSelect.value ||
+                    !academicYearSelect.value ||
+                    !courseSelect.value ||
+                    !departmentSelect.value ||
+                    !semesterSelect.value
+                ) {
+
+                    event.preventDefault();
+
+                    alert(
+                        "Please complete all academic setup selections."
+                    );
+
+                    return;
+                }
+
+
+                if (
+                    selectedSubjects.length === 0
+                ) {
+
+                    event.preventDefault();
+
+                    alert(
+                        "Please select at least one subject."
+                    );
+
+                    return;
+                }
+
+            }
+        );
+
+
+    /* =========================================================
+       INITIALIZE PAGE
+       ========================================================= */
+
+    function initializePage() {
+
+        filterAcademicYears();
+
+        filterCourses();
+
+        filterDepartments();
+
+        filterSemesters();
+
+
+        /*
+         * If the server returned selected values,
+         * restore the subjects.
+         */
+
+        if (
+            initialSelection.institution_id &&
+            initialSelection.academic_year &&
+            initialSelection.course_id
+        ) {
+
+            institutionSelect.value =
+                initialSelection.institution_id;
+
+            filterAcademicYears();
+
+
+            academicYearSelect.value =
+                initialSelection.academic_year;
+
+            filterCourses();
+            filterDepartments();
+            filterSemesters();
+
+
+            courseSelect.value =
+                initialSelection.course_id;
+
+            departmentSelect.value =
+                initialSelection.department_id;
+
+            semesterSelect.value =
+                initialSelection.semester_id;
+
+
+            showSubjects(
+                initialSelection.subject_master_ids
+            );
+
+        }
+
+
+        updateSubjectCount();
+
+        updateSaveButton();
+
+        updatePreview();
+
+        renderExistingSetups();
+
+    }
+
+
+    initializePage();
+
+</script>
+
+{% endblock %}

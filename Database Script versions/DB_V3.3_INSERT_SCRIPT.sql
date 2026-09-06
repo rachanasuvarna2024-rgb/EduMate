@@ -5,7 +5,6 @@
 
 USE edumate_db3_3;
 
-
 -- ============================================================
 -- 1. ADMIN
 -- ============================================================
@@ -526,6 +525,139 @@ SELECT
 FROM course_master
 WHERE institution_category = 'Degree College'
   AND course_name LIKE '4th Year%';
+
+-- ============================================================
+-- SEMESTER MASTER DATA
+-- ============================================================
+
+INSERT INTO semester_master
+(
+    academic_year,
+    semester_number,
+    semester_name,
+    institution_category,
+    status
+)
+VALUES
+
+-- ============================================================
+-- SCHOOL
+-- ============================================================
+-- Schools do not use semesters in EduMate.
+
+(
+    'Not Applicable',
+    0,
+    'Not Applicable',
+    'School',
+    'Active'
+),
+
+
+-- ============================================================
+-- JR COLLEGE
+-- ============================================================
+
+-- FY JC
+(
+    'FY',
+    1,
+    'Semester 1',
+    'Jr College',
+    'Active'
+),
+(
+    'FY',
+    2,
+    'Semester 2',
+    'Jr College',
+    'Active'
+),
+
+-- SY JC
+(
+    'SY',
+    3,
+    'Semester 3',
+    'Jr College',
+    'Active'
+),
+(
+    'SY',
+    4,
+    'Semester 4',
+    'Jr College',
+    'Active'
+),
+
+
+-- ============================================================
+-- DEGREE COLLEGE
+-- ============================================================
+
+-- FY
+(
+    'FY',
+    1,
+    'Semester 1',
+    'Degree College',
+    'Active'
+),
+(
+    'FY',
+    2,
+    'Semester 2',
+    'Degree College',
+    'Active'
+),
+
+-- SY
+(
+    'SY',
+    3,
+    'Semester 3',
+    'Degree College',
+    'Active'
+),
+(
+    'SY',
+    4,
+    'Semester 4',
+    'Degree College',
+    'Active'
+),
+
+-- TY
+(
+    'TY',
+    5,
+    'Semester 5',
+    'Degree College',
+    'Active'
+),
+(
+    'TY',
+    6,
+    'Semester 6',
+    'Degree College',
+    'Active'
+),
+
+-- 4th Year
+(
+    '4th Year',
+    7,
+    'Semester 7',
+    'Degree College',
+    'Active'
+),
+(
+    '4th Year',
+    8,
+    'Semester 8',
+    'Degree College',
+    'Active'
+);
 
 -- ============================================================
 -- 6. SUBJECT MASTER

@@ -231,6 +231,61 @@ CREATE TABLE course_academic_year
 );
 
 -- ============================================================
+-- 29. SEMESTER MASTER TABLE
+-- ============================================================
+-- Defines semesters according to the academic year/level.
+--
+-- Degree College:
+--     FY -> Semester 1, 2
+--     SY -> Semester 3, 4
+--     TY -> Semester 5, 6
+--     4th Year -> Semester 7, 8
+--
+-- Jr College:
+--     FY -> Semester 1, 2
+--     SY -> Semester 3, 4
+--
+-- School:
+--     Not Applicable
+--
+-- This table is a MASTER table.
+-- It is not institution-specific.
+-- ============================================================
+
+CREATE TABLE semester_master
+(
+    semester_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    academic_year VARCHAR(20) NOT NULL,
+
+    semester_number INT NOT NULL,
+
+    semester_name VARCHAR(50) NOT NULL,
+
+    institution_category ENUM(
+        'School',
+        'Jr College',
+        'Degree College'
+    ) NOT NULL,
+
+    status ENUM(
+        'Active',
+        'Inactive'
+    ) DEFAULT 'Active',
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE (
+        academic_year,
+        semester_number,
+        institution_category
+    )
+);
+
+-- ============================================================
 -- 6. SUBJECT MASTER TABLE
 -- ============================================================
 
@@ -997,7 +1052,6 @@ CREATE TABLE login_history
         ON DELETE SET NULL
 );
 
-
 -- ============================================================
 -- 28. NOTIFICATION
 -- ============================================================
@@ -1035,3 +1089,61 @@ CREATE TABLE notification
 -- ============================================================
 -- DATABASE CREATION COMPLETE
 -- ============================================================
+
+CREATE TABLE assign_academic_setup
+(
+    assign_academic_setup_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    institution_id INT NOT NULL,
+
+    course_academic_year_id INT NOT NULL,
+
+    department_id INT,
+
+    semester_id INT,
+
+    subject_master_id INT NOT NULL,
+
+    status ENUM(
+        'Active',
+        'Inactive'
+    ) DEFAULT 'Active',
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (institution_id)
+        REFERENCES institution(institution_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (course_academic_year_id)
+        REFERENCES course_academic_year(course_academic_year_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (department_id)
+        REFERENCES department_master(department_id)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+
+    FOREIGN KEY (semester_id)
+        REFERENCES semester_master(semester_id)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+
+    FOREIGN KEY (subject_master_id)
+        REFERENCES subject_master(subject_master_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    UNIQUE (
+        institution_id,
+        course_academic_year_id,
+        department_id,
+        semester_id,
+        subject_master_id
+    )
+);

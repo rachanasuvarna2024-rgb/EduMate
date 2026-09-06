@@ -6,16 +6,24 @@
 
     <h2>Edit Subject</h2>
 
+
     {% if err %}
+
     <div class="error-message">
         {{ err }}
     </div>
+
     {% endif %}
 
+
+    <!-- ===================================================== -->
+    <!-- EDIT SUBJECT -->
+    <!-- ===================================================== -->
 
     <div class="card">
 
         <h3>Update Subject</h3>
+
 
         <form method="POST"
               action="{{ url_for(
@@ -24,7 +32,9 @@
               ) }}">
 
 
+            <!-- ================================================= -->
             <!-- SUBJECT NAME -->
+            <!-- ================================================= -->
 
             <div class="form-group">
 
@@ -43,7 +53,9 @@
             </div>
 
 
+            <!-- ================================================= -->
             <!-- COURSE -->
+            <!-- ================================================= -->
 
             <div class="form-group">
 
@@ -55,17 +67,28 @@
                     id="course_id"
                     name="course_id"
                     required
+                    onchange="updateCourseDetails()"
                 >
+
+                    <option value="">
+                        -- Select Course --
+                    </option>
+
 
                     {% for course in courses %}
 
                     <option
                         value="{{ course.course_id }}"
+                        data-category="{{ course.institution_category }}"
+                        data-academic-year="{{ course.academic_year }}"
+
                         {% if course.course_id == subject.course_id %}
                         selected
                         {% endif %}
                     >
+
                         {{ course.course_name }}
+
                     </option>
 
                     {% endfor %}
@@ -75,7 +98,29 @@
             </div>
 
 
+            <!-- ================================================= -->
+            <!-- ACADEMIC YEAR -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="academic_year">
+                    Academic Year
+                </label>
+
+                <input
+                    type="text"
+                    id="academic_year"
+                    value="{{ subject.academic_year }}"
+                    readonly
+                >
+
+            </div>
+
+
+            <!-- ================================================= -->
             <!-- INSTITUTION CATEGORY -->
+            <!-- ================================================= -->
 
             <div class="form-group">
 
@@ -83,45 +128,19 @@
                     Institution Category
                 </label>
 
-                <select
+                <input
+                    type="text"
                     id="institution_category"
-                    name="institution_category"
-                    required
+                    value="{{ subject.institution_category }}"
+                    readonly
                 >
-
-                    <option
-                        value="School"
-                        {% if subject.institution_category == 'School' %}
-                        selected
-                        {% endif %}
-                    >
-                        School
-                    </option>
-
-                    <option
-                        value="Jr College"
-                        {% if subject.institution_category == 'Jr College' %}
-                        selected
-                        {% endif %}
-                    >
-                        Jr College
-                    </option>
-
-                    <option
-                        value="Degree College"
-                        {% if subject.institution_category == 'Degree College' %}
-                        selected
-                        {% endif %}
-                    >
-                        Degree College
-                    </option>
-
-                </select>
 
             </div>
 
 
+            <!-- ================================================= -->
             <!-- STATUS -->
+            <!-- ================================================= -->
 
             <div class="form-group">
 
@@ -137,6 +156,7 @@
 
                     <option
                         value="Active"
+
                         {% if subject.status == 'Active' %}
                         selected
                         {% endif %}
@@ -144,8 +164,10 @@
                         Active
                     </option>
 
+
                     <option
                         value="Inactive"
+
                         {% if subject.status == 'Inactive' %}
                         selected
                         {% endif %}
@@ -158,7 +180,9 @@
             </div>
 
 
+            <!-- ================================================= -->
             <!-- BUTTONS -->
+            <!-- ================================================= -->
 
             <div class="action-buttons">
 
@@ -168,6 +192,7 @@
                 >
                     Update Subject
                 </button>
+
 
                 <a
                     href="{{ url_for('admin.subject_master') }}"
@@ -185,12 +210,90 @@
 </div>
 
 
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
+<script>
+
+function updateCourseDetails() {
+
+    const courseSelect =
+        document.getElementById("course_id");
+
+    const academicYear =
+        document.getElementById("academic_year");
+
+    const institutionCategory =
+        document.getElementById("institution_category");
+
+
+    const selectedOption =
+        courseSelect.options[
+            courseSelect.selectedIndex
+        ];
+
+
+    if (
+        !selectedOption ||
+        !selectedOption.value
+    ) {
+
+        academicYear.value = "";
+
+        institutionCategory.value = "";
+
+        return;
+    }
+
+
+    academicYear.value =
+        selectedOption.dataset.academicYear || "";
+
+
+    institutionCategory.value =
+        selectedOption.dataset.category || "";
+
+}
+
+
+/* Load details for the currently selected course */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        updateCourseDetails();
+
+    }
+);
+
+</script>
+
+
+<!-- ========================================================= -->
+<!-- BUTTON STYLING -->
+<!-- ========================================================= -->
+
 <style>
 
 .action-buttons {
+
     display: flex;
+
     align-items: center;
+
     gap: 10px;
+
+}
+
+
+input[readonly] {
+
+    background-color: #f5f5f5;
+
+    cursor: not-allowed;
+
 }
 
 </style>

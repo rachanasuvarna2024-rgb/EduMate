@@ -1,6 +1,6 @@
 import re
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from session_utils import role_required
+from session_utils import login_required, role_required
 from db import conn, cursor
 
 
@@ -1149,8 +1149,922 @@ def delete_institution(institution_id):
                 err="Unable to delete institution: " + str(e)
             )
         )
-    
-    
+
+# ============================================================
+# ASSIGN ACADEMIC SETUP
+# ============================================================
+
+@admin_bp.route("/assign_academic_setup", methods=["GET", "POST"])
+@role_required("Admin")
+def assign_academic_setup():
+
+    msg = None
+    err = None
+
+    # ------------------------------------------------------------
+    # Selected values - used to keep the form populated after POST
+    # ------------------------------------------------------------
+    selected_institution_id = ""
+    selected_academic_year = ""
+    selected_department_id = ""
+    selected_course_id = ""
+    selected_semester_id = ""
+    selected_subject_master_ids = []
+
+    # ============================================================
+    # POST - SAVE / UPDATE ACADEMIC SETUP
+    # ============================================================
+    if request.method == 'POST':
+
+        selected_institution_id = request.form.get(
+            'institution_id', ''
+        ).strip()
+
+        selected_academic_year = request.form.get(
+            'academic_year', ''
+        ).strip()
+
+        selected_department_id = request.form.get(
+            'department_id', ''
+        ).strip()
+
+        selected_course_id = request.form.get(
+            'course_id', ''
+        ).strip()
+
+        selected_semester_id = request.form.get(
+            'semester_id', ''
+        ).strip()
+
+        selected_subject_master_ids = request.form.getlist(
+            'subject_master_ids'
+        )
+
+        # --------------------------------------------------------
+        # Basic validation
+        # --------------------------------------------------------
+        if not selected_institution_id:
+
+            err = "Please select an institution."
+
+        elif not selected_academic_year:
+
+            err = "Please select an academic year."
+
+        elif not selected_department_id:
+
+            err = "Please select a department."
+
+        elif not selected_course_id:
+
+            err = "Please select a course."
+
+        elif not selected_semester_id:
+
+            err = "Please select a semester."
+
+        elif not selected_subject_master_ids:
+
+            err = "Please select at least one subject."
+
+        # --------------------------------------------------------
+        # Convert IDs safely
+        # --------------------------------------------------------
+        if not err:
+
+            try:
+
+                institution_id = int(
+                    selected_institution_id
+                )
+
+                department_id = int(
+                    selected_department_id
+                )
+
+                course_id = int(
+                    selected_course_id
+                )
+
+                semester_id = int(
+                    selected_semester_id
+                )
+
+                subject_master_ids = [
+                    int(x)
+                    for x in selected_subject_master_ids
+                ]
+
+            except (ValueError, TypeError):
+
+                err = "Invalid academic setup selection."
+
+        # ========================================================
+        # VALIDATION
+        # ========================================================
+        if not err:
+
+            # ----------------------------------------------------
+            # 1. Get institution
+            # ----------------------------------------------------
+            cursor.execute("""
+                SELECT
+                    institution_id,
+                    institution_name,
+                    institution_category,
+                    institution_type
+                FROM institution
+                WHERE institution_id = %s
+                AND status = 'Active'
+            """, (
+                institution_id,
+            ))
+
+            institution = cursor.fetchone()
+
+            if not institution:
+
+                err = "The selected institution is invalid."
+
+            else:
+
+                institution_category = (
+                    institution['institution_category']
+                )
+
+            # ----------------------------------------------------
+            # 2. Validate Course + Academic Year
+            # ----------------------------------------------------
+            if not err:
+
+                cursor.execute("""
+                    SELECT
+                        cay.course_academic_year_id,
+                        cay.course_id,
+                        cay.academic_year,
+                        cm.course_name,
+                        cm.institution_category
+
+                    FROM course_academic_year cay
+
+                    INNER JOIN course_master cm
+                        ON cm.course_id = cay.course_id
+
+                    WHERE cay.course_id = %s
+                    AND cay.academic_year = %s
+                    AND cay.status = 'Active'
+                    AND cm.status = 'Active'
+                """, (
+                    course_id,
+                    selected_academic_year
+                ))
+
+                course_academic_year = cursor.fetchone()
+
+                if not course_academic_year:
+
+                    err = (
+                        "The selected course is not available "
+                        "for the selected academic year."
+                    )
+
+                elif (
+                    course_academic_year['institution_category']
+                    != institution_category
+                ):
+
+                    err = (
+                        "The selected course does not belong "
+                        "to the selected institution category."
+                    )
+
+                else:
+
+                    course_academic_year_id = (
+                        course_academic_year[
+                            'course_academic_year_id'
+                        ]
+                    )
+
+            # ----------------------------------------------------
+            # 3. Validate Institution → Course mapping
+            # ----------------------------------------------------
+            if not err:
+
+                cursor.execute("""
+                    SELECT
+                        institution_course_id
+
+                    FROM institution_course
+
+                    WHERE institution_id = %s
+                    AND course_id = %s
+                """, (
+                    institution_id,
+                    course_id
+                ))
+
+                institution_course = cursor.fetchone()
+
+                if not institution_course:
+
+                    err = (
+                        "The selected course is not mapped "
+                        "to the selected institution."
+                    )
+
+            # ----------------------------------------------------
+            # 4. Validate Institution → Department mapping
+            # ----------------------------------------------------
+            if not err:
+
+                cursor.execute("""
+                    SELECT
+                        idm.institution_department_id,
+                        dm.department_name,
+                        dm.institution_category
+
+                    FROM institution_department idm
+
+                    INNER JOIN department_master dm
+                        ON dm.department_id = idm.department_id
+
+                    WHERE idm.institution_id = %s
+                    AND idm.department_id = %s
+                    AND dm.status = 'Active'
+                """, (
+                    institution_id,
+                    department_id
+                ))
+
+                institution_department = cursor.fetchone()
+
+                if not institution_department:
+
+                    err = (
+                        "The selected department is not mapped "
+                        "to the selected institution."
+                    )
+
+                elif (
+                    institution_department[
+                        'institution_category'
+                    ] != institution_category
+                ):
+
+                    err = (
+                        "The selected department does not belong "
+                        "to the selected institution category."
+                    )
+
+            # ----------------------------------------------------
+            # 5. Validate Semester
+            # ----------------------------------------------------
+            if not err:
+
+                cursor.execute("""
+                    SELECT
+                        semester_id,
+                        semester_number,
+                        semester_name,
+                        academic_year,
+                        institution_category
+
+                    FROM semester_master
+
+                    WHERE semester_id = %s
+                    AND academic_year = %s
+                    AND institution_category = %s
+                    AND status = 'Active'
+                """, (
+                    semester_id,
+                    selected_academic_year,
+                    institution_category
+                ))
+
+                semester = cursor.fetchone()
+
+                if not semester:
+
+                    err = (
+                        "The selected semester is not valid "
+                        "for the selected academic year."
+                    )
+
+            # ----------------------------------------------------
+            # 6. Validate every selected subject
+            #
+            # IMPORTANT:
+            # We validate subjects directly against subject_master.
+            #
+            # institution_subject is NOT checked here because
+            # assign_academic_setup directly links the selected
+            # subject_master_id to the academic structure.
+            # ----------------------------------------------------
+            if not err:
+
+                for subject_master_id in subject_master_ids:
+
+                    cursor.execute("""
+                        SELECT
+                            sm.subject_master_id,
+                            sm.subject_name,
+                            sm.course_id,
+                            sm.institution_category
+
+                        FROM subject_master sm
+
+                        WHERE sm.subject_master_id = %s
+                        AND sm.course_id = %s
+                        AND sm.institution_category = %s
+                        AND sm.status = 'Active'
+                    """, (
+                        subject_master_id,
+                        course_id,
+                        institution_category
+                    ))
+
+                    subject = cursor.fetchone()
+
+                    if not subject:
+
+                        err = (
+                            "One or more selected subjects "
+                            "are invalid for the selected course."
+                        )
+
+                        break
+
+        # ========================================================
+        # SAVE / UPDATE
+        # ========================================================
+        if not err:
+
+            try:
+
+                # ------------------------------------------------
+                # Check whether this exact academic setup already
+                # exists.
+                #
+                # Subjects are intentionally NOT included in this
+                # check because one academic setup can contain
+                # multiple subjects.
+                # ------------------------------------------------
+                cursor.execute("""
+                    SELECT
+                        COUNT(*) AS total
+
+                    FROM assign_academic_setup
+
+                    WHERE institution_id = %s
+                    AND course_academic_year_id = %s
+                    AND department_id = %s
+                    AND semester_id = %s
+                    AND status = 'Active'
+                """, (
+                    institution_id,
+                    course_academic_year_id,
+                    department_id,
+                    semester_id
+                ))
+
+                existing_setup = cursor.fetchone()
+
+                is_update = (
+                    existing_setup['total'] > 0
+                )
+
+                # ------------------------------------------------
+                # Remove the old subject rows for this exact
+                # academic combination.
+                #
+                # This allows the administrator to edit the
+                # subject selection without creating duplicates.
+                # ------------------------------------------------
+                cursor.execute("""
+                    DELETE FROM assign_academic_setup
+
+                    WHERE institution_id = %s
+                    AND course_academic_year_id = %s
+                    AND department_id = %s
+                    AND semester_id = %s
+                """, (
+                    institution_id,
+                    course_academic_year_id,
+                    department_id,
+                    semester_id
+                ))
+
+                # ------------------------------------------------
+                # Insert the currently selected subjects
+                # ------------------------------------------------
+                insert_query = """
+                    INSERT INTO assign_academic_setup
+                    (
+                        institution_id,
+                        course_academic_year_id,
+                        department_id,
+                        semester_id,
+                        subject_master_id,
+                        status
+                    )
+                    VALUES
+                    (
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        'Active'
+                    )
+                """
+
+                for subject_master_id in subject_master_ids:
+
+                    cursor.execute(
+                        insert_query,
+                        (
+                            institution_id,
+                            course_academic_year_id,
+                            department_id,
+                            semester_id,
+                            subject_master_id
+                        )
+                    )
+
+                conn.commit()
+
+                if is_update:
+
+                    msg = (
+                        "Academic setup updated successfully."
+                    )
+
+                else:
+
+                    msg = (
+                        "Academic setup assigned successfully."
+                    )
+
+            except Exception as e:
+
+                conn.rollback()
+
+                print(
+                    "ERROR in assign_academic_setup save:",
+                    e
+                )
+
+                err = (
+                    "An error occurred while saving "
+                    "the academic setup."
+                )
+
+    # ============================================================
+    # MASTER DATA
+    # ============================================================
+
+    # ------------------------------------------------------------
+    # Institutions
+    # ------------------------------------------------------------
+    cursor.execute("""
+        SELECT
+            institution_id,
+            institution_name,
+            institution_category,
+            institution_type
+
+        FROM institution
+
+        WHERE status = 'Active'
+
+        ORDER BY institution_name
+    """)
+
+    institutions = cursor.fetchall()
+
+    # ------------------------------------------------------------
+    # Academic Years
+    #
+    # academic_year means:
+    # FY / SY / TY / 4th Year / Not Applicable
+    #
+    # It is NOT the calendar year such as 2026-27.
+    # ------------------------------------------------------------
+    cursor.execute("""
+        SELECT
+            cay.academic_year,
+
+            GROUP_CONCAT(
+                DISTINCT ic.institution_id
+                ORDER BY ic.institution_id
+                SEPARATOR ','
+            ) AS institution_ids
+
+        FROM course_academic_year cay
+
+        INNER JOIN institution_course ic
+            ON ic.course_id = cay.course_id
+
+        INNER JOIN institution i
+            ON i.institution_id = ic.institution_id
+            AND i.status = 'Active'
+
+        INNER JOIN course_master cm
+            ON cm.course_id = cay.course_id
+            AND cm.status = 'Active'
+
+        WHERE cay.status = 'Active'
+
+        GROUP BY cay.academic_year
+
+        ORDER BY
+            CASE cay.academic_year
+                WHEN 'Not Applicable' THEN 0
+                WHEN 'FY' THEN 1
+                WHEN 'SY' THEN 2
+                WHEN 'TY' THEN 3
+                WHEN '4th Year' THEN 4
+                ELSE 5
+            END,
+            cay.academic_year
+    """)
+
+    academic_years = cursor.fetchall()
+
+    # ------------------------------------------------------------
+    # Courses
+    #
+    # academic_year_map example:
+    #
+    # FY:1|SY:2|TY:3
+    #
+    # This lets JavaScript obtain the exact
+    # course_academic_year_id.
+    # ------------------------------------------------------------
+    cursor.execute("""
+        SELECT
+            cm.course_id,
+            cm.course_name,
+            cm.institution_category,
+
+            GROUP_CONCAT(
+                DISTINCT cay.academic_year
+                ORDER BY
+                    CASE cay.academic_year
+                        WHEN 'Not Applicable' THEN 0
+                        WHEN 'FY' THEN 1
+                        WHEN 'SY' THEN 2
+                        WHEN 'TY' THEN 3
+                        WHEN '4th Year' THEN 4
+                        ELSE 5
+                    END
+                SEPARATOR ','
+            ) AS academic_years,
+
+            GROUP_CONCAT(
+                DISTINCT CONCAT(
+                    cay.academic_year,
+                    ':',
+                    cay.course_academic_year_id
+                )
+                ORDER BY
+                    CASE cay.academic_year
+                        WHEN 'Not Applicable' THEN 0
+                        WHEN 'FY' THEN 1
+                        WHEN 'SY' THEN 2
+                        WHEN 'TY' THEN 3
+                        WHEN '4th Year' THEN 4
+                        ELSE 5
+                    END
+                SEPARATOR '|'
+            ) AS academic_year_map,
+
+            GROUP_CONCAT(
+                DISTINCT ic.institution_id
+                ORDER BY ic.institution_id
+                SEPARATOR ','
+            ) AS institution_ids
+
+        FROM course_master cm
+
+        INNER JOIN course_academic_year cay
+            ON cay.course_id = cm.course_id
+            AND cay.status = 'Active'
+
+        INNER JOIN institution_course ic
+            ON ic.course_id = cm.course_id
+
+        INNER JOIN institution i
+            ON i.institution_id = ic.institution_id
+            AND i.status = 'Active'
+
+        WHERE cm.status = 'Active'
+
+        GROUP BY
+            cm.course_id,
+            cm.course_name,
+            cm.institution_category
+
+        ORDER BY cm.course_name
+    """)
+
+    courses = cursor.fetchall()
+
+    # ------------------------------------------------------------
+    # Departments
+    #
+    # Only departments mapped to institutions are loaded.
+    # JavaScript filters them according to selected institution.
+    # ------------------------------------------------------------
+    cursor.execute("""
+        SELECT
+            dm.department_id,
+            dm.department_name,
+            dm.institution_category,
+
+            GROUP_CONCAT(
+                DISTINCT idm.institution_id
+                ORDER BY idm.institution_id
+                SEPARATOR ','
+            ) AS institution_ids
+
+        FROM department_master dm
+
+        INNER JOIN institution_department idm
+            ON idm.department_id = dm.department_id
+
+        INNER JOIN institution i
+            ON i.institution_id = idm.institution_id
+            AND i.status = 'Active'
+
+        WHERE dm.status = 'Active'
+
+        GROUP BY
+            dm.department_id,
+            dm.department_name,
+            dm.institution_category
+
+        ORDER BY dm.department_name
+    """)
+
+    departments = cursor.fetchall()
+
+    # ------------------------------------------------------------
+    # Subjects
+    #
+    # Subjects come directly from subject_master.
+    #
+    # JavaScript filters them by:
+    #   1. Institution category
+    #   2. Selected course
+    #
+    # institution_subject is NOT used here.
+    # ------------------------------------------------------------
+    cursor.execute("""
+        SELECT
+            subject_master_id,
+            subject_name,
+            course_id,
+            institution_category
+
+        FROM subject_master
+
+        WHERE status = 'Active'
+
+        ORDER BY
+            course_id,
+            subject_name
+    """)
+
+    subjects = cursor.fetchall()
+
+    # ------------------------------------------------------------
+    # Semesters
+    # ------------------------------------------------------------
+    cursor.execute("""
+        SELECT
+            semester_id,
+            academic_year,
+            semester_number,
+            semester_name,
+            institution_category
+
+        FROM semester_master
+
+        WHERE status = 'Active'
+
+        ORDER BY
+            CASE academic_year
+                WHEN 'Not Applicable' THEN 0
+                WHEN 'FY' THEN 1
+                WHEN 'SY' THEN 2
+                WHEN 'TY' THEN 3
+                WHEN '4th Year' THEN 4
+                ELSE 5
+            END,
+            semester_number
+    """)
+
+    semesters = cursor.fetchall()
+
+    # ============================================================
+    # EXISTING ACADEMIC SETUPS
+    #
+    # One academic setup can contain multiple subjects.
+    #
+    # Therefore all rows having the same:
+    #
+    # Institution
+    # + Course Academic Year
+    # + Department
+    # + Semester
+    #
+    # are grouped into ONE setup.
+    # ============================================================
+
+    cursor.execute("""
+        SELECT
+            aas.institution_id,
+
+            aas.course_academic_year_id,
+
+            cay.academic_year,
+
+            cm.course_id,
+            cm.course_name,
+
+            d.department_id,
+            d.department_name,
+
+            sem.semester_id,
+            sem.semester_number,
+            sem.semester_name,
+
+            sm.subject_master_id,
+            sm.subject_name
+
+        FROM assign_academic_setup aas
+
+        INNER JOIN course_academic_year cay
+            ON cay.course_academic_year_id =
+               aas.course_academic_year_id
+
+        INNER JOIN course_master cm
+            ON cm.course_id = cay.course_id
+
+        LEFT JOIN department_master d
+            ON d.department_id = aas.department_id
+
+        LEFT JOIN semester_master sem
+            ON sem.semester_id = aas.semester_id
+
+        INNER JOIN subject_master sm
+            ON sm.subject_master_id =
+               aas.subject_master_id
+
+        WHERE aas.status = 'Active'
+
+        ORDER BY
+            aas.institution_id,
+
+            CASE cay.academic_year
+                WHEN 'Not Applicable' THEN 0
+                WHEN 'FY' THEN 1
+                WHEN 'SY' THEN 2
+                WHEN 'TY' THEN 3
+                WHEN '4th Year' THEN 4
+                ELSE 5
+            END,
+
+            cay.academic_year,
+
+            d.department_name,
+            cm.course_name,
+
+            sem.semester_number,
+            sem.semester_name,
+
+            sm.subject_name
+    """)
+
+    existing_rows = cursor.fetchall()
+
+    # ------------------------------------------------------------
+    # Group subject rows into complete academic setups
+    # ------------------------------------------------------------
+    setup_map = {}
+
+    for row in existing_rows:
+
+        key = (
+            row['institution_id'],
+            row['course_academic_year_id'],
+            row['department_id'],
+            row['semester_id']
+        )
+
+        if key not in setup_map:
+
+            setup_map[key] = {
+
+                'setup_key': (
+                    f"{row['institution_id']}|"
+                    f"{row['course_academic_year_id']}|"
+                    f"{row['department_id'] or ''}|"
+                    f"{row['semester_id'] or ''}"
+                ),
+
+                'institution_id':
+                    row['institution_id'],
+
+                'course_academic_year_id':
+                    row['course_academic_year_id'],
+
+                'academic_year':
+                    row['academic_year'],
+
+                'course_id':
+                    row['course_id'],
+
+                'course_name':
+                    row['course_name'],
+
+                'department_id':
+                    row['department_id'],
+
+                'department_name':
+                    row['department_name']
+                    or 'Not Applicable',
+
+                'semester_id':
+                    row['semester_id'],
+
+                'semester_number':
+                    row['semester_number'],
+
+                'semester_name':
+                    row['semester_name']
+                    or 'Not Applicable',
+
+                'subject_master_ids': [],
+
+                'subjects': []
+            }
+
+        setup_map[key][
+            'subject_master_ids'
+        ].append(
+            row['subject_master_id']
+        )
+
+        setup_map[key][
+            'subjects'
+        ].append(
+            row['subject_name']
+        )
+
+    existing_setups = list(
+        setup_map.values()
+    )
+
+    # ============================================================
+    # RENDER
+    # ============================================================
+    return render_template(
+        'assign_academic_setup.html',
+
+        institutions=institutions,
+        academic_years=academic_years,
+        departments=departments,
+        courses=courses,
+        semesters=semesters,
+        subjects=subjects,
+
+        existing_setups=existing_setups,
+
+        msg=msg,
+        err=err,
+
+        selected_institution_id=
+            selected_institution_id,
+
+        selected_academic_year=
+            selected_academic_year,
+
+        selected_department_id=
+            selected_department_id,
+
+        selected_course_id=
+            selected_course_id,
+
+        selected_semester_id=
+            selected_semester_id,
+
+        selected_subject_master_ids=
+            selected_subject_master_ids
+    )
+
 # ============================================================
 # ============================================================
 # STREAM MASTER
@@ -3944,27 +4858,26 @@ def delete_standard(standard_id):
     )
 
 # ============================================================
-# ============================================================
 # SUBJECT MASTER
 # ============================================================
-# ============================================================
 
-
-@admin_bp.route(
-    "/subject-master",
-    methods=["GET", "POST"]
-)
+@admin_bp.route("/subject_master", methods=["GET", "POST"])
 @role_required("Admin")
 def subject_master():
 
     msg = request.args.get("msg")
-    err = request.args.get("err")
+    err = None
+
 
     # ========================================================
     # ADD SUBJECT
     # ========================================================
 
     if request.method == "POST":
+
+        # ----------------------------------------------------
+        # GET FORM DATA
+        # ----------------------------------------------------
 
         subject_name = request.form.get(
             "subject_name",
@@ -3976,78 +4889,136 @@ def subject_master():
             ""
         ).strip()
 
-        institution_category = request.form.get(
-            "institution_category",
-            ""
+        status = request.form.get(
+            "status",
+            "Active"
         ).strip()
 
-        # ----------------------------------------------------
+
+        # ====================================================
         # VALIDATION
+        # ====================================================
+
+        # ----------------------------------------------------
+        # SUBJECT NAME
         # ----------------------------------------------------
 
         if not subject_name:
 
             err = "Subject name is required."
 
+
+        # ----------------------------------------------------
+        # COURSE
+        # ----------------------------------------------------
+
         elif not course_id:
 
             err = "Please select a course."
 
-        elif institution_category not in [
-            "School",
-            "Jr College",
-            "Degree College"
+
+        # ----------------------------------------------------
+        # STATUS
+        # ----------------------------------------------------
+
+        elif status not in [
+            "Active",
+            "Inactive"
         ]:
 
-            err = "Please select a valid institution category."
+            err = "Invalid status."
 
-        else:
+
+        # ====================================================
+        # PROCESS COURSE
+        # ====================================================
+
+        if not err:
 
             try:
 
-                # ------------------------------------------------
-                # CHECK WHETHER COURSE EXISTS
-                # ------------------------------------------------
+                # ============================================
+                # GET COURSE DETAILS
+                # ============================================
 
-                cursor.execute("""
-                    SELECT course_id
-                    FROM course_master
-                    WHERE course_id = %s
-                      AND institution_category = %s
-                      AND status = 'Active'
-                """, (
-                    course_id,
-                    institution_category
-                ))
+                cursor.execute(
+                    """
+                    SELECT
+
+                        c.course_id,
+
+                        c.course_name,
+
+                        c.institution_category,
+
+                        cay.academic_year
+
+                    FROM course_master AS c
+
+                    LEFT JOIN course_academic_year AS cay
+
+                        ON c.course_id = cay.course_id
+
+                    WHERE c.course_id = %s
+                    """,
+                    (course_id,)
+                )
 
                 course = cursor.fetchone()
 
+
+                # ------------------------------------------------
+                # COURSE NOT FOUND
+                # ------------------------------------------------
+
                 if not course:
 
+                    err = "Selected course was not found."
+
+
+                # ------------------------------------------------
+                # ACADEMIC YEAR NOT FOUND
+                # ------------------------------------------------
+
+                elif not course["academic_year"]:
+
                     err = (
-                        "The selected course is not available "
-                        "for this institution category."
+                        "No academic year is configured "
+                        "for the selected course."
                     )
+
 
                 else:
 
-                    # ------------------------------------------------
+                    # ============================================
                     # CHECK DUPLICATE SUBJECT
-                    # ------------------------------------------------
+                    # ============================================
+                    #
+                    # Same subject should not be added twice
+                    # to the same course.
+                    #
+                    # ============================================
 
-                    cursor.execute("""
-                        SELECT subject_master_id
+                    cursor.execute(
+                        """
+                        SELECT
+
+                            subject_master_id
+
                         FROM subject_master
+
                         WHERE LOWER(subject_name) = LOWER(%s)
+
                           AND course_id = %s
-                          AND institution_category = %s
-                    """, (
-                        subject_name,
-                        course_id,
-                        institution_category
-                    ))
+                        """,
+                        (
+                            subject_name,
+                            course_id
+                        )
+                    )
 
                     existing_subject = cursor.fetchone()
+
 
                     if existing_subject:
 
@@ -4056,141 +5027,200 @@ def subject_master():
                             "for the selected course."
                         )
 
+
                     else:
 
-                        # ------------------------------------------------
+                        # ========================================
                         # INSERT SUBJECT
-                        # ------------------------------------------------
+                        # ========================================
 
-                        cursor.execute("""
+                        cursor.execute(
+                            """
                             INSERT INTO subject_master
                             (
                                 subject_name,
                                 course_id,
-                                institution_category
+                                institution_category,
+                                status
                             )
-                            VALUES (%s, %s, %s)
-                        """, (
-                            subject_name,
-                            course_id,
-                            institution_category
-                        ))
+
+                            VALUES
+                            (
+                                %s,
+                                %s,
+                                %s,
+                                %s
+                            )
+                            """,
+                            (
+                                subject_name,
+                                course_id,
+                                course["institution_category"],
+                                status
+                            )
+                        )
+
+
+                        # ========================================
+                        # COMMIT
+                        # ========================================
 
                         conn.commit()
 
-                        msg = "Subject added successfully."
+
+                        # ========================================
+                        # SUCCESS
+                        # ========================================
+
+                        return redirect(
+                            url_for(
+                                "admin.subject_master",
+                                msg="Subject has been added successfully."
+                            )
+                        )
+
 
             except Exception as e:
+
+                # ------------------------------------------------
+                # ROLLBACK
+                # ------------------------------------------------
 
                 conn.rollback()
 
                 err = (
-                    "Error adding subject: "
+                    "Unable to add subject: "
                     + str(e)
                 )
 
-    # ========================================================
-    # FILTER
-    # ========================================================
-
-    selected_category = request.args.get(
-        "category",
-        ""
-    ).strip()
 
     # ========================================================
-    # GET COURSES
+    # LOAD COURSES
+    # ========================================================
+    #
+    # Only courses that have an academic-year mapping are
+    # shown.
+    #
+    # Academic year and institution category are obtained
+    # automatically from the course.
+    #
     # ========================================================
 
-    cursor.execute("""
-        SELECT
-            course_id,
-            course_name,
-            institution_category
-        FROM course_master
-        WHERE status = 'Active'
-        ORDER BY
-            institution_category,
-            course_name
-    """)
+    try:
 
-    courses = cursor.fetchall()
-
-    # ========================================================
-    # GET SUBJECTS
-    # ========================================================
-
-    if selected_category in [
-        "School",
-        "Jr College",
-        "Degree College"
-    ]:
-
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT
-                sm.subject_master_id,
-                sm.subject_name,
-                sm.course_id,
-                cm.course_name,
-                sm.institution_category,
-                sm.status,
-                sm.created_at,
-                sm.updated_at
-            FROM subject_master sm
-            INNER JOIN course_master cm
-                ON sm.course_id = cm.course_id
-            WHERE sm.institution_category = %s
+
+                c.course_id,
+
+                c.course_name,
+
+                c.institution_category,
+
+                cay.academic_year
+
+            FROM course_master AS c
+
+            INNER JOIN course_academic_year AS cay
+
+                ON c.course_id = cay.course_id
+
+            WHERE c.status = 'Active'
+
             ORDER BY
-                sm.institution_category,
-                cm.course_name,
-                sm.subject_name
-        """, (
-            selected_category,
-        ))
 
-    else:
+                c.institution_category,
 
-        selected_category = ""
+                c.course_id
+            """
+        )
 
-        cursor.execute("""
-            SELECT
-                sm.subject_master_id,
-                sm.subject_name,
-                sm.course_id,
-                cm.course_name,
-                sm.institution_category,
-                sm.status,
-                sm.created_at,
-                sm.updated_at
-            FROM subject_master sm
-            INNER JOIN course_master cm
-                ON sm.course_id = cm.course_id
-            ORDER BY
-                sm.institution_category,
-                cm.course_name,
-                sm.subject_name
-        """)
+        courses = cursor.fetchall()
 
-    subjects = cursor.fetchall()
+
+    except Exception as e:
+
+        courses = []
+
+        if not err:
+
+            err = (
+                "Unable to load courses: "
+                + str(e)
+            )
+
 
     # ========================================================
-    # RENDER
+    # LOAD EXISTING SUBJECTS
+    # ========================================================
+
+    try:
+
+        cursor.execute(
+            """
+            SELECT
+
+                sm.subject_master_id,
+
+                sm.subject_name,
+
+                sm.course_id,
+
+                sm.institution_category,
+
+                sm.status,
+
+                cm.course_name,
+
+                cay.academic_year
+
+            FROM subject_master AS sm
+
+            INNER JOIN course_master AS cm
+
+                ON sm.course_id = cm.course_id
+
+            LEFT JOIN course_academic_year AS cay
+
+                ON cm.course_id = cay.course_id
+
+            ORDER BY
+
+                sm.subject_master_id ASC
+            """
+        )
+
+        subjects = cursor.fetchall()
+
+
+    except Exception as e:
+
+        subjects = []
+
+        if not err:
+
+            err = (
+                "Unable to load subjects: "
+                + str(e)
+            )
+
+
+    # ========================================================
+    # RENDER SUBJECT MASTER
     # ========================================================
 
     return render_template(
         "subject_master.html",
-        subjects=subjects,
         courses=courses,
-        selected_category=selected_category,
+        subjects=subjects,
         msg=msg,
         err=err
     )
 
-
 # ============================================================
 # EDIT SUBJECT
 # ============================================================
-
 
 @admin_bp.route(
     "/edit_subject/<int:subject_master_id>",
@@ -4201,11 +5231,16 @@ def edit_subject(subject_master_id):
 
     err = None
 
+
     # ========================================================
     # UPDATE SUBJECT
     # ========================================================
 
     if request.method == "POST":
+
+        # ----------------------------------------------------
+        # GET FORM DATA
+        # ----------------------------------------------------
 
         subject_name = request.form.get(
             "subject_name",
@@ -4217,35 +5252,37 @@ def edit_subject(subject_master_id):
             ""
         ).strip()
 
-        institution_category = request.form.get(
-            "institution_category",
-            ""
-        ).strip()
-
         status = request.form.get(
             "status",
             "Active"
         ).strip()
 
-        # ----------------------------------------------------
+
+        # ====================================================
         # VALIDATION
+        # ====================================================
+
+        # ----------------------------------------------------
+        # SUBJECT NAME
         # ----------------------------------------------------
 
         if not subject_name:
 
             err = "Subject name is required."
 
+
+        # ----------------------------------------------------
+        # COURSE
+        # ----------------------------------------------------
+
         elif not course_id:
 
             err = "Please select a course."
 
-        elif institution_category not in [
-            "School",
-            "Jr College",
-            "Degree College"
-        ]:
 
-            err = "Invalid institution category."
+        # ----------------------------------------------------
+        # STATUS
+        # ----------------------------------------------------
 
         elif status not in [
             "Active",
@@ -4254,95 +5291,192 @@ def edit_subject(subject_master_id):
 
             err = "Invalid status."
 
-        else:
+
+        # ====================================================
+        # PROCESS UPDATE
+        # ====================================================
+
+        if not err:
 
             try:
 
-                # ------------------------------------------------
-                # CHECK COURSE
-                # ------------------------------------------------
+                # ============================================
+                # CHECK SUBJECT EXISTS
+                # ============================================
 
-                cursor.execute("""
-                    SELECT course_id
-                    FROM course_master
-                    WHERE course_id = %s
-                      AND institution_category = %s
-                      AND status = 'Active'
-                """, (
-                    course_id,
-                    institution_category
-                ))
+                cursor.execute(
+                    """
+                    SELECT
 
-                course = cursor.fetchone()
+                        subject_master_id
 
-                if not course:
+                    FROM subject_master
 
-                    err = (
-                        "The selected course is not available "
-                        "for this institution category."
-                    )
+                    WHERE subject_master_id = %s
+                    """,
+                    (subject_master_id,)
+                )
+
+                subject_exists = cursor.fetchone()
+
+
+                if not subject_exists:
+
+                    err = "Subject not found."
+
 
                 else:
 
-                    # ------------------------------------------------
-                    # CHECK DUPLICATE
-                    # ------------------------------------------------
+                    # ========================================
+                    # GET SELECTED COURSE DETAILS
+                    # ========================================
 
-                    cursor.execute("""
-                        SELECT subject_master_id
-                        FROM subject_master
-                        WHERE LOWER(subject_name) = LOWER(%s)
-                          AND course_id = %s
-                          AND institution_category = %s
-                          AND subject_master_id != %s
-                    """, (
-                        subject_name,
-                        course_id,
-                        institution_category,
-                        subject_master_id
-                    ))
+                    cursor.execute(
+                        """
+                        SELECT
 
-                    existing_subject = cursor.fetchone()
+                            c.course_id,
 
-                    if existing_subject:
+                            c.course_name,
+
+                            c.institution_category,
+
+                            cay.academic_year
+
+                        FROM course_master AS c
+
+                        LEFT JOIN course_academic_year AS cay
+
+                            ON c.course_id = cay.course_id
+
+                        WHERE c.course_id = %s
+                        """,
+                        (course_id,)
+                    )
+
+                    course = cursor.fetchone()
+
+
+                    # ----------------------------------------
+                    # COURSE NOT FOUND
+                    # ----------------------------------------
+
+                    if not course:
 
                         err = (
-                            "This subject already exists "
+                            "Selected course was not found."
+                        )
+
+
+                    # ----------------------------------------
+                    # ACADEMIC YEAR NOT FOUND
+                    # ----------------------------------------
+
+                    elif not course["academic_year"]:
+
+                        err = (
+                            "No academic year is configured "
                             "for the selected course."
                         )
 
+
                     else:
 
-                        # ------------------------------------------------
-                        # UPDATE
-                        # ------------------------------------------------
+                        # ====================================
+                        # CHECK DUPLICATE SUBJECT
+                        # ====================================
 
-                        cursor.execute("""
-                            UPDATE subject_master
-                            SET
-                                subject_name = %s,
-                                course_id = %s,
-                                institution_category = %s,
-                                status = %s
-                            WHERE subject_master_id = %s
-                        """, (
-                            subject_name,
-                            course_id,
-                            institution_category,
-                            status,
-                            subject_master_id
-                        ))
+                        cursor.execute(
+                            """
+                            SELECT
 
-                        conn.commit()
+                                subject_master_id
 
-                        return redirect(
-                            url_for(
-                                "admin.subject_master",
-                                msg="Subject has been updated successfully."
+                            FROM subject_master
+
+                            WHERE LOWER(subject_name)
+                                  = LOWER(%s)
+
+                              AND course_id = %s
+
+                              AND subject_master_id != %s
+                            """,
+                            (
+                                subject_name,
+                                course_id,
+                                subject_master_id
                             )
                         )
 
+                        duplicate_subject = cursor.fetchone()
+
+
+                        if duplicate_subject:
+
+                            err = (
+                                "This subject already exists "
+                                "for the selected course."
+                            )
+
+
+                        else:
+
+                            # =================================
+                            # UPDATE SUBJECT
+                            # =================================
+
+                            cursor.execute(
+                                """
+                                UPDATE subject_master
+
+                                SET
+
+                                    subject_name = %s,
+
+                                    course_id = %s,
+
+                                    institution_category = %s,
+
+                                    status = %s
+
+                                WHERE subject_master_id = %s
+                                """,
+                                (
+                                    subject_name,
+                                    course_id,
+                                    course[
+                                        "institution_category"
+                                    ],
+                                    status,
+                                    subject_master_id
+                                )
+                            )
+
+
+                            # =================================
+                            # COMMIT
+                            # =================================
+
+                            conn.commit()
+
+
+                            # =================================
+                            # SUCCESS
+                            # =================================
+
+                            return redirect(
+                                url_for(
+                                    "admin.subject_master",
+                                    msg="Subject has been updated successfully."
+                                )
+                            )
+
+
             except Exception as e:
+
+                # ------------------------------------------------
+                # ROLLBACK
+                # ------------------------------------------------
 
                 conn.rollback()
 
@@ -4351,57 +5485,124 @@ def edit_subject(subject_master_id):
                     + str(e)
                 )
 
+
     # ========================================================
-    # GET SUBJECT
+    # LOAD SUBJECT
     # ========================================================
 
-    cursor.execute("""
-        SELECT
-            subject_master_id,
-            subject_name,
-            course_id,
-            institution_category,
-            status,
-            created_at,
-            updated_at
-        FROM subject_master
-        WHERE subject_master_id = %s
-    """, (
-        subject_master_id,
-    ))
+    try:
 
-    subject = cursor.fetchone()
+        cursor.execute(
+            """
+            SELECT
 
-    # --------------------------------------------------------
+                sm.subject_master_id,
+
+                sm.subject_name,
+
+                sm.course_id,
+
+                sm.institution_category,
+
+                sm.status,
+
+                cm.course_name,
+
+                cay.academic_year
+
+            FROM subject_master AS sm
+
+            INNER JOIN course_master AS cm
+
+                ON sm.course_id = cm.course_id
+
+            LEFT JOIN course_academic_year AS cay
+
+                ON cm.course_id = cay.course_id
+
+            WHERE sm.subject_master_id = %s
+            """,
+            (subject_master_id,)
+        )
+
+        subject = cursor.fetchone()
+
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "admin.subject_master",
+                msg="Unable to load subject: " + str(e)
+            )
+        )
+
+
+    # ========================================================
     # SUBJECT NOT FOUND
-    # --------------------------------------------------------
+    # ========================================================
 
     if not subject:
 
         return redirect(
-            url_for("admin.subject_master")
+            url_for(
+                "admin.subject_master",
+                msg="Subject not found."
+            )
         )
 
-    # ========================================================
-    # GET COURSES
-    # ========================================================
-
-    cursor.execute("""
-        SELECT
-            course_id,
-            course_name,
-            institution_category
-        FROM course_master
-        WHERE status = 'Active'
-        ORDER BY
-            institution_category,
-            course_name
-    """)
-
-    courses = cursor.fetchall()
 
     # ========================================================
-    # RENDER EDIT PAGE
+    # LOAD ACTIVE COURSES
+    # ========================================================
+
+    try:
+
+        cursor.execute(
+            """
+            SELECT
+
+                c.course_id,
+
+                c.course_name,
+
+                c.institution_category,
+
+                cay.academic_year
+
+            FROM course_master AS c
+
+            INNER JOIN course_academic_year AS cay
+
+                ON c.course_id = cay.course_id
+
+            WHERE c.status = 'Active'
+
+            ORDER BY
+
+                c.institution_category,
+
+                c.course_id
+            """
+        )
+
+        courses = cursor.fetchall()
+
+
+    except Exception as e:
+
+        courses = []
+
+        if not err:
+
+            err = (
+                "Unable to load courses: "
+                + str(e)
+            )
+
+
+    # ========================================================
+    # RENDER EDIT SUBJECT
     # ========================================================
 
     return render_template(
@@ -4411,11 +5612,9 @@ def edit_subject(subject_master_id):
         err=err
     )
 
-
 # ============================================================
 # TOGGLE SUBJECT STATUS
 # ============================================================
-
 
 @admin_bp.route(
     "/toggle_subject/<int:subject_master_id>",
@@ -4426,65 +5625,50 @@ def toggle_subject(subject_master_id):
 
     try:
 
-        # ====================================================
-        # GET CURRENT STATUS
-        # ====================================================
-
-        cursor.execute("""
-            SELECT status
+        cursor.execute(
+            """
+            SELECT
+                status
             FROM subject_master
             WHERE subject_master_id = %s
-        """, (
-            subject_master_id,
-        ))
+            """,
+            (subject_master_id,)
+        )
 
         subject = cursor.fetchone()
 
         if not subject:
-
             return redirect(
                 url_for(
                     "admin.subject_master",
-                    err="Subject not found."
+                    msg="Subject not found."
                 )
             )
 
-        # ====================================================
-        # TOGGLE STATUS
-        # ====================================================
-
-        current_status = subject["status"]
-
-        if current_status == "Active":
-
+        # Toggle Active <-> Inactive
+        if subject["status"] == "Active":
             new_status = "Inactive"
-
         else:
-
             new_status = "Active"
 
-        # ====================================================
-        # UPDATE STATUS
-        # ====================================================
-
-        cursor.execute("""
+        cursor.execute(
+            """
             UPDATE subject_master
             SET status = %s
             WHERE subject_master_id = %s
-        """, (
-            new_status,
-            subject_master_id
-        ))
+            """,
+            (
+                new_status,
+                subject_master_id
+            )
+        )
 
         conn.commit()
 
-        if new_status == "Inactive":
-
-            message = "Subject has been deactivated successfully."
-
-        else:
-
+        if new_status == "Active":
             message = "Subject has been activated successfully."
+        else:
+            message = "Subject has been deactivated successfully."
 
         return redirect(
             url_for(
@@ -4500,15 +5684,13 @@ def toggle_subject(subject_master_id):
         return redirect(
             url_for(
                 "admin.subject_master",
-                err="Unable to update subject status: " + str(e)
+                msg="Unable to change subject status: " + str(e)
             )
         )
-
 
 # ============================================================
 # DELETE SUBJECT
 # ============================================================
-
 
 @admin_bp.route(
     "/delete_subject/<int:subject_master_id>",
@@ -4519,17 +5701,17 @@ def delete_subject(subject_master_id):
 
     try:
 
-        # ====================================================
-        # CHECK SUBJECT
-        # ====================================================
-
-        cursor.execute("""
-            SELECT subject_master_id
+        # Check whether the subject exists
+        cursor.execute(
+            """
+            SELECT
+                subject_master_id,
+                subject_name
             FROM subject_master
             WHERE subject_master_id = %s
-        """, (
-            subject_master_id,
-        ))
+            """,
+            (subject_master_id,)
+        )
 
         subject = cursor.fetchone()
 
@@ -4538,20 +5720,18 @@ def delete_subject(subject_master_id):
             return redirect(
                 url_for(
                     "admin.subject_master",
-                    err="Subject not found."
+                    msg="Subject not found."
                 )
             )
 
-        # ====================================================
-        # DELETE SUBJECT
-        # ====================================================
-
-        cursor.execute("""
+        # Delete the subject
+        cursor.execute(
+            """
             DELETE FROM subject_master
             WHERE subject_master_id = %s
-        """, (
-            subject_master_id,
-        ))
+            """,
+            (subject_master_id,)
+        )
 
         conn.commit()
 
@@ -4569,9 +5749,10 @@ def delete_subject(subject_master_id):
         return redirect(
             url_for(
                 "admin.subject_master",
-                err="Unable to delete subject: " + str(e)
+                msg="Unable to delete subject: " + str(e)
             )
         )
+
 # ============================================================
 # ============================================================
 # CHAPTER MANAGEMENT

@@ -30,6 +30,11 @@
         <form method="POST"
               action="{{ url_for('admin.subject_master') }}">
 
+
+            <!-- ================================================= -->
+            <!-- SUBJECT NAME -->
+            <!-- ================================================= -->
+
             <div class="form-group">
 
                 <label for="subject_name">
@@ -47,6 +52,10 @@
             </div>
 
 
+            <!-- ================================================= -->
+            <!-- COURSE -->
+            <!-- ================================================= -->
+
             <div class="form-group">
 
                 <label for="course_id">
@@ -57,6 +66,7 @@
                     id="course_id"
                     name="course_id"
                     required
+                    onchange="updateCourseDetails()"
                 >
 
                     <option value="">
@@ -65,7 +75,11 @@
 
                     {% for course in courses %}
 
-                    <option value="{{ course.course_id }}">
+                    <option
+                        value="{{ course.course_id }}"
+                        data-category="{{ course.institution_category }}"
+                        data-academic-year="{{ course.academic_year }}"
+                    >
                         {{ course.course_name }}
                     </option>
 
@@ -76,32 +90,70 @@
             </div>
 
 
+            <!-- ================================================= -->
+            <!-- ACADEMIC YEAR -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="academic_year">
+                    Academic Year
+                </label>
+
+                <input
+                    type="text"
+                    id="academic_year"
+                    value=""
+                    placeholder="Automatically selected"
+                    readonly
+                >
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- INSTITUTION CATEGORY -->
+            <!-- ================================================= -->
+
             <div class="form-group">
 
                 <label for="institution_category">
                     Institution Category
                 </label>
 
-                <select
+                <input
+                    type="text"
                     id="institution_category"
-                    name="institution_category"
+                    value=""
+                    placeholder="Automatically selected"
+                    readonly
+                >
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- STATUS -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="status">
+                    Status
+                </label>
+
+                <select
+                    id="status"
+                    name="status"
                     required
                 >
 
-                    <option value="">
-                        -- Select Institution Category --
+                    <option value="Active">
+                        Active
                     </option>
 
-                    <option value="School">
-                        School
-                    </option>
-
-                    <option value="Jr College">
-                        Jr College
-                    </option>
-
-                    <option value="Degree College">
-                        Degree College
+                    <option value="Inactive">
+                        Inactive
                     </option>
 
                 </select>
@@ -109,7 +161,14 @@
             </div>
 
 
-            <button type="submit" class="btn">
+            <!-- ================================================= -->
+            <!-- SUBMIT -->
+            <!-- ================================================= -->
+
+            <button
+                type="submit"
+                class="btn"
+            >
                 Add Subject
             </button>
 
@@ -119,7 +178,7 @@
 
 
     <!-- ===================================================== -->
-    <!-- SUBJECT LIST -->
+    <!-- EXISTING SUBJECTS -->
     <!-- ===================================================== -->
 
     <div class="card">
@@ -136,10 +195,17 @@
                 <tr>
 
                     <th>ID</th>
+
                     <th>Subject Name</th>
+
                     <th>Course</th>
+
+                    <th>Academic Year</th>
+
                     <th>Institution Category</th>
+
                     <th>Status</th>
+
                     <th>Actions</th>
 
                 </tr>
@@ -153,33 +219,58 @@
 
                 <tr>
 
+                    <!-- ID -->
+
                     <td>
                         {{ subject.subject_master_id }}
                     </td>
+
+
+                    <!-- SUBJECT NAME -->
 
                     <td>
                         {{ subject.subject_name }}
                     </td>
 
+
+                    <!-- COURSE -->
+
                     <td>
                         {{ subject.course_name }}
                     </td>
+
+
+                    <!-- ACADEMIC YEAR -->
+
+                    <td>
+                        {{ subject.academic_year }}
+                    </td>
+
+
+                    <!-- INSTITUTION CATEGORY -->
 
                     <td>
                         {{ subject.institution_category }}
                     </td>
 
+
+                    <!-- STATUS -->
+
                     <td>
                         {{ subject.status }}
                     </td>
 
-                    <td>
 
-                        <!-- ACTION BUTTON CONTAINER -->
+                    <!-- ACTIONS -->
+
+                    <td>
 
                         <div class="action-buttons">
 
+
+                            <!-- ================================= -->
                             <!-- EDIT -->
+                            <!-- ================================= -->
 
                             <a
                                 href="{{ url_for(
@@ -192,7 +283,9 @@
                             </a>
 
 
+                            <!-- ================================= -->
                             <!-- ACTIVATE / DEACTIVATE -->
+                            <!-- ================================= -->
 
                             <form
                                 method="POST"
@@ -229,7 +322,9 @@
                             </form>
 
 
+                            <!-- ================================= -->
                             <!-- DELETE -->
+                            <!-- ================================= -->
 
                             <form
                                 method="POST"
@@ -277,26 +372,98 @@
 </div>
 
 
-<!-- ===================================================== -->
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
+<script>
+
+function updateCourseDetails() {
+
+    const courseSelect =
+        document.getElementById("course_id");
+
+    const academicYear =
+        document.getElementById("academic_year");
+
+    const institutionCategory =
+        document.getElementById("institution_category");
+
+
+    const selectedOption =
+        courseSelect.options[
+            courseSelect.selectedIndex
+        ];
+
+
+    if (
+        !selectedOption ||
+        !selectedOption.value
+    ) {
+
+        academicYear.value = "";
+
+        institutionCategory.value = "";
+
+        return;
+    }
+
+
+    academicYear.value =
+        selectedOption.dataset.academicYear || "";
+
+
+    institutionCategory.value =
+        selectedOption.dataset.category || "";
+
+}
+
+</script>
+
+
+<!-- ========================================================= -->
 <!-- BUTTON SPACING -->
-<!-- ===================================================== -->
+<!-- ========================================================= -->
 
 <style>
 
 .action-buttons {
+
     display: flex;
+
     align-items: center;
+
     gap: 8px;
+
     white-space: nowrap;
+
 }
+
 
 .action-buttons form {
+
     margin: 0;
+
     padding: 0;
+
 }
 
+
 .action-buttons .btn {
+
     margin: 0;
+
+}
+
+
+/* Automatically populated fields */
+
+input[readonly] {
+
+    background-color: #f5f5f5;
+
+    cursor: not-allowed;
+
 }
 
 </style>
