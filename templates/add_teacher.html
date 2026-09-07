@@ -2,464 +2,865 @@
 
 {% block content %}
 
-<div class="container">
+<style>
 
-<h2>Add Teacher</h2>
+    .teacher-page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 10px 0 40px;
+    }
 
-<p>Enter the teacher's details below.</p>
+    .page-header {
+        margin-bottom: 25px;
+    }
 
-{% if message %}
-    <div class="success">
-        {{ message }}
+    .page-header h2 {
+        margin: 0 0 6px;
+        font-size: 28px;
+        color: #1f2937;
+    }
+
+    .page-header p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .form-card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 25px;
+        margin-bottom: 22px;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+        border: 1px solid #e5e7eb;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .section-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #eef2ff;
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .section-title h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #1f2937;
+    }
+
+    .section-title p {
+        margin: 2px 0 0;
+        color: #6b7280;
+        font-size: 12px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group.full {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 7px;
+    }
+
+    .required {
+        color: #dc2626;
+    }
+
+    .form-control {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        background: #fff;
+        color: #1f2937;
+        outline: none;
+        transition: 0.2s;
+    }
+
+    .form-control:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    }
+
+    .form-control:disabled {
+        background: #f3f4f6;
+        color: #9ca3af;
+        cursor: not-allowed;
+    }
+
+    .subject-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+    .subject-search {
+        flex: 1;
+        min-width: 240px;
+    }
+
+    .selected-count {
+        font-size: 13px;
+        color: #4f46e5;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .subject-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        max-height: 430px;
+        overflow-y: auto;
+        padding: 4px;
+    }
+
+    .subject-item {
+        position: relative;
+    }
+
+    .subject-item input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .subject-label {
+        display: block;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 14px;
+        cursor: pointer;
+        background: #fff;
+        transition: 0.2s;
+        height: 100%;
+        box-sizing: border-box;
+    }
+
+    .subject-label:hover {
+        border-color: #a5b4fc;
+        background: #fafaff;
+    }
+
+    .subject-item input:checked + .subject-label {
+        border-color: #6366f1;
+        background: #eef2ff;
+        box-shadow: 0 0 0 1px #6366f1;
+    }
+
+    .subject-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .subject-name {
+        font-weight: 700;
+        color: #1f2937;
+        font-size: 14px;
+    }
+
+    .check-mark {
+        width: 20px;
+        height: 20px;
+        border: 1px solid #d1d5db;
+        border-radius: 5px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: transparent;
+    }
+
+    .subject-item input:checked + .subject-label .check-mark {
+        background: #4f46e5;
+        border-color: #4f46e5;
+        color: white;
+    }
+
+    .subject-info {
+        margin-top: 9px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .subject-tag {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 4px 8px;
+        border-radius: 5px;
+        font-size: 11px;
+    }
+
+    .subject-item input:checked + .subject-label .subject-tag {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .no-subjects {
+        text-align: center;
+        padding: 30px;
+        color: #6b7280;
+        background: #f9fafb;
+        border: 1px dashed #d1d5db;
+        border-radius: 10px;
+        grid-column: 1 / -1;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        padding: 11px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: #4f46e5;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #4338ca;
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .alert {
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        font-size: 14px;
+    }
+
+    .alert-error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    @media (max-width: 750px) {
+
+        .form-grid,
+        .subject-list {
+            grid-template-columns: 1fr;
+        }
+
+        .form-card {
+            padding: 18px;
+        }
+
+    }
+
+</style>
+
+
+<div class="teacher-page">
+
+    <div class="page-header">
+        <h2>Add Teacher</h2>
+        <p>Create a teacher account and assign their academic subjects.</p>
     </div>
-{% endif %}
-
-<div class="card">
-
-    <form action="{{ url_for('admin.add_teacher') }}"
-          method="POST"
-          id="teacherForm"
-          novalidate>
-
-        <!-- Teacher Name -->
-        <label for="name">Teacher Name:</label>
-
-        <input type="text"
-               id="name"
-               name="name"
-               maxlength="50"
-               required>
-
-        <small id="nameError" class="error"></small>
 
 
-        <!-- Email -->
-        <label for="email">Email:</label>
-
-        <input type="email"
-               id="email"
-               name="email"
-               maxlength="100"
-               required>
-
-        <small id="emailError" class="error"></small>
+    {% if err %}
+    <div class="alert alert-error">
+        {{ err }}
+    </div>
+    {% endif %}
 
 
-        <!-- Password -->
-        <label for="password">Password:</label>
+    <form method="POST"
+          action="{{ url_for('admin.add_teacher') }}"
+          id="teacherForm">
 
-        <div class="password-container">
 
-            <input type="password"
-                   id="password"
-                   name="password"
-                   minlength="8"
-                   required>
+        <!-- =====================================================
+             SECTION 1 : ACADEMIC ASSIGNMENT
+        ====================================================== -->
 
-            <button type="button"
-                    class="password-toggle"
-                    onclick="togglePassword()">
-                👁
-            </button>
+        <div class="form-card">
+
+            <div class="section-title">
+
+                <div class="section-number">1</div>
+
+                <div>
+                    <h3>Institution & Academic Assignment</h3>
+                    <p>Select the institution and teacher's academic position.</p>
+                </div>
+
+            </div>
+
+
+            <div class="form-grid">
+
+                <!-- Institution -->
+
+                <div class="form-group full">
+
+                    <label>
+                        Institution <span class="required">*</span>
+                    </label>
+
+                    <select
+                        name="institution_id"
+                        id="institution_id"
+                        class="form-control"
+                        required
+                    >
+
+                        <option value="">Select Institution</option>
+
+                        {% for inst in institutions %}
+
+                        <option
+                            value="{{ inst.institution_id }}"
+                            data-category="{{ inst.institution_category }}"
+                        >
+                            {{ inst.institution_name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- Department -->
+
+                <div class="form-group">
+
+                    <label>
+                        Department
+                    </label>
+
+                    <select
+                        name="department_id"
+                        id="department_id"
+                        class="form-control"
+                        disabled
+                    >
+
+                        <option value="">Select Department</option>
+
+                        {% for dept in departments %}
+
+                        <option
+                            value="{{ dept.department_id }}"
+                            data-institution="{{ dept.institution_id }}"
+                        >
+                            {{ dept.department_name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- Designation -->
+
+                <div class="form-group">
+
+                    <label>
+                        Designation
+                    </label>
+
+                    <select
+                        name="designation_id"
+                        id="designation_id"
+                        class="form-control"
+                        disabled
+                    >
+
+                        <option value="">Select Designation</option>
+
+                        {% for des in designations %}
+
+                        <option
+                            value="{{ des.designation_id }}"
+                            data-institution="{{ des.institution_id }}"
+                        >
+                            {{ des.designation_name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+            </div>
 
         </div>
 
-        <small id="passwordError" class="error"></small>
 
 
-        <!-- Mobile -->
-        <label for="mobile">Mobile Number:</label>
+        <!-- =====================================================
+             SECTION 2 : TEACHER DETAILS
+        ====================================================== -->
 
-        <input type="text"
-               id="mobile"
-               name="mobile"
-               maxlength="10"
-               inputmode="numeric"
-               required>
+        <div class="form-card">
 
-        <small id="mobileError" class="error"></small>
+            <div class="section-title">
 
+                <div class="section-number">2</div>
 
-        <!-- Department -->
-        <label for="department">Department:</label>
+                <div>
+                    <h3>Teacher Details</h3>
+                    <p>Enter the teacher's account and contact information.</p>
+                </div>
 
-        <input type="text"
-               id="department"
-               name="department"
-               maxlength="50">
-
-        <small id="departmentError" class="error"></small>
+            </div>
 
 
-        <!-- Designation -->
-        <label for="designation">Designation:</label>
+            <div class="form-grid">
 
-        <input type="text"
-               id="designation"
-               name="designation"
-               maxlength="50">
+                <div class="form-group">
 
-        <small id="designationError" class="error"></small>
+                    <label>
+                        Teacher Name <span class="required">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        name="teacher_name"
+                        class="form-control"
+                        maxlength="100"
+                        required
+                        value="{{ request.form.get('teacher_name', '') }}"
+                    >
+
+                </div>
 
 
-        <button type="submit">
-            Add Teacher
-        </button>
+                <div class="form-group">
+
+                    <label>
+                        Email <span class="required">*</span>
+                    </label>
+
+                    <input
+                        type="email"
+                        name="email"
+                        class="form-control"
+                        maxlength="150"
+                        required
+                        value="{{ request.form.get('email', '') }}"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Phone</label>
+
+                    <input
+                        type="text"
+                        name="phone"
+                        class="form-control"
+                        maxlength="20"
+                        value="{{ request.form.get('phone', '') }}"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>
+                        Password <span class="required">*</span>
+                    </label>
+
+                    <input
+                        type="password"
+                        name="password"
+                        class="form-control"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>
+                        Confirm Password <span class="required">*</span>
+                    </label>
+
+                    <input
+                        type="password"
+                        name="confirm_password"
+                        class="form-control"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             SECTION 3 : SUBJECTS
+        ====================================================== -->
+
+        <div class="form-card">
+
+            <div class="section-title">
+
+                <div class="section-number">3</div>
+
+                <div>
+                    <h3>Assign Subjects</h3>
+                    <p>Select the subjects this teacher will handle.</p>
+                </div>
+
+            </div>
+
+
+            <div class="subject-toolbar">
+
+                <input
+                    type="text"
+                    id="subjectSearch"
+                    class="form-control subject-search"
+                    placeholder="Search subjects..."
+                >
+
+                <div class="selected-count">
+                    Selected: <span id="selectedCount">0</span>
+                </div>
+
+            </div>
+
+
+            <div class="subject-list" id="subjectList">
+
+                {% if subjects %}
+
+                    {% for sub in subjects %}
+
+                    <div
+                        class="subject-item"
+                        data-institution="{{ sub.institution_id }}"
+                        data-search="{{ (
+                            sub.subject_name ~ ' ' ~
+                            (sub.course_name or '') ~ ' ' ~
+                            (sub.academic_year or '') ~ ' ' ~
+                            (sub.standard_name or '')
+                        ) | lower }}"
+                    >
+
+                        <input
+                            type="checkbox"
+                            name="subject_ids"
+                            value="{{ sub.subject_id }}"
+                            id="subject_{{ sub.subject_id }}"
+                        >
+
+                        <label
+                            for="subject_{{ sub.subject_id }}"
+                            class="subject-label"
+                        >
+
+                            <div class="subject-top">
+
+                                <div class="subject-name">
+                                    {{ sub.subject_name }}
+                                </div>
+
+                                <div class="check-mark">
+                                    ✓
+                                </div>
+
+                            </div>
+
+
+                            <div class="subject-info">
+
+                                {% if sub.course_name %}
+                                <span class="subject-tag">
+                                    {{ sub.course_name }}
+                                </span>
+                                {% endif %}
+
+                                {% if sub.academic_year %}
+                                <span class="subject-tag">
+                                    {{ sub.academic_year }}
+                                </span>
+                                {% endif %}
+
+                                {% if sub.standard_name %}
+                                <span class="subject-tag">
+                                    {{ sub.standard_name }}
+                                </span>
+                                {% endif %}
+
+                            </div>
+
+                        </label>
+
+                    </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <div class="no-subjects">
+                        No active subjects are available.
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             ACTIONS
+        ====================================================== -->
+
+        <div class="form-actions">
+
+            <a
+                href="{{ url_for('admin.view_teachers') }}"
+                class="btn btn-secondary"
+            >
+                Cancel
+            </a>
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                Add Teacher
+            </button>
+
+        </div>
 
     </form>
 
 </div>
 
-</div>
 
-<style>
-
-/* Error message */
-.error {
-    color: red;
-    display: none;
-    margin-top: 3px;
-    margin-bottom: 5px;
-    font-size: 14px;
-    background: transparent;
-    border: none;
-}
-
-/* Make sure validation never changes input appearance */
-input.invalid,
-input.valid {
-    border: 1px solid #ccc !important;
-    background-color: white !important;
-    box-shadow: none !important;
-}
-
-</style>
 
 <script>
 
-const form = document.getElementById("teacherForm");
+document.addEventListener("DOMContentLoaded", function () {
 
-const nameInput = document.getElementById("name");
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
-const mobileInput = document.getElementById("mobile");
-const departmentInput = document.getElementById("department");
-const designationInput = document.getElementById("designation");
+    const institution =
+        document.getElementById("institution_id");
 
+    const department =
+        document.getElementById("department_id");
 
-// =====================================================
-// ERROR MESSAGE FUNCTIONS
-// =====================================================
+    const designation =
+        document.getElementById("designation_id");
 
-function showError(errorElement, message) {
+    const subjectItems =
+        document.querySelectorAll(".subject-item");
 
-    errorElement.textContent = message;
-    errorElement.style.display = "block";
+    const subjectSearch =
+        document.getElementById("subjectSearch");
 
-}
+    const selectedCount =
+        document.getElementById("selectedCount");
 
 
-function clearError(errorElement) {
+    /* =====================================================
+       FILTER DEPARTMENT / DESIGNATION / SUBJECTS
+    ====================================================== */
 
-    errorElement.textContent = "";
-    errorElement.style.display = "none";
+    institution.addEventListener("change", function () {
 
-}
+        const institutionId = this.value;
 
 
-// =====================================================
-// NAME VALIDATION
-// =====================================================
+        /* Department */
 
-function validateName() {
+        department.disabled = !institutionId;
+        department.value = "";
 
-    const name = nameInput.value.trim();
-    const error = document.getElementById("nameError");
+        Array.from(department.options).forEach(function (option) {
 
-    const namePattern = /^[A-Za-z][A-Za-z .']{1,49}$/;
+            if (!option.value) {
+                option.hidden = false;
+                return;
+            }
 
-    if (name === "") {
+            option.hidden =
+                option.dataset.institution !== institutionId;
 
-        showError(error, "Teacher name is required.");
-        return false;
+        });
 
-    }
 
-    if (!namePattern.test(name)) {
+        /* Designation */
 
-        showError(
-            error,
-            "Name should contain only letters, spaces, dots or apostrophes."
-        );
+        designation.disabled = !institutionId;
+        designation.value = "";
 
-        return false;
-    }
+        Array.from(designation.options).forEach(function (option) {
 
-    clearError(error);
+            if (!option.value) {
+                option.hidden = false;
+                return;
+            }
 
-    return true;
-}
+            option.hidden =
+                option.dataset.institution !== institutionId;
 
+        });
 
-// =====================================================
-// EMAIL VALIDATION
-// =====================================================
 
-function validateEmail() {
+        /* Subjects */
 
-    const email = emailInput.value.trim();
-    const error = document.getElementById("emailError");
+        subjectItems.forEach(function (item) {
 
-    const emailPattern =
-        /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+            const checkbox =
+                item.querySelector("input[type='checkbox']");
 
-    if (email === "") {
+            const matches =
+                institutionId &&
+                item.dataset.institution === institutionId;
 
-        showError(error, "Email address is required.");
-        return false;
+            item.style.display =
+                matches ? "" : "none";
 
-    }
+            if (!matches) {
+                checkbox.checked = false;
+            }
 
-    if (!emailPattern.test(email)) {
+        });
 
-        showError(
-            error,
-            "Please enter a valid email address."
-        );
+        updateSelectedCount();
 
-        return false;
-    }
+    });
 
-    clearError(error);
 
-    return true;
-}
+    /* =====================================================
+       SUBJECT SEARCH
+    ====================================================== */
 
+    subjectSearch.addEventListener("input", function () {
 
-// =====================================================
-// PASSWORD VALIDATION
-// =====================================================
+        const search =
+            this.value.toLowerCase().trim();
 
-function validatePassword() {
+        const institutionId =
+            institution.value;
 
-    const password = passwordInput.value;
-    const error = document.getElementById("passwordError");
 
-    if (password === "") {
+        subjectItems.forEach(function (item) {
 
-        showError(error, "Password is required.");
-        return false;
+            const matchesInstitution =
+                institutionId &&
+                item.dataset.institution === institutionId;
 
-    }
+            const matchesSearch =
+                !search ||
+                item.dataset.search.includes(search);
 
-    if (password.length < 8) {
+            item.style.display =
+                matchesInstitution && matchesSearch
+                    ? ""
+                    : "none";
 
-        showError(
-            error,
-            "Password must contain at least 8 characters."
-        );
+        });
 
-        return false;
-    }
+    });
 
-    clearError(error);
 
-    return true;
-}
+    /* =====================================================
+       SELECTED COUNT
+    ====================================================== */
 
+    subjectItems.forEach(function (item) {
 
-// =====================================================
-// MOBILE VALIDATION
-// =====================================================
+        const checkbox =
+            item.querySelector("input[type='checkbox']");
 
-function validateMobile() {
+        checkbox.addEventListener("change", updateSelectedCount);
 
-    const mobile = mobileInput.value.trim();
-    const error = document.getElementById("mobileError");
+    });
 
-    const mobilePattern = /^[6-9][0-9]{9}$/;
 
-    if (mobile === "") {
+    function updateSelectedCount() {
 
-        showError(error, "Mobile number is required.");
-        return false;
+        const selected =
+            document.querySelectorAll(
+                ".subject-item input[type='checkbox']:checked"
+            ).length;
 
-    }
-
-    if (!mobilePattern.test(mobile)) {
-
-        showError(
-            error,
-            "Enter a valid 10-digit Indian mobile number."
-        );
-
-        return false;
-    }
-
-    clearError(error);
-
-    return true;
-}
-
-
-// =====================================================
-// DEPARTMENT VALIDATION
-// =====================================================
-
-function validateDepartment() {
-
-    const department = departmentInput.value.trim();
-    const error = document.getElementById("departmentError");
-
-    /* Department is optional */
-
-    if (department === "") {
-
-        clearError(error);
-        return true;
-
-    }
-
-    const pattern = /^[A-Za-z ]{2,50}$/;
-
-    if (!pattern.test(department)) {
-
-        showError(
-            error,
-            "Department should contain only letters and spaces."
-        );
-
-        return false;
-    }
-
-    clearError(error);
-
-    return true;
-}
-
-
-// =====================================================
-// DESIGNATION VALIDATION
-// =====================================================
-
-function validateDesignation() {
-
-    const designation = designationInput.value.trim();
-    const error = document.getElementById("designationError");
-
-    /* Designation is optional */
-
-    if (designation === "") {
-
-        clearError(error);
-        return true;
-
-    }
-
-    const pattern = /^[A-Za-z ]{2,50}$/;
-
-    if (!pattern.test(designation)) {
-
-        showError(
-            error,
-            "Designation should contain only letters and spaces."
-        );
-
-        return false;
-    }
-
-    clearError(error);
-
-    return true;
-}
-
-
-// =====================================================
-// VALIDATE WHILE TYPING
-// =====================================================
-
-nameInput.addEventListener("input", validateName);
-
-emailInput.addEventListener("input", validateEmail);
-
-passwordInput.addEventListener("input", validatePassword);
-
-mobileInput.addEventListener("input", validateMobile);
-
-departmentInput.addEventListener("input", validateDepartment);
-
-designationInput.addEventListener("input", validateDesignation);
-
-
-// =====================================================
-// MOBILE - ALLOW ONLY NUMBERS
-// =====================================================
-
-mobileInput.addEventListener("input", function() {
-
-    this.value = this.value.replace(/[^0-9]/g, "");
-
-});
-
-
-// =====================================================
-// FORM SUBMISSION
-// =====================================================
-
-form.addEventListener("submit", function(event) {
-
-    const nameValid = validateName();
-
-    const emailValid = validateEmail();
-
-    const passwordValid = validatePassword();
-
-    const mobileValid = validateMobile();
-
-    const departmentValid = validateDepartment();
-
-    const designationValid = validateDesignation();
-
-
-    if (
-        !nameValid ||
-        !emailValid ||
-        !passwordValid ||
-        !mobileValid ||
-        !departmentValid ||
-        !designationValid
-    ) {
-
-        event.preventDefault();
-
-        alert("Please correct the invalid fields before submitting.");
-
-        return false;
+        selectedCount.textContent = selected;
 
     }
 
 });
-
-
-// =====================================================
-// PASSWORD SHOW / HIDE
-// =====================================================
-
-function togglePassword() {
-
-    const password = document.getElementById("password");
-
-    if (password.type === "password") {
-
-        password.type = "text";
-
-    } else {
-
-        password.type = "password";
-
-    }
-
-}
 
 </script>
 

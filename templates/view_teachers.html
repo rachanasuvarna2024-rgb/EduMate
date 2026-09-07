@@ -2,91 +2,634 @@
 
 {% block content %}
 
-<div class="container">
+<style>
 
-    <h2>View Teachers</h2>
+    .teachers-page {
+        max-width: 1250px;
+        margin: 0 auto;
+        padding: 10px 0 40px;
+    }
 
-    <p>View and manage all teachers registered in EduMate.</p>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+    }
+
+    .page-header h2 {
+        margin: 0 0 5px;
+        font-size: 28px;
+        color: #1f2937;
+    }
+
+    .page-header p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .btn-add {
+        background: #4f46e5;
+        color: white;
+        text-decoration: none;
+        padding: 11px 18px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .btn-add:hover {
+        background: #4338ca;
+    }
+
+    .toolbar {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        gap: 12px;
+        margin-bottom: 18px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+    }
+
+    .search-box {
+        flex: 1;
+    }
+
+    .filter-box {
+        width: 180px;
+    }
+
+    .form-control {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+    }
+
+    .form-control:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    }
+
+    .table-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1000px;
+    }
+
+    thead {
+        background: #f9fafb;
+    }
+
+    th {
+        text-align: left;
+        padding: 14px 15px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #6b7280;
+        border-bottom: 1px solid #e5e7eb;
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 15px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 13px;
+        color: #374151;
+        vertical-align: top;
+    }
+
+    tbody tr:hover {
+        background: #fafafa;
+    }
+
+    .teacher-name {
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 4px;
+    }
+
+    .teacher-contact {
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .subject-list {
+        max-width: 300px;
+        line-height: 1.5;
+        color: #4b5563;
+    }
+
+    .status {
+        display: inline-block;
+        padding: 5px 9px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .status-active {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-inactive {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .actions {
+        display: flex;
+        gap: 7px;
+        align-items: center;
+    }
+
+    .action-btn {
+        border: none;
+        padding: 7px 11px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .edit-btn {
+        background: #eef2ff;
+        color: #4338ca;
+    }
+
+    .edit-btn:hover {
+        background: #e0e7ff;
+    }
+
+    .delete-btn {
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    .delete-btn:hover {
+        background: #fee2e2;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 45px 20px;
+        color: #6b7280;
+    }
+
+    .empty-state h3 {
+        margin: 0 0 5px;
+        color: #374151;
+    }
+
+    .alert {
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        font-size: 14px;
+    }
+
+    .alert-success {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .alert-error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    @media (max-width: 700px) {
+
+        .toolbar {
+            flex-direction: column;
+        }
+
+        .filter-box {
+            width: 100%;
+        }
+
+    }
+
+</style>
 
 
-    {% if teachers %}
-
-    <div class="card">
-
-        <table>
-
-            <thead>
-
-                <tr>
-                    <th>Teacher ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Mobile</th>
-                    <th>Department</th>
-                    <th>Designation</th>
-                    <th>Action</th>
-                </tr>
-
-            </thead>
+<div class="teachers-page">
 
 
-            <tbody>
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
-                {% for teacher in teachers %}
+    <div class="page-header">
 
-                <tr>
+        <div>
 
-                    <td>{{ teacher.teacher_id }}</td>
+            <h2>Teacher Management</h2>
 
-                    <td>{{ teacher.name }}</td>
+            <p>
+                View and manage teachers and their subject assignments.
+            </p>
 
-                    <td>{{ teacher.email }}</td>
+        </div>
 
-                    <td>{{ teacher.mobile or '-' }}</td>
 
-                    <td>{{ teacher.department or '-' }}</td>
-
-                    <td>{{ teacher.designation or '-' }}</td>
-
-                    <td>
-
-                        <a href="{{ url_for('admin.edit_teacher', teacher_id=teacher.teacher_id) }}"
-                           class="btn">
-                            Edit
-                        </a>
-
-                        
-                        <form action="{{ url_for('admin.delete_teacher', teacher_id=teacher.teacher_id) }}"
-                              method="POST"
-                              style="display:inline;">
-                            <br/><br/>
-                            <button type="submit"
-                                    onclick="return confirm('Are you sure you want to delete this teacher?');">
-                                Delete
-                            </button>
-
-                        </form>
-
-                    </td>
-
-                </tr>
-
-                {% endfor %}
-
-            </tbody>
-
-        </table>
+        <a
+            href="{{ url_for('admin.add_teacher') }}"
+            class="btn-add"
+        >
+            + Add Teacher
+        </a>
 
     </div>
 
-    {% else %}
 
-        <div class="info-box">
-            No teachers have been added yet.
-        </div>
+
+    <!-- =====================================================
+         MESSAGES
+    ====================================================== -->
+
+    {% if msg %}
+
+    <div class="alert alert-success">
+        {{ msg }}
+    </div>
 
     {% endif %}
 
+
+    {% if err %}
+
+    <div class="alert alert-error">
+        {{ err }}
+    </div>
+
+    {% endif %}
+
+
+
+    <!-- =====================================================
+         SEARCH / FILTER
+    ====================================================== -->
+
+    <div class="toolbar">
+
+        <div class="search-box">
+
+            <input
+                type="text"
+                id="teacherSearch"
+                class="form-control"
+                placeholder="Search by teacher, email, institution, department or designation..."
+            >
+
+        </div>
+
+
+        <div class="filter-box">
+
+            <select
+                id="statusFilter"
+                class="form-control"
+            >
+
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+
+            </select>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         TABLE
+    ====================================================== -->
+
+    <div class="table-card">
+
+        {% if teachers %}
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>ID</th>
+
+                        <th>Teacher</th>
+
+                        <th>Institution</th>
+
+                        <th>Department</th>
+
+                        <th>Designation</th>
+
+                        <th>Assigned Subjects</th>
+
+                        <th>Status</th>
+
+                        <th>Actions</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="teacherTable">
+
+                    {% for teacher in teachers %}
+
+                    <tr
+                        data-status="{{ teacher.status }}"
+                        data-search="{{ (
+                            teacher.teacher_name ~ ' ' ~
+                            teacher.email ~ ' ' ~
+                            (teacher.phone or '') ~ ' ' ~
+                            (teacher.institution_name or '') ~ ' ' ~
+                            (teacher.department_name or '') ~ ' ' ~
+                            (teacher.designation_name or '') ~ ' ' ~
+                            (teacher.assigned_subjects or '')
+                        ) | lower }}"
+                    >
+
+                        <td>
+                            #{{ teacher.teacher_id }}
+                        </td>
+
+
+                        <td>
+
+                            <div class="teacher-name">
+                                {{ teacher.teacher_name }}
+                            </div>
+
+                            <div class="teacher-contact">
+                                {{ teacher.email }}
+                            </div>
+
+                            {% if teacher.phone %}
+                            <div class="teacher-contact">
+                                {{ teacher.phone }}
+                            </div>
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ teacher.institution_name or '—' }}
+                        </td>
+
+
+                        <td>
+                            {{ teacher.department_name or '—' }}
+                        </td>
+
+
+                        <td>
+                            {{ teacher.designation_name or '—' }}
+                        </td>
+
+
+                        <td>
+
+                            {% if teacher.assigned_subjects %}
+
+                            <div class="subject-list">
+                                {{ teacher.assigned_subjects }}
+                            </div>
+
+                            {% else %}
+
+                            <span style="color:#9ca3af;">
+                                No subjects assigned
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if teacher.status == 'Active' %}
+
+                            <span class="status status-active">
+                                Active
+                            </span>
+
+                            {% else %}
+
+                            <span class="status status-inactive">
+                                Inactive
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            <div class="actions">
+
+                                <a
+                                    href="{{ url_for(
+                                        'admin.edit_teacher',
+                                        teacher_id=teacher.teacher_id
+                                    ) }}"
+                                    class="action-btn edit-btn"
+                                >
+                                    Edit
+                                </a>
+
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'admin.delete_teacher',
+                                        teacher_id=teacher.teacher_id
+                                    ) }}"
+                                    onsubmit="return confirm(
+                                        'Are you sure you want to delete this teacher?'
+                                    );"
+                                    style="display:inline;"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="action-btn delete-btn"
+                                    >
+                                        Delete
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <div
+            id="noSearchResults"
+            class="empty-state"
+            style="display:none;"
+        >
+
+            <h3>No teachers found</h3>
+
+            <p>
+                Try changing your search or status filter.
+            </p>
+
+        </div>
+
+
+        {% else %}
+
+        <div class="empty-state">
+
+            <h3>No Teachers Found</h3>
+
+            <p>
+                No teachers have been added yet.
+            </p>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
 </div>
+
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const searchInput =
+        document.getElementById("teacherSearch");
+
+    const statusFilter =
+        document.getElementById("statusFilter");
+
+    const rows =
+        document.querySelectorAll("#teacherTable tr");
+
+    const noResults =
+        document.getElementById("noSearchResults");
+
+
+    function filterTeachers() {
+
+        const search =
+            searchInput.value.toLowerCase().trim();
+
+        const status =
+            statusFilter.value;
+
+        let visibleCount = 0;
+
+
+        rows.forEach(function (row) {
+
+            const rowSearch =
+                row.dataset.search || "";
+
+            const rowStatus =
+                row.dataset.status || "";
+
+
+            const matchesSearch =
+                !search ||
+                rowSearch.includes(search);
+
+            const matchesStatus =
+                !status ||
+                rowStatus === status;
+
+
+            if (matchesSearch && matchesStatus) {
+
+                row.style.display = "";
+                visibleCount++;
+
+            } else {
+
+                row.style.display = "none";
+
+            }
+
+        });
+
+
+        if (noResults) {
+
+            noResults.style.display =
+                visibleCount === 0
+                    ? "block"
+                    : "none";
+
+        }
+
+    }
+
+
+    searchInput.addEventListener(
+        "input",
+        filterTeachers
+    );
+
+    statusFilter.addEventListener(
+        "change",
+        filterTeachers
+    );
+
+});
+
+</script>
 
 {% endblock %}

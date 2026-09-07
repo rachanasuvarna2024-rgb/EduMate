@@ -2,508 +2,906 @@
 
 {% block content %}
 
-<div class="container">
-
-    <h2>Edit Teacher</h2>
-
-    <p>Update the teacher's details below.</p>
-
-
-    {% if message %}
-
-        <div class="error">
-            {{ message }}
-        </div>
-
-    {% endif %}
-
-
-    <div class="card">
-
-        <form action="{{ url_for('admin.edit_teacher', teacher_id=teacher.teacher_id) }}"
-              method="POST"
-              id="teacherForm"
-              novalidate>
-
-
-            <!-- ============================= -->
-            <!-- TEACHER NAME -->
-            <!-- ============================= -->
-
-            <label for="name">Teacher Name:</label>
-
-            <input type="text"
-                   id="name"
-                   name="name"
-                   value="{{ teacher.name }}"
-                   maxlength="50"
-                   required>
-
-            <small id="nameError" class="error-message"></small>
-
-
-            <!-- ============================= -->
-            <!-- EMAIL -->
-            <!-- ============================= -->
-
-            <label for="email">Email:</label>
-
-            <input type="email"
-                   id="email"
-                   name="email"
-                   value="{{ teacher.email }}"
-                   maxlength="100"
-                   required>
-
-            <small id="emailError" class="error-message"></small>
-
-
-            <!-- ============================= -->
-            <!-- MOBILE -->
-            <!-- ============================= -->
-
-            <label for="mobile">Mobile Number:</label>
-
-            <input type="text"
-                   id="mobile"
-                   name="mobile"
-                   value="{{ teacher.mobile or '' }}"
-                   maxlength="10"
-                   inputmode="numeric"
-                   required>
-
-            <small id="mobileError" class="error-message"></small>
-
-
-            <!-- ============================= -->
-            <!-- DEPARTMENT -->
-            <!-- ============================= -->
-
-            <label for="department">Department:</label>
-
-            <input type="text"
-                   id="department"
-                   name="department"
-                   value="{{ teacher.department or '' }}"
-                   maxlength="50">
-
-            <small id="departmentError" class="error-message"></small>
-
-
-            <!-- ============================= -->
-            <!-- DESIGNATION -->
-            <!-- ============================= -->
-
-            <label for="designation">Designation:</label>
-
-            <input type="text"
-                   id="designation"
-                   name="designation"
-                   value="{{ teacher.designation or '' }}"
-                   maxlength="50">
-
-            <small id="designationError" class="error-message"></small>
-
-
-            <!-- ============================= -->
-            <!-- BUTTONS -->
-            <!-- ============================= -->
-
-            <button type="submit">
-                Save Changes
-            </button>
-
-
-            <a href="{{ url_for('admin.view_teachers') }}"
-               class="btn">
-                Cancel
-            </a>
-
-        </form>
-
-    </div>
-
-</div>
-
-
-<!-- ============================= -->
-<!-- VALIDATION CSS -->
-<!-- ============================= -->
-
 <style>
 
-.error-message {
-    color: red;
-    display: block;
-    margin-top: 5px;
-    margin-bottom: 10px;
-    font-size: 14px;
-}
+    .teacher-page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 10px 0 40px;
+    }
 
-input.invalid {
-    border: 2px solid red;
-}
+    .page-header {
+        margin-bottom: 25px;
+    }
 
-input.valid {
-    border: 2px solid green;
-}
+    .page-header h2 {
+        margin: 0 0 6px;
+        font-size: 28px;
+        color: #1f2937;
+    }
+
+    .page-header p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .form-card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 25px;
+        margin-bottom: 22px;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+        border: 1px solid #e5e7eb;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .section-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #eef2ff;
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .section-title h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #1f2937;
+    }
+
+    .section-title p {
+        margin: 2px 0 0;
+        color: #6b7280;
+        font-size: 12px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group.full {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 7px;
+    }
+
+    .required {
+        color: #dc2626;
+    }
+
+    .form-control {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        background: #fff;
+        color: #1f2937;
+        outline: none;
+        transition: 0.2s;
+    }
+
+    .form-control:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    }
+
+    .form-control:disabled {
+        background: #f3f4f6;
+        color: #9ca3af;
+        cursor: not-allowed;
+    }
+
+    .password-note {
+        margin-top: 6px;
+        font-size: 11px;
+        color: #6b7280;
+    }
+
+    .subject-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+    .subject-search {
+        flex: 1;
+        min-width: 240px;
+    }
+
+    .selected-count {
+        font-size: 13px;
+        color: #4f46e5;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .subject-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        max-height: 430px;
+        overflow-y: auto;
+        padding: 4px;
+    }
+
+    .subject-item {
+        position: relative;
+    }
+
+    .subject-item input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .subject-label {
+        display: block;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 14px;
+        cursor: pointer;
+        background: #fff;
+        transition: 0.2s;
+        height: 100%;
+        box-sizing: border-box;
+    }
+
+    .subject-label:hover {
+        border-color: #a5b4fc;
+        background: #fafaff;
+    }
+
+    .subject-item input:checked + .subject-label {
+        border-color: #6366f1;
+        background: #eef2ff;
+        box-shadow: 0 0 0 1px #6366f1;
+    }
+
+    .subject-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .subject-name {
+        font-weight: 700;
+        color: #1f2937;
+        font-size: 14px;
+    }
+
+    .check-mark {
+        width: 20px;
+        height: 20px;
+        border: 1px solid #d1d5db;
+        border-radius: 5px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: transparent;
+    }
+
+    .subject-item input:checked + .subject-label .check-mark {
+        background: #4f46e5;
+        border-color: #4f46e5;
+        color: white;
+    }
+
+    .subject-info {
+        margin-top: 9px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .subject-tag {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 4px 8px;
+        border-radius: 5px;
+        font-size: 11px;
+    }
+
+    .subject-item input:checked + .subject-label .subject-tag {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .no-subjects {
+        text-align: center;
+        padding: 30px;
+        color: #6b7280;
+        background: #f9fafb;
+        border: 1px dashed #d1d5db;
+        border-radius: 10px;
+        grid-column: 1 / -1;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        padding: 11px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: #4f46e5;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #4338ca;
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .alert {
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        font-size: 14px;
+    }
+
+    .alert-error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    @media (max-width: 750px) {
+
+        .form-grid,
+        .subject-list {
+            grid-template-columns: 1fr;
+        }
+
+        .form-card {
+            padding: 18px;
+        }
+
+    }
 
 </style>
 
 
-<!-- ============================= -->
-<!-- VALIDATION JAVASCRIPT -->
-<!-- ============================= -->
+<div class="teacher-page">
+
+    <div class="page-header">
+
+        <h2>Edit Teacher</h2>
+
+        <p>
+            Update teacher details, academic assignment and subjects.
+        </p>
+
+    </div>
+
+
+    {% if err %}
+    <div class="alert alert-error">
+        {{ err }}
+    </div>
+    {% endif %}
+
+
+    <form
+        method="POST"
+        action="{{ url_for('admin.edit_teacher', teacher_id=teacher.teacher_id) }}"
+        id="teacherForm"
+    >
+
+
+        <!-- =====================================================
+             SECTION 1
+        ====================================================== -->
+
+        <div class="form-card">
+
+            <div class="section-title">
+
+                <div class="section-number">1</div>
+
+                <div>
+                    <h3>Institution & Academic Assignment</h3>
+                    <p>Select the institution and teacher's academic position.</p>
+                </div>
+
+            </div>
+
+
+            <div class="form-grid">
+
+
+                <div class="form-group full">
+
+                    <label>
+                        Institution <span class="required">*</span>
+                    </label>
+
+                    <select
+                        name="institution_id"
+                        id="institution_id"
+                        class="form-control"
+                        required
+                    >
+
+                        <option value="">Select Institution</option>
+
+                        {% for inst in institutions %}
+
+                        <option
+                            value="{{ inst.institution_id }}"
+                            {% if inst.institution_id == teacher.institution_id %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ inst.institution_name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Department</label>
+
+                    <select
+                        name="department_id"
+                        id="department_id"
+                        class="form-control"
+                    >
+
+                        <option value="">Select Department</option>
+
+                        {% for dept in departments %}
+
+                        <option
+                            value="{{ dept.department_id }}"
+                            data-institution="{{ dept.institution_id }}"
+                            {% if dept.department_id == teacher.department_id %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ dept.department_name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Designation</label>
+
+                    <select
+                        name="designation_id"
+                        id="designation_id"
+                        class="form-control"
+                    >
+
+                        <option value="">Select Designation</option>
+
+                        {% for des in designations %}
+
+                        <option
+                            value="{{ des.designation_id }}"
+                            data-institution="{{ des.institution_id }}"
+                            {% if des.designation_id == teacher.designation_id %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ des.designation_name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             SECTION 2
+        ====================================================== -->
+
+        <div class="form-card">
+
+            <div class="section-title">
+
+                <div class="section-number">2</div>
+
+                <div>
+                    <h3>Teacher Details</h3>
+                    <p>Update the teacher's account and contact information.</p>
+                </div>
+
+            </div>
+
+
+            <div class="form-grid">
+
+
+                <div class="form-group">
+
+                    <label>
+                        Teacher Name <span class="required">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        name="teacher_name"
+                        class="form-control"
+                        maxlength="100"
+                        required
+                        value="{{ teacher.teacher_name }}"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>
+                        Email <span class="required">*</span>
+                    </label>
+
+                    <input
+                        type="email"
+                        name="email"
+                        class="form-control"
+                        maxlength="150"
+                        required
+                        value="{{ teacher.email }}"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Phone</label>
+
+                    <input
+                        type="text"
+                        name="phone"
+                        class="form-control"
+                        maxlength="20"
+                        value="{{ teacher.phone or '' }}"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>New Password</label>
+
+                    <input
+                        type="password"
+                        name="password"
+                        class="form-control"
+                    >
+
+                    <div class="password-note">
+                        Leave blank to keep the existing password.
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Confirm New Password</label>
+
+                    <input
+                        type="password"
+                        name="confirm_password"
+                        class="form-control"
+                    >
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             SECTION 3
+        ====================================================== -->
+
+        <div class="form-card">
+
+            <div class="section-title">
+
+                <div class="section-number">3</div>
+
+                <div>
+                    <h3>Assign Subjects</h3>
+                    <p>Select the subjects this teacher will handle.</p>
+                </div>
+
+            </div>
+
+
+            <div class="subject-toolbar">
+
+                <input
+                    type="text"
+                    id="subjectSearch"
+                    class="form-control subject-search"
+                    placeholder="Search subjects..."
+                >
+
+                <div class="selected-count">
+                    Selected: <span id="selectedCount">0</span>
+                </div>
+
+            </div>
+
+
+            <div class="subject-list" id="subjectList">
+
+                {% if subjects %}
+
+                    {% for sub in subjects %}
+
+                    <div
+                        class="subject-item"
+                        data-institution="{{ sub.institution_id }}"
+                        data-search="{{ (
+                            sub.subject_name ~ ' ' ~
+                            (sub.course_name or '') ~ ' ' ~
+                            (sub.academic_year or '') ~ ' ' ~
+                            (sub.standard_name or '')
+                        ) | lower }}"
+                    >
+
+                        <input
+                            type="checkbox"
+                            name="subject_ids"
+                            value="{{ sub.subject_id }}"
+                            id="subject_{{ sub.subject_id }}"
+                            {% if sub.subject_id in assigned_subject_ids %}
+                                checked
+                            {% endif %}
+                        >
+
+                        <label
+                            for="subject_{{ sub.subject_id }}"
+                            class="subject-label"
+                        >
+
+                            <div class="subject-top">
+
+                                <div class="subject-name">
+                                    {{ sub.subject_name }}
+                                </div>
+
+                                <div class="check-mark">
+                                    ✓
+                                </div>
+
+                            </div>
+
+
+                            <div class="subject-info">
+
+                                {% if sub.course_name %}
+                                <span class="subject-tag">
+                                    {{ sub.course_name }}
+                                </span>
+                                {% endif %}
+
+                                {% if sub.academic_year %}
+                                <span class="subject-tag">
+                                    {{ sub.academic_year }}
+                                </span>
+                                {% endif %}
+
+                                {% if sub.standard_name %}
+                                <span class="subject-tag">
+                                    {{ sub.standard_name }}
+                                </span>
+                                {% endif %}
+
+                            </div>
+
+                        </label>
+
+                    </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <div class="no-subjects">
+                        No active subjects are available.
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             ACTIONS
+        ====================================================== -->
+
+        <div class="form-actions">
+
+            <a
+                href="{{ url_for('admin.view_teachers') }}"
+                class="btn btn-secondary"
+            >
+                Cancel
+            </a>
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                Update Teacher
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
 
 <script>
 
-const form = document.getElementById("teacherForm");
+document.addEventListener("DOMContentLoaded", function () {
 
-const nameInput = document.getElementById("name");
-const emailInput = document.getElementById("email");
-const mobileInput = document.getElementById("mobile");
-const departmentInput = document.getElementById("department");
-const designationInput = document.getElementById("designation");
-
-
-// =====================================================
-// VALIDATE TEACHER NAME
-// =====================================================
-
-function validateName() {
-
-    const name = nameInput.value.trim();
-    const error = document.getElementById("nameError");
-
-    // Allows:
-    // Letters
-    // Spaces
-    // Dot
-    // Apostrophe
-
-    const namePattern = /^[A-Za-z][A-Za-z .']{1,49}$/;
-
-
-    if (name === "") {
-
-        error.textContent = "Teacher name is required.";
-
-        nameInput.classList.add("invalid");
-        nameInput.classList.remove("valid");
-
-        return false;
-    }
-
-
-    if (!namePattern.test(name)) {
-
-        error.textContent =
-            "Name should contain only letters, spaces, dots or apostrophes.";
-
-        nameInput.classList.add("invalid");
-        nameInput.classList.remove("valid");
-
-        return false;
-    }
-
-
-    error.textContent = "";
-
-    nameInput.classList.remove("invalid");
-    nameInput.classList.add("valid");
-
-    return true;
-}
-
-
-// =====================================================
-// VALIDATE EMAIL
-// =====================================================
-
-function validateEmail() {
-
-    const email = emailInput.value.trim();
-    const error = document.getElementById("emailError");
-
-
-    const emailPattern =
-        /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-
-
-    if (email === "") {
-
-        error.textContent =
-            "Email address is required.";
-
-        emailInput.classList.add("invalid");
-        emailInput.classList.remove("valid");
-
-        return false;
-    }
-
-
-    if (!emailPattern.test(email)) {
-
-        error.textContent =
-            "Please enter a valid email address.";
-
-        emailInput.classList.add("invalid");
-        emailInput.classList.remove("valid");
-
-        return false;
-    }
-
-
-    error.textContent = "";
-
-    emailInput.classList.remove("invalid");
-    emailInput.classList.add("valid");
-
-    return true;
-}
-
-
-// =====================================================
-// VALIDATE MOBILE NUMBER
-// =====================================================
-
-function validateMobile() {
-
-    const mobile = mobileInput.value.trim();
-    const error = document.getElementById("mobileError");
-
-
-    // Indian mobile number
-    // Must:
-    // - contain exactly 10 digits
-    // - start with 6, 7, 8 or 9
-
-    const mobilePattern = /^[6-9][0-9]{9}$/;
-
-
-    if (mobile === "") {
-
-        error.textContent =
-            "Mobile number is required.";
-
-        mobileInput.classList.add("invalid");
-        mobileInput.classList.remove("valid");
-
-        return false;
-    }
-
-
-    if (!mobilePattern.test(mobile)) {
-
-        error.textContent =
-            "Enter a valid 10-digit Indian mobile number.";
-
-        mobileInput.classList.add("invalid");
-        mobileInput.classList.remove("valid");
-
-        return false;
-    }
-
-
-    error.textContent = "";
-
-    mobileInput.classList.remove("invalid");
-    mobileInput.classList.add("valid");
-
-    return true;
-}
-
-
-// =====================================================
-// VALIDATE DEPARTMENT
-// =====================================================
-
-function validateDepartment() {
+    const institution =
+        document.getElementById("institution_id");
 
     const department =
-        departmentInput.value.trim();
-
-    const error =
-        document.getElementById("departmentError");
-
-
-    // Department is optional
-
-    if (department === "") {
-
-        error.textContent = "";
-
-        departmentInput.classList.remove("invalid");
-        departmentInput.classList.remove("valid");
-
-        return true;
-    }
-
-
-    const departmentPattern =
-        /^[A-Za-z ]{2,50}$/;
-
-
-    if (!departmentPattern.test(department)) {
-
-        error.textContent =
-            "Department should contain only letters and spaces.";
-
-        departmentInput.classList.add("invalid");
-        departmentInput.classList.remove("valid");
-
-        return false;
-    }
-
-
-    error.textContent = "";
-
-    departmentInput.classList.remove("invalid");
-    departmentInput.classList.add("valid");
-
-    return true;
-}
-
-
-// =====================================================
-// VALIDATE DESIGNATION
-// =====================================================
-
-function validateDesignation() {
+        document.getElementById("department_id");
 
     const designation =
-        designationInput.value.trim();
+        document.getElementById("designation_id");
 
-    const error =
-        document.getElementById("designationError");
+    const subjectItems =
+        document.querySelectorAll(".subject-item");
+
+    const subjectSearch =
+        document.getElementById("subjectSearch");
+
+    const selectedCount =
+        document.getElementById("selectedCount");
 
 
-    // Designation is optional
+    /* =====================================================
+       FILTER DATA
+    ====================================================== */
 
-    if (designation === "") {
+    function filterAcademicData(resetSelections = false) {
 
-        error.textContent = "";
+        const institutionId =
+            institution.value;
 
-        designationInput.classList.remove("invalid");
-        designationInput.classList.remove("valid");
 
-        return true;
+        /* Department */
+
+        Array.from(department.options).forEach(function (option) {
+
+            if (!option.value) {
+                option.hidden = false;
+                return;
+            }
+
+            const matches =
+                option.dataset.institution === institutionId;
+
+            option.hidden = !matches;
+
+            if (resetSelections && !matches && option.selected) {
+                department.value = "";
+            }
+
+        });
+
+
+        /* Designation */
+
+        Array.from(designation.options).forEach(function (option) {
+
+            if (!option.value) {
+                option.hidden = false;
+                return;
+            }
+
+            const matches =
+                option.dataset.institution === institutionId;
+
+            option.hidden = !matches;
+
+            if (resetSelections && !matches && option.selected) {
+                designation.value = "";
+            }
+
+        });
+
+
+        /* Subjects */
+
+        subjectItems.forEach(function (item) {
+
+            const checkbox =
+                item.querySelector("input[type='checkbox']");
+
+            const matches =
+                institutionId &&
+                item.dataset.institution === institutionId;
+
+            item.style.display =
+                matches ? "" : "none";
+
+            if (resetSelections && !matches) {
+                checkbox.checked = false;
+            }
+
+        });
+
+
+        updateSelectedCount();
+
+    }
+
+
+    /* =====================================================
+       INSTITUTION CHANGE
+    ====================================================== */
+
+    institution.addEventListener("change", function () {
+
+        filterAcademicData(true);
+
+    });
+
+
+    /* =====================================================
+       SEARCH
+    ====================================================== */
+
+    subjectSearch.addEventListener("input", function () {
+
+        const search =
+            this.value.toLowerCase().trim();
+
+        const institutionId =
+            institution.value;
+
+
+        subjectItems.forEach(function (item) {
+
+            const matchesInstitution =
+                institutionId &&
+                item.dataset.institution === institutionId;
+
+            const matchesSearch =
+                !search ||
+                item.dataset.search.includes(search);
+
+            item.style.display =
+                matchesInstitution && matchesSearch
+                    ? ""
+                    : "none";
+
+        });
+
+    });
+
+
+    /* =====================================================
+       COUNT
+    ====================================================== */
+
+    subjectItems.forEach(function (item) {
+
+        const checkbox =
+            item.querySelector("input[type='checkbox']");
+
+        checkbox.addEventListener(
+            "change",
+            updateSelectedCount
+        );
+
+    });
+
+
+    function updateSelectedCount() {
+
+        const selected =
+            document.querySelectorAll(
+                ".subject-item input[type='checkbox']:checked"
+            ).length;
+
+        selectedCount.textContent = selected;
+
     }
 
 
-    const designationPattern =
-        /^[A-Za-z ]{2,50}$/;
+    /* =====================================================
+       INITIAL LOAD
+    ====================================================== */
 
+    filterAcademicData(false);
 
-    if (!designationPattern.test(designation)) {
-
-        error.textContent =
-            "Designation should contain only letters and spaces.";
-
-        designationInput.classList.add("invalid");
-        designationInput.classList.remove("valid");
-
-        return false;
-    }
-
-
-    error.textContent = "";
-
-    designationInput.classList.remove("invalid");
-    designationInput.classList.add("valid");
-
-    return true;
-}
-
-
-// =====================================================
-// VALIDATE WHILE TYPING
-// =====================================================
-
-nameInput.addEventListener(
-    "input",
-    validateName
-);
-
-emailInput.addEventListener(
-    "input",
-    validateEmail
-);
-
-mobileInput.addEventListener(
-    "input",
-    validateMobile
-);
-
-departmentInput.addEventListener(
-    "input",
-    validateDepartment
-);
-
-designationInput.addEventListener(
-    "input",
-    validateDesignation
-);
-
-
-// =====================================================
-// ALLOW ONLY NUMBERS IN MOBILE
-// =====================================================
-
-mobileInput.addEventListener(
-    "input",
-    function() {
-
-        this.value =
-            this.value.replace(/[^0-9]/g, "");
-
-    }
-);
-
-
-// =====================================================
-// VALIDATE FORM BEFORE SUBMISSION
-// =====================================================
-
-form.addEventListener(
-    "submit",
-    function(event) {
-
-        const nameValid =
-            validateName();
-
-        const emailValid =
-            validateEmail();
-
-        const mobileValid =
-            validateMobile();
-
-        const departmentValid =
-            validateDepartment();
-
-        const designationValid =
-            validateDesignation();
-
-
-        if (
-            !nameValid ||
-            !emailValid ||
-            !mobileValid ||
-            !departmentValid ||
-            !designationValid
-        ) {
-
-            event.preventDefault();
-
-            alert(
-                "Please correct the invalid fields before saving."
-            );
-
-            return false;
-        }
-
-    }
-);
+});
 
 </script>
 

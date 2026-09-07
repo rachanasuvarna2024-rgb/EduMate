@@ -1,8 +1,120 @@
 import re
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from session_utils import login_required, role_required
-from db import conn, cursor
+from db import conn, cursor, get_db_connection
+from werkzeug.security import generate_password_hash
 
+def get_teacher_form_data():
+
+    conn = get_db_connection()
+
+    if not conn:
+        return [], [], [], []
+
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        # -------------------------------------------------
+        # INSTITUTIONS
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                institution_id,
+                institution_name,
+                institution_category
+            FROM institution
+            WHERE status = 'Active'
+            ORDER BY institution_name
+        """)
+
+        institutions = cursor.fetchall()
+
+
+        # -------------------------------------------------
+        # DEPARTMENTS
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                d.department_id,
+                d.department_name,
+                d.institution_category,
+                idm.institution_id
+            FROM department_master d
+            INNER JOIN institution_department idm
+                ON d.department_id = idm.department_id
+            WHERE d.status = 'Active'
+            ORDER BY d.department_name
+        """)
+
+        departments = cursor.fetchall()
+
+
+        # -------------------------------------------------
+        # DESIGNATIONS
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                dg.designation_id,
+                dg.designation_name,
+                dg.institution_category,
+                idm.institution_id
+            FROM designation_master dg
+            INNER JOIN institution_designation idm
+                ON dg.designation_id = idm.designation_id
+            WHERE dg.status = 'Active'
+            ORDER BY dg.designation_name
+        """)
+
+        designations = cursor.fetchall()
+
+
+        # -------------------------------------------------
+        # INSTITUTION-SPECIFIC SUBJECTS
+        #
+        # IMPORTANT:
+        # subject_id here is from `subject`,
+        # NOT subject_master_id.
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                s.subject_id,
+                s.subject_name,
+                s.institution_id,
+                st.standard_name,
+                st.academic_year,
+                cm.course_name
+            FROM subject s
+            LEFT JOIN standard st
+                ON s.standard_id = st.standard_id
+            LEFT JOIN course_master cm
+                ON st.course_id = cm.course_id
+            WHERE s.status = 'Active'
+            ORDER BY
+                cm.course_name,
+                st.academic_year,
+                st.standard_name,
+                s.subject_name
+        """)
+
+        subjects = cursor.fetchall()
+
+
+        return (
+            institutions,
+            departments,
+            designations,
+            subjects
+        )
+
+    finally:
+
+        cursor.close()
+        conn.close()
 
 # ============================================================
 # ADMIN BLUEPRINT
@@ -496,13 +608,43 @@ def add_institution():
 @role_required("Admin")
 def manage_institution():
 
+    conn = get_db_connection()
+
+    if not conn:
+        return render_template(
+            "manage_institution.html",
+            institutions=[],
+            courses=[],
+            departments=[],
+            designations=[],
+            selected_institution_id=None,
+            selected_category=None,
+            selected_courses=[],
+            selected_departments=[],
+            selected_designations=[],
+            msg=None,
+            err="Unable to connect to database."
+        )
+
+    cursor = conn.cursor(dictionary=True)
+
     try:
 
         # ====================================================
         # GET ALL ACTIVE INSTITUTIONS
         # ====================================================
 
-        institutions = get_institutions()
+        cursor.execute("""
+            SELECT
+                institution_id,
+                institution_name,
+                institution_category
+            FROM institution
+            WHERE status = 'Active'
+            ORDER BY institution_name ASC
+        """)
+
+        institutions = cursor.fetchall()
 
         # ====================================================
         # DEFAULT VALUES
@@ -529,6 +671,10 @@ def manage_institution():
                 "institution_id"
             )
 
+            # Success / error messages from redirect
+            msg = request.args.get("msg")
+            err = request.args.get("err")
+
             # =================================================
             # NO INSTITUTION SELECTED
             # =================================================
@@ -549,7 +695,10 @@ def manage_institution():
 
                     selected_courses=[],
                     selected_departments=[],
-                    selected_designations=[]
+                    selected_designations=[],
+
+                    msg=msg,
+                    err=err
                 )
 
             # =================================================
@@ -589,6 +738,7 @@ def manage_institution():
                     selected_departments=[],
                     selected_designations=[],
 
+                    msg=None,
                     err="Institution not found."
                 )
 
@@ -596,7 +746,9 @@ def manage_institution():
             # GET INSTITUTION CATEGORY
             # =================================================
 
-            selected_category = institution["institution_category"]
+            selected_category = institution[
+                "institution_category"
+            ]
 
             # =================================================
             # GET COURSES FOR CATEGORY
@@ -608,6 +760,7 @@ def manage_institution():
                     course_name
                 FROM course_master
                 WHERE institution_category = %s
+                  AND status = 'Active'
                 ORDER BY course_name ASC
             """, (
                 selected_category,
@@ -625,6 +778,7 @@ def manage_institution():
                     department_name
                 FROM department_master
                 WHERE institution_category = %s
+                  AND status = 'Active'
                 ORDER BY department_name ASC
             """, (
                 selected_category,
@@ -642,6 +796,7 @@ def manage_institution():
                     designation_name
                 FROM designation_master
                 WHERE institution_category = %s
+                  AND status = 'Active'
                 ORDER BY designation_name ASC
             """, (
                 selected_category,
@@ -721,7 +876,10 @@ def manage_institution():
 
                 selected_courses=selected_courses,
                 selected_departments=selected_departments,
-                selected_designations=selected_designations
+                selected_designations=selected_designations,
+
+                msg=msg,
+                err=err
             )
 
         # ====================================================
@@ -754,6 +912,7 @@ def manage_institution():
                 selected_departments=[],
                 selected_designations=[],
 
+                msg=None,
                 err="Please select an institution."
             )
 
@@ -794,6 +953,7 @@ def manage_institution():
                 selected_departments=[],
                 selected_designations=[],
 
+                msg=None,
                 err="Institution not found."
             )
 
@@ -872,6 +1032,7 @@ def manage_institution():
                 FROM course_master
                 WHERE course_id = %s
                   AND institution_category = %s
+                  AND status = 'Active'
             """, (
                 institution_id,
                 course_id,
@@ -896,6 +1057,7 @@ def manage_institution():
                 FROM department_master
                 WHERE department_id = %s
                   AND institution_category = %s
+                  AND status = 'Active'
             """, (
                 institution_id,
                 department_id,
@@ -920,6 +1082,7 @@ def manage_institution():
                 FROM designation_master
                 WHERE designation_id = %s
                   AND institution_category = %s
+                  AND status = 'Active'
             """, (
                 institution_id,
                 designation_id,
@@ -933,14 +1096,14 @@ def manage_institution():
         conn.commit()
 
         # ====================================================
-        # REDIRECT BACK TO SAME INSTITUTION
+        # REDIRECT WITH SUCCESS MESSAGE
         # ====================================================
 
         return redirect(
             url_for(
                 "admin.manage_institution",
                 institution_id=institution_id
-            )
+            ) + "&msg=Institution+assignments+saved+successfully!"
         )
 
     # ========================================================
@@ -967,8 +1130,14 @@ def manage_institution():
             selected_departments=selected_departments,
             selected_designations=selected_designations,
 
+            msg=None,
             err="Database error: " + str(e)
         )
+
+    finally:
+
+        cursor.close()
+        conn.close()
 
 # ============================================================
 # ============================================================
@@ -3944,198 +4113,970 @@ def delete_designation(designation_id):
             )
         )
 
-
 # ============================================================
 # ============================================================
 # TEACHER MANAGEMENT
 # ============================================================
 # ============================================================
 
-
-# ============================================================
-# ADD TEACHER
-# ============================================================
-
 @admin_bp.route("/add_teacher", methods=["GET", "POST"])
 @role_required("Admin")
 def add_teacher():
 
-    institutions = get_institutions()
+    if request.method == "POST":
 
-    if request.method == "GET":
+        institution_id = request.form.get("institution_id")
+        department_id = request.form.get("department_id") or None
+        designation_id = request.form.get("designation_id") or None
 
-        return render_template(
-            "add_teacher.html",
-            institutions=institutions
-        )
+        teacher_name = request.form.get("teacher_name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        phone = request.form.get("phone", "").strip()
 
-    institution_id = request.form.get(
-        "institution_id", ""
-    ).strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
 
-    name = request.form.get(
-        "name", ""
-    ).strip()
+        subject_ids = request.form.getlist("subject_ids")
 
-    email = request.form.get(
-        "email", ""
-    ).strip().lower()
 
-    password = request.form.get(
-        "password", ""
-    )
+        # -------------------------------------------------
+        # BASIC VALIDATION
+        # -------------------------------------------------
 
-    mobile = request.form.get(
-        "mobile", ""
-    ).strip()
+        if not institution_id:
+            return render_template(
+                "add_teacher.html",
+                *get_teacher_form_data(),
+                err="Please select an institution."
+            )
 
-    department_id = request.form.get(
-        "department_id", ""
-    ).strip()
 
-    designation_id = request.form.get(
-        "designation_id", ""
-    ).strip()
+        if not teacher_name:
+            return render_template(
+                "add_teacher.html",
+                *get_teacher_form_data(),
+                err="Teacher name is required."
+            )
 
-    if not institution_id:
 
-        return render_template(
-            "add_teacher.html",
-            institutions=institutions,
-            message="Please select an institution."
-        )
+        if not email:
+            return render_template(
+                "add_teacher.html",
+                *get_teacher_form_data(),
+                err="Email is required."
+            )
 
-    if not name:
 
-        return render_template(
-            "add_teacher.html",
-            institutions=institutions,
-            message="Name is required."
-        )
+        if not password:
+            return render_template(
+                "add_teacher.html",
+                *get_teacher_form_data(),
+                err="Password is required."
+            )
 
-    if not email or not EMAIL_PATTERN.fullmatch(email):
 
-        return render_template(
-            "add_teacher.html",
-            institutions=institutions,
-            message="Please enter a valid email address."
-        )
+        if password != confirm_password:
+            return render_template(
+                "add_teacher.html",
+                *get_teacher_form_data(),
+                err="Passwords do not match."
+            )
 
-    if not password:
 
-        return render_template(
-            "add_teacher.html",
-            institutions=institutions,
-            message="Password is required."
-        )
+        # -------------------------------------------------
+        # CONNECTION
+        # -------------------------------------------------
 
-    if mobile and not PHONE_PATTERN.fullmatch(mobile):
+        conn = get_db_connection()
 
-        return render_template(
-            "add_teacher.html",
-            institutions=institutions,
-            message="Mobile number must contain exactly 10 digits."
-        )
-
-    try:
-
-        cursor.execute("""
-            SELECT teacher_id
-            FROM teacher
-            WHERE email = %s
-        """, (email,))
-
-        if cursor.fetchone():
+        if not conn:
 
             return render_template(
                 "add_teacher.html",
-                institutions=institutions,
-                message="Teacher email already exists."
+                *get_teacher_form_data(),
+                err="Unable to connect to database."
             )
 
-        cursor.execute("""
-            INSERT INTO teacher
-            (
+        cursor = conn.cursor(dictionary=True)
+
+
+        try:
+
+            # -------------------------------------------------
+            # CHECK INSTITUTION
+            # -------------------------------------------------
+
+            cursor.execute("""
+                SELECT institution_id
+                FROM institution
+                WHERE institution_id = %s
+                AND status = 'Active'
+            """, (institution_id,))
+
+            institution = cursor.fetchone()
+
+            if not institution:
+
+                return render_template(
+                    "add_teacher.html",
+                    *get_teacher_form_data(),
+                    err="Invalid institution selected."
+                )
+
+
+            # -------------------------------------------------
+            # VALIDATE DEPARTMENT
+            # -------------------------------------------------
+
+            if department_id:
+
+                cursor.execute("""
+                    SELECT idm.department_id
+                    FROM institution_department idm
+                    INNER JOIN department_master d
+                        ON idm.department_id = d.department_id
+                    WHERE idm.institution_id = %s
+                    AND idm.department_id = %s
+                    AND d.status = 'Active'
+                """, (
+                    institution_id,
+                    department_id
+                ))
+
+                if not cursor.fetchone():
+
+                    return render_template(
+                        "add_teacher.html",
+                        *get_teacher_form_data(),
+                        err="Selected department does not belong to the selected institution."
+                    )
+
+
+            # -------------------------------------------------
+            # VALIDATE DESIGNATION
+            # -------------------------------------------------
+
+            if designation_id:
+
+                cursor.execute("""
+                    SELECT idm.designation_id
+                    FROM institution_designation idm
+                    INNER JOIN designation_master dg
+                        ON idm.designation_id = dg.designation_id
+                    WHERE idm.institution_id = %s
+                    AND idm.designation_id = %s
+                    AND dg.status = 'Active'
+                """, (
+                    institution_id,
+                    designation_id
+                ))
+
+                if not cursor.fetchone():
+
+                    return render_template(
+                        "add_teacher.html",
+                        *get_teacher_form_data(),
+                        err="Selected designation does not belong to the selected institution."
+                    )
+
+
+            # -------------------------------------------------
+            # CHECK EMAIL
+            # -------------------------------------------------
+
+            cursor.execute("""
+                SELECT teacher_id
+                FROM teacher
+                WHERE email = %s
+            """, (email,))
+
+            if cursor.fetchone():
+
+                return render_template(
+                    "add_teacher.html",
+                    *get_teacher_form_data(),
+                    err="A teacher with this email already exists."
+                )
+
+
+            # -------------------------------------------------
+            # VALIDATE SUBJECTS
+            #
+            # IMPORTANT:
+            # subject_ids = subject.subject_id
+            # -------------------------------------------------
+
+            if subject_ids:
+
+                placeholders = ",".join(
+                    ["%s"] * len(subject_ids)
+                )
+
+                query = f"""
+                    SELECT subject_id
+                    FROM subject
+                    WHERE subject_id IN ({placeholders})
+                    AND institution_id = %s
+                    AND status = 'Active'
+                """
+
+                cursor.execute(
+                    query,
+                    tuple(subject_ids) + (institution_id,)
+                )
+
+                valid_subjects = {
+                    str(row["subject_id"])
+                    for row in cursor.fetchall()
+                }
+
+
+                if not all(
+                    str(sid) in valid_subjects
+                    for sid in subject_ids
+                ):
+
+                    return render_template(
+                        "add_teacher.html",
+                        *get_teacher_form_data(),
+                        err="One or more selected subjects are invalid."
+                    )
+
+
+            # -------------------------------------------------
+            # HASH PASSWORD
+            # -------------------------------------------------
+
+            hashed_password = generate_password_hash(password)
+
+
+            # -------------------------------------------------
+            # INSERT TEACHER
+            # -------------------------------------------------
+
+            cursor.execute("""
+                INSERT INTO teacher (
+                    institution_id,
+                    department_id,
+                    designation_id,
+                    teacher_name,
+                    email,
+                    phone,
+                    password,
+                    status
+                )
+                VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, 'Active'
+                )
+            """, (
                 institution_id,
                 department_id,
                 designation_id,
-                name,
+                teacher_name,
                 email,
-                password,
-                mobile
+                phone or None,
+                hashed_password
+            ))
+
+
+            teacher_id = cursor.lastrowid
+
+
+            # -------------------------------------------------
+            # INSERT TEACHER SUBJECTS
+            # -------------------------------------------------
+
+            for subject_id in subject_ids:
+
+                cursor.execute("""
+                    INSERT INTO teacher_subject (
+                        teacher_id,
+                        subject_id
+                    )
+                    VALUES (%s, %s)
+                """, (
+                    teacher_id,
+                    subject_id
+                ))
+
+
+            conn.commit()
+
+
+            return redirect(
+                url_for(
+                    "admin.view_teachers",
+                    msg="Teacher added successfully!"
+                )
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (
-            institution_id,
-            department_id if department_id else None,
-            designation_id if designation_id else None,
-            name,
-            email,
-            password,
-            mobile if mobile else None
-        ))
-
-        conn.commit()
-
-        return render_template(
-            "add_teacher.html",
-            institutions=institutions,
-            message="Teacher added successfully!"
-        )
-
-    except Exception as e:
-
-        conn.rollback()
-
-        return render_template(
-            "add_teacher.html",
-            institutions=institutions,
-            message="Error adding teacher: " + str(e)
-        )
 
 
-# ============================================================
-# VIEW TEACHERS
-# ============================================================
+        except Exception as e:
+
+            conn.rollback()
+
+            return render_template(
+                "add_teacher.html",
+                *get_teacher_form_data(),
+                err="Failed to add teacher: " + str(e)
+            )
+
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+
+    # -------------------------------------------------
+    # GET
+    # -------------------------------------------------
+
+    institutions, departments, designations, subjects = \
+        get_teacher_form_data()
+
+
+    return render_template(
+        "add_teacher.html",
+        institutions=institutions,
+        departments=departments,
+        designations=designations,
+        subjects=subjects
+    )
 
 @admin_bp.route("/view_teachers")
 @role_required("Admin")
 def view_teachers():
 
-    cursor.execute("""
-        SELECT
-            t.teacher_id,
-            t.name,
-            t.email,
-            t.mobile,
-            i.institution_name,
-            d.department_name,
-            dg.designation_name
-        FROM teacher t
+    conn = get_db_connection()
 
-        JOIN institution i
-            ON t.institution_id = i.institution_id
+    if not conn:
 
-        LEFT JOIN department_master d
-            ON t.department_id = d.department_id
+        return render_template(
+            "view_teachers.html",
+            teachers=[],
+            err="Unable to connect to database."
+        )
 
-        LEFT JOIN designation_master dg
-            ON t.designation_id = dg.designation_id
+    cursor = conn.cursor(dictionary=True)
 
-        ORDER BY t.teacher_id ASC
-    """)
+    try:
 
-    teachers = cursor.fetchall()
+        cursor.execute("""
+            SELECT
 
-    return render_template(
-        "view_teachers.html",
-        teachers=teachers
-    )
+                t.teacher_id,
+
+                t.teacher_name,
+
+                t.email,
+
+                t.phone,
+
+                t.status,
+
+                i.institution_name,
+
+                d.department_name,
+
+                dg.designation_name,
+
+                GROUP_CONCAT(
+                    DISTINCT CONCAT(
+                        s.subject_name,
+
+                        CASE
+
+                            WHEN cm.course_name IS NOT NULL
+                                 AND st.academic_year IS NOT NULL
+
+                            THEN CONCAT(
+                                ' (',
+                                cm.course_name,
+                                ' - ',
+                                st.academic_year,
+                                ')'
+                            )
+
+                            ELSE ''
+
+                        END
+                    )
+
+                    ORDER BY s.subject_name
+
+                    SEPARATOR ', '
+                ) AS assigned_subjects
+
+            FROM teacher t
+
+            INNER JOIN institution i
+                ON t.institution_id = i.institution_id
+
+            LEFT JOIN department_master d
+                ON t.department_id = d.department_id
+
+            LEFT JOIN designation_master dg
+                ON t.designation_id = dg.designation_id
+
+            LEFT JOIN teacher_subject ts
+                ON t.teacher_id = ts.teacher_id
+
+            LEFT JOIN subject s
+                ON ts.subject_id = s.subject_id
+
+            LEFT JOIN standard st
+                ON s.standard_id = st.standard_id
+
+            LEFT JOIN course_master cm
+                ON st.course_id = cm.course_id
+
+            GROUP BY
+
+                t.teacher_id,
+                t.teacher_name,
+                t.email,
+                t.phone,
+                t.status,
+                i.institution_name,
+                d.department_name,
+                dg.designation_name
+
+            ORDER BY
+                t.teacher_id DESC
+        """)
+
+        teachers = cursor.fetchall()
 
 
-# ============================================================
-# DELETE TEACHER
-# ============================================================
+        return render_template(
+            "view_teachers.html",
+            teachers=teachers,
+            msg=request.args.get("msg"),
+            err=request.args.get("err")
+        )
+
+
+    except Exception as e:
+
+        return render_template(
+            "view_teachers.html",
+            teachers=[],
+            err="Unable to load teachers: " + str(e)
+        )
+
+
+    finally:
+
+        cursor.close()
+        conn.close()
+
+@admin_bp.route(
+    "/edit_teacher/<int:teacher_id>",
+    methods=["GET", "POST"]
+)
+@role_required("Admin")
+def edit_teacher(teacher_id):
+
+    conn = get_db_connection()
+
+    if not conn:
+
+        return redirect(
+            url_for(
+                "admin.view_teachers",
+                err="Unable to connect to database."
+            )
+        )
+
+    cursor = conn.cursor(dictionary=True)
+
+
+    try:
+
+        # -------------------------------------------------
+        # GET TEACHER
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                teacher_id,
+                institution_id,
+                department_id,
+                designation_id,
+                teacher_name,
+                email,
+                phone,
+                password,
+                status
+            FROM teacher
+            WHERE teacher_id = %s
+        """, (teacher_id,))
+
+        teacher = cursor.fetchone()
+
+
+        if not teacher:
+
+            return redirect(
+                url_for(
+                    "admin.view_teachers",
+                    err="Teacher not found."
+                )
+            )
+
+
+        # -------------------------------------------------
+        # ASSIGNED SUBJECTS
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT subject_id
+            FROM teacher_subject
+            WHERE teacher_id = %s
+        """, (teacher_id,))
+
+        assigned_subject_ids = [
+            row["subject_id"]
+            for row in cursor.fetchall()
+        ]
+
+
+        # -------------------------------------------------
+        # POST
+        # -------------------------------------------------
+
+        if request.method == "POST":
+
+            institution_id = request.form.get(
+                "institution_id"
+            )
+
+            department_id = request.form.get(
+                "department_id"
+            ) or None
+
+            designation_id = request.form.get(
+                "designation_id"
+            ) or None
+
+            teacher_name = request.form.get(
+                "teacher_name",
+                ""
+            ).strip()
+
+            email = request.form.get(
+                "email",
+                ""
+            ).strip().lower()
+
+            phone = request.form.get(
+                "phone",
+                ""
+            ).strip()
+
+            password = request.form.get(
+                "password",
+                ""
+            )
+
+            confirm_password = request.form.get(
+                "confirm_password",
+                ""
+            )
+
+            subject_ids = request.form.getlist(
+                "subject_ids"
+            )
+
+
+            # -------------------------------------------------
+            # BASIC VALIDATION
+            # -------------------------------------------------
+
+            if not institution_id:
+
+                institutions, departments, designations, subjects = \
+                    get_teacher_form_data()
+
+                return render_template(
+                    "edit_teacher.html",
+                    teacher=teacher,
+                    assigned_subject_ids=assigned_subject_ids,
+                    institutions=institutions,
+                    departments=departments,
+                    designations=designations,
+                    subjects=subjects,
+                    err="Please select an institution."
+                )
+
+
+            if not teacher_name:
+
+                institutions, departments, designations, subjects = \
+                    get_teacher_form_data()
+
+                return render_template(
+                    "edit_teacher.html",
+                    teacher=teacher,
+                    assigned_subject_ids=assigned_subject_ids,
+                    institutions=institutions,
+                    departments=departments,
+                    designations=designations,
+                    subjects=subjects,
+                    err="Teacher name is required."
+                )
+
+
+            if not email:
+
+                institutions, departments, designations, subjects = \
+                    get_teacher_form_data()
+
+                return render_template(
+                    "edit_teacher.html",
+                    teacher=teacher,
+                    assigned_subject_ids=assigned_subject_ids,
+                    institutions=institutions,
+                    departments=departments,
+                    designations=designations,
+                    subjects=subjects,
+                    err="Email is required."
+                )
+
+
+            # -------------------------------------------------
+            # PASSWORD
+            # -------------------------------------------------
+
+            if password:
+
+                if password != confirm_password:
+
+                    institutions, departments, designations, subjects = \
+                        get_teacher_form_data()
+
+                    return render_template(
+                        "edit_teacher.html",
+                        teacher=teacher,
+                        assigned_subject_ids=assigned_subject_ids,
+                        institutions=institutions,
+                        departments=departments,
+                        designations=designations,
+                        subjects=subjects,
+                        err="Passwords do not match."
+                    )
+
+            else:
+
+                password = None
+
+
+            # -------------------------------------------------
+            # VALIDATE INSTITUTION
+            # -------------------------------------------------
+
+            cursor.execute("""
+                SELECT institution_id
+                FROM institution
+                WHERE institution_id = %s
+                AND status = 'Active'
+            """, (institution_id,))
+
+            if not cursor.fetchone():
+
+                institutions, departments, designations, subjects = \
+                    get_teacher_form_data()
+
+                return render_template(
+                    "edit_teacher.html",
+                    teacher=teacher,
+                    assigned_subject_ids=assigned_subject_ids,
+                    institutions=institutions,
+                    departments=departments,
+                    designations=designations,
+                    subjects=subjects,
+                    err="Invalid institution selected."
+                )
+
+
+            # -------------------------------------------------
+            # VALIDATE DEPARTMENT
+            # -------------------------------------------------
+
+            if department_id:
+
+                cursor.execute("""
+                    SELECT idm.department_id
+                    FROM institution_department idm
+                    INNER JOIN department_master d
+                        ON idm.department_id = d.department_id
+                    WHERE idm.institution_id = %s
+                    AND idm.department_id = %s
+                    AND d.status = 'Active'
+                """, (
+                    institution_id,
+                    department_id
+                ))
+
+                if not cursor.fetchone():
+
+                    institutions, departments, designations, subjects = \
+                        get_teacher_form_data()
+
+                    return render_template(
+                        "edit_teacher.html",
+                        teacher=teacher,
+                        assigned_subject_ids=assigned_subject_ids,
+                        institutions=institutions,
+                        departments=departments,
+                        designations=designations,
+                        subjects=subjects,
+                        err="Selected department does not belong to the selected institution."
+                    )
+
+
+            # -------------------------------------------------
+            # VALIDATE DESIGNATION
+            # -------------------------------------------------
+
+            if designation_id:
+
+                cursor.execute("""
+                    SELECT idm.designation_id
+                    FROM institution_designation idm
+                    INNER JOIN designation_master dg
+                        ON idm.designation_id = dg.designation_id
+                    WHERE idm.institution_id = %s
+                    AND idm.designation_id = %s
+                    AND dg.status = 'Active'
+                """, (
+                    institution_id,
+                    designation_id
+                ))
+
+                if not cursor.fetchone():
+
+                    institutions, departments, designations, subjects = \
+                        get_teacher_form_data()
+
+                    return render_template(
+                        "edit_teacher.html",
+                        teacher=teacher,
+                        assigned_subject_ids=assigned_subject_ids,
+                        institutions=institutions,
+                        departments=departments,
+                        designations=designations,
+                        subjects=subjects,
+                        err="Selected designation does not belong to the selected institution."
+                    )
+
+
+            # -------------------------------------------------
+            # EMAIL UNIQUE CHECK
+            # -------------------------------------------------
+
+            cursor.execute("""
+                SELECT teacher_id
+                FROM teacher
+                WHERE email = %s
+                AND teacher_id != %s
+            """, (
+                email,
+                teacher_id
+            ))
+
+            if cursor.fetchone():
+
+                institutions, departments, designations, subjects = \
+                    get_teacher_form_data()
+
+                return render_template(
+                    "edit_teacher.html",
+                    teacher=teacher,
+                    assigned_subject_ids=assigned_subject_ids,
+                    institutions=institutions,
+                    departments=departments,
+                    designations=designations,
+                    subjects=subjects,
+                    err="Another teacher already uses this email."
+                )
+
+
+            # -------------------------------------------------
+            # VALIDATE SUBJECTS
+            # -------------------------------------------------
+
+            if subject_ids:
+
+                placeholders = ",".join(
+                    ["%s"] * len(subject_ids)
+                )
+
+                query = f"""
+                    SELECT subject_id
+                    FROM subject
+                    WHERE subject_id IN ({placeholders})
+                    AND institution_id = %s
+                    AND status = 'Active'
+                """
+
+                cursor.execute(
+                    query,
+                    tuple(subject_ids) + (institution_id,)
+                )
+
+                valid_subjects = {
+                    str(row["subject_id"])
+                    for row in cursor.fetchall()
+                }
+
+
+                if not all(
+                    str(sid) in valid_subjects
+                    for sid in subject_ids
+                ):
+
+                    institutions, departments, designations, subjects = \
+                        get_teacher_form_data()
+
+                    return render_template(
+                        "edit_teacher.html",
+                        teacher=teacher,
+                        assigned_subject_ids=assigned_subject_ids,
+                        institutions=institutions,
+                        departments=departments,
+                        designations=designations,
+                        subjects=subjects,
+                        err="One or more selected subjects are invalid."
+                    )
+
+
+            # -------------------------------------------------
+            # UPDATE TEACHER
+            # -------------------------------------------------
+
+            if password:
+
+                hashed_password = generate_password_hash(
+                    password
+                )
+
+                cursor.execute("""
+                    UPDATE teacher
+                    SET
+                        institution_id = %s,
+                        department_id = %s,
+                        designation_id = %s,
+                        teacher_name = %s,
+                        email = %s,
+                        phone = %s,
+                        password = %s
+                    WHERE teacher_id = %s
+                """, (
+                    institution_id,
+                    department_id,
+                    designation_id,
+                    teacher_name,
+                    email,
+                    phone or None,
+                    hashed_password,
+                    teacher_id
+                ))
+
+            else:
+
+                cursor.execute("""
+                    UPDATE teacher
+                    SET
+                        institution_id = %s,
+                        department_id = %s,
+                        designation_id = %s,
+                        teacher_name = %s,
+                        email = %s,
+                        phone = %s
+                    WHERE teacher_id = %s
+                """, (
+                    institution_id,
+                    department_id,
+                    designation_id,
+                    teacher_name,
+                    email,
+                    phone or None,
+                    teacher_id
+                ))
+
+
+            # -------------------------------------------------
+            # REPLACE SUBJECT ASSIGNMENTS
+            # -------------------------------------------------
+
+            cursor.execute("""
+                DELETE FROM teacher_subject
+                WHERE teacher_id = %s
+            """, (teacher_id,))
+
+
+            for subject_id in subject_ids:
+
+                cursor.execute("""
+                    INSERT INTO teacher_subject (
+                        teacher_id,
+                        subject_id
+                    )
+                    VALUES (%s, %s)
+                """, (
+                    teacher_id,
+                    subject_id
+                ))
+
+
+            conn.commit()
+
+
+            return redirect(
+                url_for(
+                    "admin.view_teachers",
+                    msg="Teacher updated successfully!"
+                )
+            )
+
+
+        # -------------------------------------------------
+        # GET FORM DATA
+        # -------------------------------------------------
+
+        institutions, departments, designations, subjects = \
+            get_teacher_form_data()
+
+
+        return render_template(
+            "edit_teacher.html",
+            teacher=teacher,
+            assigned_subject_ids=assigned_subject_ids,
+            institutions=institutions,
+            departments=departments,
+            designations=designations,
+            subjects=subjects
+        )
+
+
+    except Exception as e:
+
+        conn.rollback()
+
+        return redirect(
+            url_for(
+                "admin.view_teachers",
+                err="Update failed: " + str(e)
+            )
+        )
+
+
+    finally:
+
+        cursor.close()
+        conn.close()
 
 @admin_bp.route(
     "/delete_teacher/<int:teacher_id>",
@@ -4144,25 +5085,83 @@ def view_teachers():
 @role_required("Admin")
 def delete_teacher(teacher_id):
 
+    conn = get_db_connection()
+
+    if not conn:
+
+        return redirect(
+            url_for(
+                "admin.view_teachers",
+                err="Unable to connect to database."
+            )
+        )
+
+    cursor = conn.cursor(dictionary=True)
+
     try:
+
+        cursor.execute("""
+            SELECT teacher_id
+            FROM teacher
+            WHERE teacher_id = %s
+        """, (teacher_id,))
+
+        teacher = cursor.fetchone()
+
+
+        if not teacher:
+
+            return redirect(
+                url_for(
+                    "admin.view_teachers",
+                    err="Teacher not found."
+                )
+            )
+
+
+        # Remove subject mappings first
+
+        cursor.execute("""
+            DELETE FROM teacher_subject
+            WHERE teacher_id = %s
+        """, (teacher_id,))
+
+
+        # Then remove teacher
 
         cursor.execute("""
             DELETE FROM teacher
             WHERE teacher_id = %s
         """, (teacher_id,))
 
+
         conn.commit()
+
+
+        return redirect(
+            url_for(
+                "admin.view_teachers",
+                msg="Teacher deleted successfully!"
+            )
+        )
+
 
     except Exception as e:
 
         conn.rollback()
 
-        return "Error deleting teacher: " + str(e)
+        return redirect(
+            url_for(
+                "admin.view_teachers",
+                err="Delete failed: " + str(e)
+            )
+        )
 
-    return redirect(
-        url_for("admin.view_teachers")
-    )
 
+    finally:
+
+        cursor.close()
+        conn.close()
 
 # ============================================================
 # ============================================================
