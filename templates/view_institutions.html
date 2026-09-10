@@ -4,216 +4,233 @@
 
 <div class="container">
 
-    <h2>View Institutions</h2>
+<h2>View Institutions</h2>
 
 
-    <!-- ===================================================== -->
-    <!-- SUCCESS MESSAGE -->
-    <!-- ===================================================== -->
+<!-- ===================================================== -->
+<!-- SUCCESS MESSAGE -->
+<!-- ===================================================== -->
 
-    {% if msg %}
+{% if msg %}
 
-    <div class="success-message">
-        {{ msg }}
-    </div>
+<div class="success-message">
+    {{ msg }}
+</div>
 
-    {% endif %}
+{% endif %}
 
 
-    <!-- ===================================================== -->
-    <!-- ERROR MESSAGE -->
-    <!-- ===================================================== -->
+<!-- ===================================================== -->
+<!-- ERROR MESSAGE -->
+<!-- ===================================================== -->
 
-    {% if err %}
+{% if err %}
 
-    <div class="error-message">
-        {{ err }}
-    </div>
+<div class="error-message">
+    {{ err }}
+</div>
 
-    {% endif %}
+{% endif %}
 
 
-    <!-- ===================================================== -->
-    <!-- INSTITUTION LIST -->
-    <!-- ===================================================== -->
+<!-- ===================================================== -->
+<!-- INSTITUTION LIST -->
+<!-- ===================================================== -->
 
-    <div class="card">
+<div class="card">
 
-        <h3>Institution List</h3>
+    <h3>Institution List</h3>
 
 
-        {% if institutions %}
+    {% if institutions %}
 
-        <div class="table-container">
+    <div class="table-container">
 
-            <table>
+        <table>
 
-                <thead>
+            <thead>
 
-                    <tr>
+                <tr>
 
-                        <th>Sr. No.</th>
+                    <th>Sr. No.</th>
 
-                        <th>Institution Name</th>
+                    <th>Institution Name</th>
 
-                        <th>Institution Code</th>
+                    <th>Institution Code</th>
 
-                        <th>Category</th>
+                    <th>Category</th>
 
-                        <th>Type</th>
+                    <th>Type</th>
 
-                        <th>Address</th>
+                    <th>Address</th>
 
-                        <th>City</th>
+                    <th>City</th>
 
-                        <th>State</th>
+                    <th>State</th>
 
-                        <th>Pincode</th>
+                    <th>Pincode</th>
 
-                        <th>Email</th>
+                    <th>Email</th>
 
-                        <th>Phone</th>
+                    <th>Phone</th>
 
-                        <th>Website</th>
+                    <th>Website</th>
 
-                        <th>Status</th>
+                    <th>Status</th>
 
-                        <th>Action</th>
+                    <th>Action</th>
 
-                    </tr>
+                </tr>
 
-                </thead>
+            </thead>
 
 
-                <tbody>
+            <tbody>
 
-                    {% for institution in institutions %}
+                {% for institution in institutions %}
 
-                    <tr>
+                <tr>
 
-                        <!-- SR NO -->
+                    <!-- SR NO -->
 
-                        <td>
-                            {{ loop.index }}
-                        </td>
+                    <td>
+                        {{ loop.index }}
+                    </td>
 
 
-                        <!-- INSTITUTION NAME -->
+                    <!-- INSTITUTION NAME -->
 
-                        <td>
-                            {{ institution["institution_name"] }}
-                        </td>
+                    <td>
+                        {{ institution["institution_name"] }}
+                    </td>
 
 
-                        <!-- INSTITUTION CODE -->
+                    <!-- INSTITUTION CODE -->
 
-                        <td>
-                            {{ institution["institution_code"] }}
-                        </td>
+                    <td>
+                        {{ institution["institution_code"] }}
+                    </td>
 
 
-                        <!-- CATEGORY -->
+                    <!-- CATEGORY -->
 
-                        <td>
-                            {{ institution["institution_category"] }}
-                        </td>
+                    <td>
+                        {{ institution["institution_category"] }}
+                    </td>
 
 
-                        <!-- TYPE -->
+                    <!-- TYPE -->
 
-                        <td>
-                            {{ institution["institution_type"] }}
-                        </td>
+                    <td>
+                        {{ institution["institution_type"] }}
+                    </td>
 
 
-                        <!-- ADDRESS -->
+                    <!-- ADDRESS -->
 
-                        <td>
-                            {{ institution["address"] or "-" }}
-                        </td>
+                    <td>
+                        {{ institution["address"] or "-" }}
+                    </td>
 
 
-                        <!-- CITY -->
+                    <!-- CITY -->
 
-                        <td>
-                            {{ institution["city"] or "-" }}
-                        </td>
+                    <td>
+                        {{ institution["city"] or "-" }}
+                    </td>
 
 
-                        <!-- STATE -->
+                    <!-- STATE -->
 
-                        <td>
-                            {{ institution["state"] or "-" }}
-                        </td>
+                    <td>
+                        {{ institution["state"] or "-" }}
+                    </td>
 
 
-                        <!-- PINCODE -->
+                    <!-- PINCODE -->
 
-                        <td>
-                            {{ institution["pincode"] or "-" }}
-                        </td>
+                    <td>
+                        {{ institution["pincode"] or "-" }}
+                    </td>
 
 
-                        <!-- EMAIL -->
+                    <!-- EMAIL -->
 
-                        <td>
-                            {{ institution["email"] or "-" }}
-                        </td>
+                    <td>
+                        {{ institution["email"] or "-" }}
+                    </td>
 
 
-                        <!-- PHONE -->
+                    <!-- PHONE -->
 
-                        <td>
-                            {{ institution["phone"] or "-" }}
-                        </td>
+                    <td>
+                        {{ institution["phone"] or "-" }}
+                    </td>
 
 
-                        <!-- WEBSITE -->
+                    <!-- WEBSITE -->
 
-                        <td>
+                    <td>
 
-                            {% if institution["website"] %}
+                        {% if institution["website"] %}
 
-                                <a
-                                    href="{{ institution['website'] }}"
-                                    target="_blank"
-                                >
-                                    {{ institution["website"] }}
-                                </a>
+                            <a
+                                href="{{ institution['website'] }}"
+                                target="_blank"
+                            >
+                                {{ institution["website"] }}
+                            </a>
 
-                            {% else %}
+                        {% else %}
 
-                                -
+                            -
 
-                            {% endif %}
+                        {% endif %}
 
-                        </td>
+                    </td>
 
 
-                        <!-- STATUS -->
+                    <!-- STATUS -->
 
-                        <td>
+                    <td>
 
-                            {% if institution["status"] == "Active" %}
+                        {% if institution["status"] == "Active" %}
 
-                                <span class="status-active">
-                                    Active
-                                </span>
+                            <span class="status-active">
+                                Active
+                            </span>
 
-                            {% else %}
+                        {% else %}
 
-                                <span class="status-inactive">
-                                    Inactive
-                                </span>
+                            <span class="status-inactive">
+                                Inactive
+                            </span>
 
-                            {% endif %}
+                        {% endif %}
 
-                        </td>
+                    </td>
 
 
-                        <!-- ACTION -->
+                    <!-- ACTION -->
 
-                        <td>
+                    <td>
+
+                        <div class="action-buttons">
+
+                            <!-- EDIT -->
+
+                            <a
+                                href="{{ url_for(
+                                    'admin.edit_institution',
+                                    institution_id=institution['institution_id']
+                                ) }}"
+                                class="btn-edit"
+                            >
+                                Edit
+                            </a>
+
+
+                            <!-- DELETE -->
 
                             <form
                                 method="POST"
@@ -235,57 +252,60 @@
 
                             </form>
 
-                        </td>
+                        </div>
 
-                    </tr>
+                    </td>
 
-                    {% endfor %}
+                </tr>
 
-                </tbody>
+                {% endfor %}
 
-            </table>
+            </tbody>
 
-        </div>
-
-        {% else %}
-
-        <p class="empty-message">
-            No institutions found.
-        </p>
-
-        {% endif %}
+        </table>
 
     </div>
 
+    {% else %}
 
-    <!-- ===================================================== -->
-    <!-- ACTION BUTTONS -->
-    <!-- ===================================================== -->
+    <p class="empty-message">
+        No institutions found.
+    </p>
 
-    <div class="form-actions">
-
-        <a
-            href="{{ url_for('admin.add_institution') }}"
-            class="btn btn-primary"
-        >
-            Add Institution
-        </a>
-
-
-        <a
-            href="{{ url_for('admin.manage_institution') }}"
-            class="btn btn-secondary"
-        >
-            Manage Institutions
-        </a>
-
-    </div>
+    {% endif %}
 
 </div>
 
 
+<!-- ===================================================== -->
+<!-- ACTION BUTTONS -->
+<!-- ===================================================== -->
+
+<div class="form-actions">
+
+    <a
+        href="{{ url_for('admin.add_institution') }}"
+        class="btn btn-primary"
+    >
+        Add Institution
+    </a>
+
+
+    <a
+        href="{{ url_for('admin.manage_institution') }}"
+        class="btn btn-secondary"
+    >
+        Manage Institutions
+    </a>
+
+</div>
+
+</div>
+
 <!-- ========================================================= -->
+
 <!-- CSS -->
+
 <!-- ========================================================= -->
 
 <style>
@@ -350,6 +370,12 @@ tr:nth-child(even) {
     margin-bottom: 30px;
 }
 
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .btn {
     display: inline-block;
     padding: 10px 16px;
@@ -370,6 +396,19 @@ tr:nth-child(even) {
     color: #ffffff;
 }
 
+.btn-edit {
+    background: #198754;
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-edit:hover {
+    background: #157347;
+}
+
 .btn-delete {
     background: #dc3545;
     color: #ffffff;
@@ -381,6 +420,22 @@ tr:nth-child(even) {
 
 .btn-delete:hover {
     background: #bb2d3b;
+}
+
+.success-message {
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.error-message {
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background: #ffebee;
+    color: #c62828;
 }
 
 </style>

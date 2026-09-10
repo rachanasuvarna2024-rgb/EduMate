@@ -1140,7 +1140,6 @@ def manage_institution():
         conn.close()
 
 # ============================================================
-# ============================================================
 # VIEW INSTITUTIONS
 # ============================================================
 
@@ -1149,6 +1148,14 @@ def manage_institution():
 def view_institutions():
 
     try:
+
+        # ====================================================
+        # GET MESSAGES
+        # ====================================================
+
+        msg = request.args.get("msg")
+        err = request.args.get("err")
+
 
         # ====================================================
         # GET ALL INSTITUTIONS
@@ -1182,7 +1189,9 @@ def view_institutions():
 
         return render_template(
             "view_institutions.html",
-            institutions=institutions
+            institutions=institutions,
+            msg=msg,
+            err=err
         )
 
 
@@ -1194,11 +1203,275 @@ def view_institutions():
 
         return render_template(
             "view_institutions.html",
-
             institutions=[],
-
+            msg=None,
             err="Database error: " + str(e)
         )
+
+
+# ============================================================
+# EDIT INSTITUTION
+# ============================================================
+
+@admin_bp.route(
+    "/edit_institution/<int:institution_id>",
+    methods=["GET", "POST"]
+)
+@role_required("Admin")
+def edit_institution(institution_id):
+
+    try:
+
+        # ====================================================
+        # GET EXISTING INSTITUTION
+        # ====================================================
+
+        cursor.execute("""
+            SELECT
+                institution_id,
+                institution_name,
+                institution_code,
+                institution_category,
+                institution_type,
+                address,
+                city,
+                state,
+                pincode,
+                email,
+                phone,
+                website,
+                status
+            FROM institution
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+        institution = cursor.fetchone()
+
+
+        # ====================================================
+        # CHECK IF INSTITUTION EXISTS
+        # ====================================================
+
+        if not institution:
+
+            return redirect(
+                url_for(
+                    "admin.view_institutions",
+                    err="Institution not found."
+                )
+            )
+
+
+        # ====================================================
+        # UPDATE
+        # ====================================================
+
+        if request.method == "POST":
+
+            institution_name = request.form.get(
+                "institution_name"
+            )
+
+            institution_code = request.form.get(
+                "institution_code"
+            )
+
+            institution_category = request.form.get(
+                "institution_category"
+            )
+
+            institution_type = request.form.get(
+                "institution_type"
+            )
+
+            address = request.form.get("address") or None
+
+            city = request.form.get("city") or None
+
+            state = request.form.get("state") or None
+
+            pincode = request.form.get("pincode") or None
+
+            email = request.form.get("email") or None
+
+            phone = request.form.get("phone") or None
+
+            website = request.form.get("website") or None
+
+            status = request.form.get("status")
+
+
+            # =================================================
+            # BASIC VALIDATION
+            # =================================================
+
+            if not institution_name:
+
+                return render_template(
+                    "edit_institution.html",
+                    institution=institution,
+                    err="Institution name is required."
+                )
+
+
+            if not institution_code:
+
+                return render_template(
+                    "edit_institution.html",
+                    institution=institution,
+                    err="Institution code is required."
+                )
+
+
+            if not institution_category:
+
+                return render_template(
+                    "edit_institution.html",
+                    institution=institution,
+                    err="Institution category is required."
+                )
+
+
+            if not institution_type:
+
+                return render_template(
+                    "edit_institution.html",
+                    institution=institution,
+                    err="Institution type is required."
+                )
+
+
+            if not status:
+
+                return render_template(
+                    "edit_institution.html",
+                    institution=institution,
+                    err="Status is required."
+                )
+
+
+            # =================================================
+            # CHECK DUPLICATE INSTITUTION CODE
+            # =================================================
+
+            cursor.execute("""
+                SELECT institution_id
+                FROM institution
+                WHERE institution_code = %s
+                  AND institution_id != %s
+            """, (
+                institution_code,
+                institution_id
+            ))
+
+            duplicate = cursor.fetchone()
+
+
+            if duplicate:
+
+                return render_template(
+                    "edit_institution.html",
+                    institution=institution,
+                    err="Institution code already exists."
+                )
+
+
+            # =================================================
+            # UPDATE INSTITUTION
+            # =================================================
+
+            cursor.execute("""
+                UPDATE institution
+                SET
+                    institution_name = %s,
+                    institution_code = %s,
+                    institution_category = %s,
+                    institution_type = %s,
+                    address = %s,
+                    city = %s,
+                    state = %s,
+                    pincode = %s,
+                    email = %s,
+                    phone = %s,
+                    website = %s,
+                    status = %s
+                WHERE institution_id = %s
+            """, (
+                institution_name,
+                institution_code,
+                institution_category,
+                institution_type,
+                address,
+                city,
+                state,
+                pincode,
+                email,
+                phone,
+                website,
+                status,
+                institution_id
+            ))
+
+
+            # =================================================
+            # UPDATE SUBJECT ASSESSMENT TYPE
+            # =================================================
+
+            cursor.execute("""
+                UPDATE subject
+                SET assessment_type = %s
+                WHERE institution_id = %s
+            """, (
+                institution_type,
+                institution_id
+            ))
+
+
+            # =================================================
+            # COMMIT
+            # =================================================
+
+            conn.commit()
+
+
+            # =================================================
+            # REDIRECT
+            # =================================================
+
+            return redirect(
+                url_for(
+                    "admin.view_institutions",
+                    msg="Institution updated successfully."
+                )
+            )
+
+
+        # ====================================================
+        # DISPLAY EDIT PAGE
+        # ====================================================
+
+        return render_template(
+            "edit_institution.html",
+            institution=institution
+        )
+
+
+    # ========================================================
+    # ERROR HANDLING
+    # ========================================================
+
+    except Exception as e:
+
+        conn.rollback()
+
+        return render_template(
+            "edit_institution.html",
+            institution=institution if "institution" in locals() else {},
+            err="Database error: " + str(e)
+        )
+
 
 # ============================================================
 # DELETE INSTITUTION
@@ -1233,12 +1506,15 @@ def delete_institution(institution_id):
         if not institution:
 
             return redirect(
-                url_for("admin.view_institutions")
+                url_for(
+                    "admin.view_institutions",
+                    err="Institution not found."
+                )
             )
 
 
         # ====================================================
-        # DELETE COURSE ASSIGNMENTS
+        # DELETE INSTITUTION COURSE ASSIGNMENTS
         # ====================================================
 
         cursor.execute("""
@@ -1250,7 +1526,7 @@ def delete_institution(institution_id):
 
 
         # ====================================================
-        # DELETE DEPARTMENT ASSIGNMENTS
+        # DELETE INSTITUTION DEPARTMENT ASSIGNMENTS
         # ====================================================
 
         cursor.execute("""
@@ -1262,11 +1538,35 @@ def delete_institution(institution_id):
 
 
         # ====================================================
-        # DELETE DESIGNATION ASSIGNMENTS
+        # DELETE INSTITUTION DESIGNATION ASSIGNMENTS
         # ====================================================
 
         cursor.execute("""
             DELETE FROM institution_designation
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+
+        # ====================================================
+        # DELETE INSTITUTION STREAM ASSIGNMENTS
+        # ====================================================
+
+        cursor.execute("""
+            DELETE FROM institution_stream
+            WHERE institution_id = %s
+        """, (
+            institution_id,
+        ))
+
+
+        # ====================================================
+        # DELETE INSTITUTION SUBJECT ASSIGNMENTS
+        # ====================================================
+
+        cursor.execute("""
+            DELETE FROM institution_subject
             WHERE institution_id = %s
         """, (
             institution_id,
@@ -1293,7 +1593,7 @@ def delete_institution(institution_id):
 
 
         # ====================================================
-        # REDIRECT TO VIEW PAGE
+        # REDIRECT
         # ====================================================
 
         return redirect(

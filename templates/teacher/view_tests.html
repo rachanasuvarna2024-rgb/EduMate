@@ -1,0 +1,416 @@
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}EduMate - Manage Tests{% endblock %}
+
+{% block portal_title %}Manage / Publish Tests{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="page-header">
+
+        <div>
+            <h2>View and Manage Tests</h2>
+
+            <p>
+                View and manage tests created by you.
+            </p>
+        </div>
+
+        <a
+            href="{{ url_for('teacher.create_test') }}"
+            class="btn-primary"
+        >
+            + Create Test
+        </a>
+
+    </div>
+
+
+    <!-- FLASH MESSAGES -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                {% if category == 'error' %}
+
+                    <div class="error">
+                        {{ message }}
+                    </div>
+
+                {% else %}
+
+                    <div class="message">
+                        {{ message }}
+                    </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <!-- TEST TABLE -->
+
+    {% if tests %}
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Test Name</th>
+                        <th>Subject</th>
+                        <th>Class / Standard</th>
+                        <th>Total Marks</th>
+                        <th>Duration</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for test in tests %}
+
+                        <tr>
+
+                            <td>
+                                <strong>
+                                    {{ test.test_name }}
+                                </strong>
+                            </td>
+
+
+                            <td>
+                                {{ test.subject_name }}
+                            </td>
+
+
+                            <td>
+
+                                {% if test.standard_name %}
+
+                                    {{ test.standard_name }}
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+                                {{ test.total_marks }}
+                            </td>
+
+
+                            <td>
+                                {{ test.duration_minutes }} min
+                            </td>
+
+
+                            <td>
+
+                                {% if test.start_datetime %}
+
+                                    {{ test.start_datetime }}
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if test.end_datetime %}
+
+                                    {{ test.end_datetime }}
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if test.status == 'Draft' %}
+
+                                    <span class="status draft">
+                                        Draft
+                                    </span>
+
+                                {% elif test.status == 'Published' %}
+
+                                    <span class="status published">
+                                        Published
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="status closed">
+                                        Closed
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- ACTION -->
+
+                            <td>
+
+                                {% if test.status == 'Draft' %}
+
+                                    <a
+                                        href="{{ url_for(
+                                            'teacher.edit_test',
+                                            test_id=test.test_id
+                                        ) }}"
+                                        class="btn-edit"
+                                    >
+                                        Edit Test
+                                    </a>
+
+
+                                    <a
+                                        href="{{ url_for(
+                                            'teacher.manage_questions',
+                                            test_id=test.test_id
+                                        ) }}"
+                                        class="btn-action"
+                                    >
+                                        Manage Questions
+                                    </a>
+
+
+                                    <a
+                                        href="#"
+                                        class="btn-publish"
+                                    >
+                                        Publish
+                                    </a>
+
+
+                                {% elif test.status == 'Published' %}
+
+                                    <span class="action-disabled">
+                                        Published
+                                    </span>
+
+
+                                {% else %}
+
+                                    <span class="action-disabled">
+                                        Closed
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+    {% else %}
+
+        <div class="empty-state">
+
+            <h3>No Tests Created Yet</h3>
+
+            <p>
+                You have not created any tests yet.
+            </p>
+
+            <a
+                href="{{ url_for('teacher.create_test') }}"
+                class="btn-primary"
+            >
+                Create Your First Test
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<style>
+
+.container {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.page-header h2 {
+    margin: 0 0 6px 0;
+}
+
+.page-header p {
+    margin: 0;
+    color: #666;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th {
+    background: #f5f6fa;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    white-space: nowrap;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.status {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.draft {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.published {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.closed {
+    background: #eeeeee;
+    color: #555;
+}
+
+.btn-primary {
+    display: inline-block;
+    padding: 10px 16px;
+    background: #4f46e5;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.btn-edit,
+.btn-action,
+.btn-publish {
+    display: inline-block;
+    padding: 7px 10px;
+    margin: 2px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.btn-edit {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.btn-action {
+    background: #e8eaf6;
+    color: #3949ab;
+}
+
+.btn-publish {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.action-disabled {
+    color: #888;
+    font-size: 12px;
+}
+
+.message {
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.error {
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background: #ffebee;
+    color: #c62828;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: #666;
+}
+
+.empty-state h3 {
+    color: #333;
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+}
+
+</style>
+
+{% endblock %}

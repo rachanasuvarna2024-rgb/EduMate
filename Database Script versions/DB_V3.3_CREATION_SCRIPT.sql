@@ -817,6 +817,10 @@ CREATE TABLE course_outcome
 -- 22. QUESTION TABLE
 -- ============================================================
 
+-- ============================================================
+-- QUESTION TABLE
+-- ============================================================
+
 CREATE TABLE question
 (
     question_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -828,6 +832,8 @@ CREATE TABLE question
     co_id INT,
 
     question_text TEXT NOT NULL,
+
+    question_image VARCHAR(255),
 
     option_a VARCHAR(500),
 
@@ -876,8 +882,6 @@ CREATE TABLE question
         ON UPDATE CASCADE
         ON DELETE SET NULL
 );
-
-
 -- ============================================================
 -- 23. TEST TABLE
 -- ============================================================

@@ -1,0 +1,550 @@
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}EduMate - Question Bank{% endblock %}
+
+{% block portal_title %}Question Bank{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+<!-- ===================================================== -->
+<!-- PAGE HEADING -->
+<!-- ===================================================== -->
+
+<div class="page-heading">
+
+    <div>
+
+        <h2>Question Bank</h2>
+
+        <p>
+            View questions available for your assigned subjects.
+        </p>
+
+    </div>
+
+    <a
+        href="{{ url_for('teacher.add_question') }}"
+        class="btn-primary"
+    >
+        + Add Question
+    </a>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- FLASH MESSAGES -->
+<!-- ===================================================== -->
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+
+    {% if messages %}
+
+        {% for category, message in messages %}
+
+            {% if category == 'error' %}
+
+                <div class="error">
+                    {{ message }}
+                </div>
+
+            {% else %}
+
+                <div class="message">
+                    {{ message }}
+                </div>
+
+            {% endif %}
+
+        {% endfor %}
+
+    {% endif %}
+
+{% endwith %}
+
+
+{% if questions %}
+
+    <!-- ================================================= -->
+    <!-- QUESTION TABLE -->
+    <!-- ================================================= -->
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>#</th>
+
+                    <th>Question</th>
+
+                    <th>Subject</th>
+
+                    <th>Chapter</th>
+
+                    <th>CO</th>
+
+                    <th>Type</th>
+
+                    <th>Difficulty</th>
+
+                    <th>Marks</th>
+
+                    <th>PYQ</th>
+
+                    <th>Action</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for question in questions %}
+
+                <tr>
+
+                    <!-- NUMBER -->
+
+                    <td>
+                        {{ loop.index }}
+                    </td>
+
+
+                    <!-- QUESTION -->
+
+                    <td class="question-cell">
+
+                        <div class="question-text">
+                            {{ question.question_text }}
+                        </div>
+
+
+                        <!-- QUESTION IMAGE -->
+
+                        {% if question.question_image %}
+
+                            <div class="question-image">
+
+                                <img
+                                    src="{{ url_for(
+                                        'static',
+                                        filename='uploads/questions/' ~ question.question_image
+                                    ) }}"
+                                    alt="Question image"
+                                >
+
+                            </div>
+
+                        {% endif %}
+
+
+                        <!-- MCQ OPTIONS -->
+
+                        {% if question.question_type == "MCQ" %}
+
+                            <div class="options">
+
+                                <div>
+                                    <strong>A.</strong>
+                                    {{ question.option_a }}
+                                </div>
+
+                                <div>
+                                    <strong>B.</strong>
+                                    {{ question.option_b }}
+                                </div>
+
+                                <div>
+                                    <strong>C.</strong>
+                                    {{ question.option_c }}
+                                </div>
+
+                                <div>
+                                    <strong>D.</strong>
+                                    {{ question.option_d }}
+                                </div>
+
+                            </div>
+
+
+                            {% if question.correct_answer %}
+
+                                <div class="correct-answer">
+
+                                    Correct Answer:
+
+                                    <strong>
+                                        {{ question.correct_answer }}
+                                    </strong>
+
+                                </div>
+
+                            {% endif %}
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- SUBJECT -->
+
+                    <td>
+
+                        {{ question.subject_name }}
+
+                        {% if question.standard_name %}
+
+                            <br>
+
+                            <small>
+                                {{ question.standard_name }}
+                            </small>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- CHAPTER -->
+
+                    <td>
+
+                        {% if question.chapter_name %}
+
+                            {% if question.chapter_number %}
+
+                                Ch. {{ question.chapter_number }} -
+
+                            {% endif %}
+
+                            {{ question.chapter_name }}
+
+                        {% else %}
+
+                            —
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- CO -->
+
+                    <td>
+
+                        {% if question.co_code %}
+
+                            {{ question.co_code }}
+
+                        {% else %}
+
+                            —
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- TYPE -->
+
+                    <td>
+                        {{ question.question_type }}
+                    </td>
+
+
+                    <!-- DIFFICULTY -->
+
+                    <td>
+                        {{ question.difficulty }}
+                    </td>
+
+
+                    <!-- MARKS -->
+
+                    <td>
+                        {{ question.marks }}
+                    </td>
+
+
+                    <!-- PYQ -->
+
+                    <td>
+
+                        {% if question.is_pyq %}
+
+                            <span class="pyq">
+                                PYQ
+                            </span>
+
+                        {% else %}
+
+                            —
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- ACTION -->
+
+                    <td>
+
+                        <div class="action-buttons">
+
+                            <!-- EDIT -->
+
+                            <a
+                                href="{{ url_for(
+                                    'teacher.edit_question',
+                                    question_id=question.question_id
+                                ) }}"
+                                class="btn-edit"
+                            >
+                                Edit
+                            </a>
+
+
+                            <!-- DELETE -->
+
+                            <form
+                                method="POST"
+                                action="{{ url_for(
+                                    'teacher.delete_question',
+                                    question_id=question.question_id
+                                ) }}"
+                                onsubmit="return confirm(
+                                    'Are you sure you want to delete this question?'
+                                );"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="btn-delete"
+                                >
+                                    Delete
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+{% else %}
+
+    <!-- ================================================= -->
+    <!-- EMPTY STATE -->
+    <!-- ================================================= -->
+
+    <div class="empty-state">
+
+        <h3>No Questions Found</h3>
+
+        <p>
+            Your Question Bank is currently empty.
+        </p>
+
+        <a
+            href="{{ url_for('teacher.add_question') }}"
+            class="btn-primary"
+        >
+            + Add Your First Question
+        </a>
+
+    </div>
+
+{% endif %}
+
+</div>
+
+<!-- ========================================================= -->
+
+<!-- CSS -->
+
+<!-- ========================================================= -->
+
+<style>
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.page-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.page-heading h2 {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.page-heading p {
+    margin: 0;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.question-cell {
+    min-width: 350px;
+    max-width: 500px;
+}
+
+.question-text {
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.question-image {
+    margin: 10px 0;
+}
+
+.question-image img {
+    max-width: 250px;
+    max-height: 180px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    object-fit: contain;
+}
+
+.options {
+    line-height: 1.7;
+    font-size: 14px;
+}
+
+.correct-answer {
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.pyq {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-primary {
+    background: #4f46e5;
+    color: white;
+    padding: 11px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.btn-edit {
+    background: #198754;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-edit:hover {
+    background: #157347;
+}
+
+.btn-delete {
+    background: #dc3545;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    background: #bb2d3b;
+}
+
+.message {
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.error {
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background: #ffebee;
+    color: #c62828;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state h3 {
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+}
+
+</style>
+
+{% endblock %}

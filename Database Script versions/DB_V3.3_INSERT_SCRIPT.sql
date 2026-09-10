@@ -1602,9 +1602,9 @@ WHERE t.email = 'meera@brightfuture.edu'
       'TY B Science Computer Science'
   );
 
-
 -- ============================================================
 -- 20. CHAPTERS
+-- 5 CHAPTERS FOR EVERY ACTIVE SUBJECT
 -- ============================================================
 
 INSERT INTO chapter
@@ -1616,35 +1616,64 @@ INSERT INTO chapter
 )
 SELECT
     s.subject_id,
-    'Introduction',
-    1,
+
+    CASE numbers.chapter_number
+
+        WHEN 1 THEN CONCAT(
+            'Introduction to ',
+            sm.subject_name
+        )
+
+        WHEN 2 THEN CONCAT(
+            'Fundamentals of ',
+            sm.subject_name
+        )
+
+        WHEN 3 THEN CONCAT(
+            'Core Concepts of ',
+            sm.subject_name
+        )
+
+        WHEN 4 THEN CONCAT(
+            'Applications of ',
+            sm.subject_name
+        )
+
+        WHEN 5 THEN CONCAT(
+            'Advanced Topics in ',
+            sm.subject_name
+        )
+
+    END AS chapter_name,
+
+    numbers.chapter_number,
+
     'Active'
+
 FROM subject s
-JOIN standard st
-    ON st.standard_id = s.standard_id
-WHERE st.standard_name = 'IX';
 
+JOIN subject_master sm
+    ON sm.subject_master_id = s.subject_master_id
 
-INSERT INTO chapter
+JOIN
 (
-    subject_id,
-    chapter_name,
-    chapter_number,
-    status
-)
-SELECT
-    s.subject_id,
-    'Fundamentals',
-    1,
-    'Active'
-FROM subject s
-JOIN standard st
-    ON st.standard_id = s.standard_id
-WHERE st.standard_name = 'FY B Science Computer Science';
+    SELECT 1 AS chapter_number
+    UNION ALL
+    SELECT 2
+    UNION ALL
+    SELECT 3
+    UNION ALL
+    SELECT 4
+    UNION ALL
+    SELECT 5
+) numbers
+
+WHERE s.status = 'Active';
 
 
 -- ============================================================
 -- 21. COURSE OUTCOMES
+-- ONLY FOR OBE SUBJECTS
 -- ============================================================
 
 INSERT INTO course_outcome
@@ -1655,32 +1684,67 @@ INSERT INTO course_outcome
 )
 SELECT
     s.subject_id,
-    'CO1',
-    'Understand the fundamental concepts of the subject.'
+    CONCAT('CO', numbers.co_number),
+
+    CASE numbers.co_number
+
+        WHEN 1 THEN CONCAT(
+            'Understand the fundamental concepts of ',
+            sm.subject_name,
+            '.'
+        )
+
+        WHEN 2 THEN CONCAT(
+            'Explain the basic principles and terminology of ',
+            sm.subject_name,
+            '.'
+        )
+
+        WHEN 3 THEN CONCAT(
+            'Apply the concepts of ',
+            sm.subject_name,
+            ' to appropriate examples and problems.'
+        )
+
+        WHEN 4 THEN CONCAT(
+            'Analyze and interpret concepts related to ',
+            sm.subject_name,
+            '.'
+        )
+
+        WHEN 5 THEN CONCAT(
+            'Demonstrate knowledge and application of ',
+            sm.subject_name,
+            ' concepts.'
+        )
+
+    END AS co_description
+
 FROM subject s
-JOIN standard st
-    ON st.standard_id = s.standard_id
-WHERE st.standard_name = 'IX';
 
+JOIN subject_master sm
+    ON sm.subject_master_id = s.subject_master_id
 
-INSERT INTO course_outcome
+JOIN
 (
-    subject_id,
-    co_code,
-    co_description
-)
-SELECT
-    s.subject_id,
-    'CO1',
-    'Understand fundamental concepts of Computer Science.'
-FROM subject s
-JOIN standard st
-    ON st.standard_id = s.standard_id
-WHERE st.standard_name = 'FY B Science Computer Science';
+    SELECT 1 AS co_number
+    UNION ALL
+    SELECT 2
+    UNION ALL
+    SELECT 3
+    UNION ALL
+    SELECT 4
+    UNION ALL
+    SELECT 5
+) numbers
+
+WHERE s.status = 'Active'
+  AND s.assessment_type = 'OBE';
 
 
 -- ============================================================
 -- 22. QUESTIONS
+-- 12 QUESTIONS FOR EVERY ACTIVE SUBJECT
 -- ============================================================
 
 INSERT INTO question
@@ -1700,74 +1764,343 @@ INSERT INTO question
     is_pyq,
     status
 )
+
 SELECT
+
     s.subject_id,
+
     ch.chapter_id,
+
     co.co_id,
-    'Which of the following is a fundamental concept?',
-    'Option A',
-    'Option B',
-    'Option C',
-    'Option D',
-    'A',
-    'Easy',
+
+    qt.question_text,
+
+    qt.option_a,
+    qt.option_b,
+    qt.option_c,
+    qt.option_d,
+
+    qt.correct_answer,
+
+    qt.difficulty,
+
     1,
+
     'MCQ',
+
     FALSE,
+
     'Active'
+
 FROM subject s
-JOIN standard st
-    ON st.standard_id = s.standard_id
-JOIN chapter ch
-    ON ch.subject_id = s.subject_id
-JOIN course_outcome co
-    ON co.subject_id = s.subject_id
-WHERE st.standard_name = 'IX'
-LIMIT 1;
 
+JOIN subject_master sm
+    ON sm.subject_master_id = s.subject_master_id
 
-INSERT INTO question
+JOIN
 (
-    subject_id,
-    chapter_id,
-    co_id,
-    question_text,
-    option_a,
-    option_b,
-    option_c,
-    option_d,
-    correct_answer,
-    difficulty,
-    marks,
-    question_type,
-    is_pyq,
-    status
-)
-SELECT
-    s.subject_id,
-    ch.chapter_id,
-    co.co_id,
-    'What is the primary purpose of a computer program?',
-    'To process instructions',
-    'To store only images',
-    'To display advertisements',
-    'None of these',
-    'A',
-    'Easy',
-    1,
-    'MCQ',
-    FALSE,
-    'Active'
-FROM subject s
-JOIN standard st
-    ON st.standard_id = s.standard_id
+    -- ========================================================
+    -- QUESTION 1
+    -- ========================================================
+
+    SELECT
+        1 AS question_number,
+        1 AS chapter_number,
+        'Easy' AS difficulty,
+        'A' AS correct_answer,
+        'What is the primary purpose of studying %s?' AS question_text,
+        'To understand the fundamental concepts of %s' AS option_a,
+        'To repair computer hardware' AS option_b,
+        'To design electrical circuits' AS option_c,
+        'To operate a printer' AS option_d
+
+    UNION ALL
+
+    -- ========================================================
+    -- QUESTION 2
+    -- ========================================================
+
+    SELECT
+        2,
+        1,
+        'Easy',
+        'A',
+        'Which of the following is most closely related to %s?',
+        '%s concepts and applications',
+        'Web browsing only',
+        'Computer assembly only',
+        'Network cabling only'
+
+    UNION ALL
+
+    -- ========================================================
+    -- QUESTION 3
+    -- ========================================================
+
+    SELECT
+        3,
+        1,
+        'Medium',
+        'A',
+        'Which statement best describes %s?',
+        'It deals with concepts related to %s',
+        'It is only about computer hardware',
+        'It is only about internet services',
+        'It is only about office software'
+
+    UNION ALL
+
+    -- ========================================================
+    -- QUESTION 4
+    -- ========================================================
+
+    SELECT
+        4,
+        2,
+        'Easy',
+        'A',
+        'Which skill is useful when learning %s?',
+        'Understanding and applying its concepts',
+        'Replacing a computer processor',
+        'Installing network cables',
+        'Repairing a printer'
+
+    UNION ALL
+
+    -- ========================================================
+    -- QUESTION 5
+    -- ========================================================
+
+    SELECT
+        5,
+        2,
+        'Medium',
+        'A',
+        'Which of the following would be an appropriate topic in %s?',
+        'A concept directly related to %s',
+        'Unrelated hardware repair',
+        'Electrical wiring',
+        'Printer maintenance'
+
+    UNION ALL
+
+    -- ========================================================
+    -- QUESTION 6
+    -- ========================================================
+
+    SELECT
+        6,
+        2,
+        'Hard',
+        'A',
+        'Why is %s important?',
+        'It helps develop knowledge and understanding in its field',
+        'It is used only to switch on computers',
+        'It replaces all other subjects',
+        'It is required only for gaming'
+
+    UNION ALL
+
+    -- ========================================================
+    -- QUESTION 7
+    -- ========================================================
+
+    SELECT
+        7,
+        3,
+        'Easy',
+        'A',
+        'Which option represents a basic concept of %s?',
+        'A fundamental idea related to %s',
+        'A random computer command',
+        'A type of printer',
+        'A network cable'
+
+    UNION ALL
+
+    -- ========================================================
+    -- QUESTION 8
+    -- ========================================================
+
+    SELECT
+        8,
+        3,
+        'Medium',
+        'A',
+        'What should a student do when studying %s?',
+        'Understand concepts and apply them correctly',
+        'Memorize unrelated hardware parts',
+        'Avoid examples',
+        'Ignore applications'
+
+    UNION ALL
+
+    -- ========================================================
+    -- QUESTION 9
+    -- ========================================================
+
+    SELECT
+        9,
+        4,
+        'Medium',
+        'A',
+        'Which statement about %s is correct?',
+        'It has concepts that can be learned and applied',
+        'It is unrelated to education',
+        'It only concerns computer networks',
+        'It only concerns operating systems'
+
+    UNION ALL
+
+    -- ========================================================
+    -- QUESTION 10
+    -- ========================================================
+
+    SELECT
+        10,
+        4,
+        'Hard',
+        'A',
+        'An assessment on %s would most likely test:',
+        'Knowledge and application of %s concepts',
+        'Computer power supply repair',
+        'Printer installation',
+        'Keyboard cleaning'
+
+    UNION ALL
+
+    -- ========================================================
+    -- QUESTION 11
+    -- ========================================================
+
+    SELECT
+        11,
+        5,
+        'Medium',
+        'A',
+        'Which approach is suitable for learning %s?',
+        'Study its concepts, examples, and applications',
+        'Study only computer hardware',
+        'Study only network cables',
+        'Study only typing speed'
+
+    UNION ALL
+
+    -- ========================================================
+    -- QUESTION 12
+    -- ========================================================
+
+    SELECT
+        12,
+        5,
+        'Hard',
+        'A',
+        'Which of the following is a valid learning outcome for %s?',
+        'Explain and apply basic %s concepts',
+        'Repair a computer monitor',
+        'Configure a printer',
+        'Replace a keyboard'
+
+) qt
+
 JOIN chapter ch
     ON ch.subject_id = s.subject_id
-JOIN course_outcome co
-    ON co.subject_id = s.subject_id
-WHERE st.standard_name = 'FY B Science Computer Science'
-LIMIT 1;
+   AND ch.chapter_number = qt.chapter_number
 
+LEFT JOIN course_outcome co
+    ON co.subject_id = s.subject_id
+   AND co.co_code = CONCAT(
+        'CO',
+        qt.chapter_number
+   )
+
+WHERE s.status = 'Active';
+
+
+-- ============================================================
+-- IMPORTANT:
+-- REPLACE THE %s PLACEHOLDERS WITH THE SUBJECT NAME
+-- ============================================================
+
+UPDATE question q
+
+JOIN subject s
+    ON s.subject_id = q.subject_id
+
+JOIN subject_master sm
+    ON sm.subject_master_id = s.subject_master_id
+
+SET
+
+    q.question_text =
+        REPLACE(
+            q.question_text,
+            '%s',
+            sm.subject_name
+        ),
+
+    q.option_a =
+        REPLACE(
+            q.option_a,
+            '%s',
+            sm.subject_name
+        ),
+
+    q.option_b =
+        REPLACE(
+            q.option_b,
+            '%s',
+            sm.subject_name
+        ),
+
+    q.option_c =
+        REPLACE(
+            q.option_c,
+            '%s',
+            sm.subject_name
+        ),
+
+    q.option_d =
+        REPLACE(
+            q.option_d,
+            '%s',
+            sm.subject_name
+        );
+
+
+-- ============================================================
+-- VERIFICATION
+-- ============================================================
+
+SELECT
+    s.subject_id,
+    sm.subject_name,
+    st.standard_name,
+    s.assessment_type,
+    COUNT(q.question_id) AS question_count
+
+FROM subject s
+
+JOIN subject_master sm
+    ON sm.subject_master_id = s.subject_master_id
+
+JOIN standard st
+    ON st.standard_id = s.standard_id
+
+LEFT JOIN question q
+    ON q.subject_id = s.subject_id
+
+WHERE s.status = 'Active'
+
+GROUP BY
+    s.subject_id,
+    sm.subject_name,
+    st.standard_name,
+    s.assessment_type
+
+ORDER BY
+    st.standard_name,
+    sm.subject_name;
 
 -- ============================================================
 -- 23. TEST

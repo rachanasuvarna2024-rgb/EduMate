@@ -1,0 +1,894 @@
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}EduMate - Add Question{% endblock %}
+
+{% block portal_title %}Teacher Portal{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+<h2>Add Question</h2>
+
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+
+    {% if messages %}
+
+        {% for category, message in messages %}
+
+            {% if category == 'error' %}
+
+                <div class="error">
+                    {{ message }}
+                </div>
+
+            {% else %}
+
+                <div class="message">
+                    {{ message }}
+                </div>
+
+            {% endif %}
+
+        {% endfor %}
+
+    {% endif %}
+
+{% endwith %}
+
+
+<form method="POST"
+      enctype="multipart/form-data">
+
+
+<!-- SUBJECT -->
+
+<div class="form-group">
+
+<label for="subject_id">
+    Subject
+</label>
+
+<select name="subject_id"
+        id="subject_id"
+        required>
+
+<option value="">
+    Select Subject
+</option>
+
+{% for subject in subjects %}
+
+<option value="{{ subject.subject_id }}"
+    {% if request.form.get('subject_id') == subject.subject_id|string %}
+        selected
+    {% endif %}>
+
+    {{ subject.subject_name }}
+
+    {% if subject.standard_name %}
+        - {{ subject.standard_name }}
+    {% endif %}
+
+</option>
+
+{% endfor %}
+
+</select>
+
+</div>
+
+
+<!-- CHAPTER -->
+
+<div class="form-group">
+
+<label for="chapter_id">
+    Chapter
+</label>
+
+<select name="chapter_id"
+        id="chapter_id">
+
+<option value="">
+    Select Chapter
+</option>
+
+{% for chapter in chapters %}
+
+<option value="{{ chapter.chapter_id }}"
+        data-subject="{{ chapter.subject_id }}"
+    {% if request.form.get('chapter_id') == chapter.chapter_id|string %}
+        selected
+    {% endif %}>
+
+    {% if chapter.chapter_number %}
+        Chapter {{ chapter.chapter_number }} -
+    {% endif %}
+
+    {{ chapter.chapter_name }}
+
+</option>
+
+{% endfor %}
+
+</select>
+
+</div>
+
+
+<!-- COURSE OUTCOME -->
+<!-- ONLY DISPLAYED FOR OBE -->
+
+{% if institution_type == 'OBE' %}
+
+<div class="form-group">
+
+<label for="co_id">
+    Course Outcome
+</label>
+
+<select name="co_id"
+        id="co_id">
+
+<option value="">
+    Select Course Outcome
+</option>
+
+{% for co in course_outcomes %}
+
+<option value="{{ co.co_id }}"
+        data-subject="{{ co.subject_id }}"
+    {% if request.form.get('co_id') == co.co_id|string %}
+        selected
+    {% endif %}>
+
+    {{ co.co_code }} - {{ co.co_description }}
+
+</option>
+
+{% endfor %}
+
+</select>
+
+</div>
+
+{% endif %}
+
+
+<!-- QUESTION -->
+
+<div class="form-group">
+
+<label for="question_text">
+    Question
+</label>
+
+<textarea id="question_text"
+          name="question_text"
+          placeholder="Enter the question"
+          required>{{ request.form.get('question_text', '') }}</textarea>
+
+</div>
+
+
+<!-- QUESTION IMAGE -->
+
+<div class="form-group">
+
+<label>
+    Question Image / Diagram
+</label>
+
+<div class="upload-box"
+     id="uploadBox">
+
+    <div class="upload-icon">
+        🖼️
+    </div>
+
+    <p class="upload-title">
+        Drag & drop an image here
+    </p>
+
+    <p class="upload-subtitle">
+        or
+    </p>
+
+    <label for="question_image"
+           class="choose-file">
+
+        Choose Image
+
+    </label>
+
+    <input type="file"
+           id="question_image"
+           name="question_image"
+           accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+           hidden>
+
+    <p class="file-info">
+        PNG, JPG, JPEG, GIF or WEBP
+    </p>
+
+</div>
+
+<div id="imagePreview"
+     class="image-preview">
+</div>
+
+</div>
+
+
+<!-- MCQ OPTIONS -->
+
+<div class="options-section">
+
+<h3>Options</h3>
+
+
+<div class="form-group">
+
+<label for="option_a">
+    Option A
+</label>
+
+<input type="text"
+       id="option_a"
+       name="option_a"
+       placeholder="Enter option A"
+       value="{{ request.form.get('option_a', '') }}"
+       required>
+
+</div>
+
+
+<div class="form-group">
+
+<label for="option_b">
+    Option B
+</label>
+
+<input type="text"
+       id="option_b"
+       name="option_b"
+       placeholder="Enter option B"
+       value="{{ request.form.get('option_b', '') }}"
+       required>
+
+</div>
+
+
+<div class="form-group">
+
+<label for="option_c">
+    Option C
+</label>
+
+<input type="text"
+       id="option_c"
+       name="option_c"
+       placeholder="Enter option C"
+       value="{{ request.form.get('option_c', '') }}"
+       required>
+
+</div>
+
+
+<div class="form-group">
+
+<label for="option_d">
+    Option D
+</label>
+
+<input type="text"
+       id="option_d"
+       name="option_d"
+       placeholder="Enter option D"
+       value="{{ request.form.get('option_d', '') }}"
+       required>
+
+</div>
+
+</div>
+
+
+<!-- CORRECT ANSWER -->
+
+<div class="form-group">
+
+<label for="correct_answer">
+    Correct Answer
+</label>
+
+<select name="correct_answer"
+        id="correct_answer"
+        required>
+
+<option value="">
+    Select Correct Answer
+</option>
+
+<option value="A"
+    {% if request.form.get('correct_answer') == 'A' %}
+        selected
+    {% endif %}>
+    A
+</option>
+
+<option value="B"
+    {% if request.form.get('correct_answer') == 'B' %}
+        selected
+    {% endif %}>
+    B
+</option>
+
+<option value="C"
+    {% if request.form.get('correct_answer') == 'C' %}
+        selected
+    {% endif %}>
+    C
+</option>
+
+<option value="D"
+    {% if request.form.get('correct_answer') == 'D' %}
+        selected
+    {% endif %}>
+    D
+</option>
+
+</select>
+
+</div>
+
+
+<!-- DIFFICULTY + MARKS -->
+
+<div class="row">
+
+<div class="form-group">
+
+<label for="difficulty">
+    Difficulty
+</label>
+
+<select name="difficulty"
+        id="difficulty">
+
+<option value="Easy"
+    {% if request.form.get('difficulty', 'Medium') == 'Easy' %}
+        selected
+    {% endif %}>
+    Easy
+</option>
+
+<option value="Medium"
+    {% if request.form.get('difficulty', 'Medium') == 'Medium' %}
+        selected
+    {% endif %}>
+    Medium
+</option>
+
+<option value="Hard"
+    {% if request.form.get('difficulty', 'Medium') == 'Hard' %}
+        selected
+    {% endif %}>
+    Hard
+</option>
+
+</select>
+
+</div>
+
+
+<div class="form-group">
+
+<label for="marks">
+    Marks
+</label>
+
+<input type="number"
+       id="marks"
+       name="marks"
+       min="0.5"
+       step="0.5"
+       placeholder="e.g. 1"
+       value="{{ request.form.get('marks', '1') }}"
+       required>
+
+</div>
+
+</div>
+
+
+<!-- PYQ -->
+
+<div class="checkbox-group">
+
+<input type="checkbox"
+       id="is_pyq"
+       name="is_pyq"
+       value="1"
+       {% if request.form.get('is_pyq') == '1' %}
+           checked
+       {% endif %}>
+
+<label for="is_pyq">
+    Previous Year Question (PYQ)
+</label>
+
+</div>
+
+
+<!-- BUTTONS -->
+
+<div class="button-row">
+
+<button type="submit"
+        class="btn-primary">
+
+    Add Question
+
+</button>
+
+<a href="{{ url_for('teacher.view_questions') }}"
+   class="btn-secondary">
+
+    Cancel
+
+</a>
+
+</div>
+
+</form>
+
+</div>
+
+
+<style>
+
+.container {
+    max-width: 800px;
+    margin: auto;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+h2 {
+    margin-top: 0;
+    margin-bottom: 25px;
+}
+
+h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+label {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: 600;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.row {
+    display: flex;
+    gap: 20px;
+}
+
+.row .form-group {
+    flex: 1;
+}
+
+
+/* OPTIONS */
+
+.options-section {
+    margin-top: 25px;
+    margin-bottom: 20px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+
+/* IMAGE UPLOAD */
+
+.upload-box {
+    border: 2px dashed #c7c7c7;
+    border-radius: 10px;
+    padding: 28px 20px;
+    text-align: center;
+    background: #fafafa;
+    transition: 0.2s ease;
+}
+
+.upload-box.dragover {
+    border-color: #4f46e5;
+    background: #f5f3ff;
+}
+
+.upload-icon {
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+
+.upload-title {
+    margin: 0;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.upload-subtitle {
+    margin: 6px 0;
+    color: #777;
+    font-size: 13px;
+}
+
+.choose-file {
+    display: inline-block;
+    padding: 9px 16px;
+    background: #4f46e5;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.choose-file:hover {
+    opacity: 0.9;
+}
+
+.file-info {
+    margin: 10px 0 0;
+    font-size: 12px;
+    color: #888;
+}
+
+.image-preview {
+    margin-top: 12px;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    display: block;
+}
+
+
+/* CHECKBOX */
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+    margin-bottom: 20px;
+}
+
+.checkbox-group input {
+    width: auto;
+}
+
+.checkbox-group label {
+    margin: 0;
+    font-weight: 500;
+}
+
+
+/* BUTTONS */
+
+.button-row {
+    margin-top: 25px;
+    display: flex;
+    gap: 10px;
+}
+
+button,
+.btn-secondary {
+    padding: 11px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #4f46e5;
+    color: white;
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: #333;
+}
+
+.message {
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.error {
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background: #ffebee;
+    color: #c62828;
+}
+
+</style>
+
+
+<script>
+
+/* ---------------------------------
+   SUBJECT → CHAPTER FILTER
+--------------------------------- */
+
+const subjectSelect =
+    document.getElementById("subject_id");
+
+const chapterSelect =
+    document.getElementById("chapter_id");
+
+
+{% if institution_type == 'OBE' %}
+
+const coSelect =
+    document.getElementById("co_id");
+
+{% endif %}
+
+
+function filterDependentFields() {
+
+    const selectedSubject =
+        subjectSelect.value;
+
+
+    /* CHAPTERS */
+
+    Array.from(
+        chapterSelect.options
+    ).forEach(option => {
+
+        if (!option.value) {
+            option.style.display = "";
+            return;
+        }
+
+        if (
+            option.dataset.subject ===
+            selectedSubject
+        ) {
+            option.style.display = "";
+        }
+        else {
+            option.style.display = "none";
+        }
+
+    });
+
+
+    /* COURSE OUTCOMES */
+
+    {% if institution_type == 'OBE' %}
+
+    Array.from(
+        coSelect.options
+    ).forEach(option => {
+
+        if (!option.value) {
+            option.style.display = "";
+            return;
+        }
+
+        if (
+            option.dataset.subject ===
+            selectedSubject
+        ) {
+            option.style.display = "";
+        }
+        else {
+            option.style.display = "none";
+        }
+
+    });
+
+    {% endif %}
+
+}
+
+
+/* ---------------------------------
+   IMAGE UPLOAD
+--------------------------------- */
+
+const uploadBox =
+    document.getElementById("uploadBox");
+
+const imageInput =
+    document.getElementById("question_image");
+
+const imagePreview =
+    document.getElementById("imagePreview");
+
+
+function showImagePreview(file) {
+
+    if (!file) {
+        return;
+    }
+
+
+    if (!file.type.startsWith("image/")) {
+
+        alert(
+            "Please select an image file."
+        );
+
+        imageInput.value = "";
+
+        imagePreview.innerHTML = "";
+
+        return;
+    }
+
+
+    const reader =
+        new FileReader();
+
+
+    reader.onload =
+        function(event) {
+
+            imagePreview.innerHTML =
+                '<img src="' +
+                event.target.result +
+                '" alt="Question image preview">';
+
+        };
+
+
+    reader.readAsDataURL(file);
+
+}
+
+
+/* Choose Image */
+
+imageInput.addEventListener(
+    "change",
+    function() {
+
+        if (this.files.length > 0) {
+
+            showImagePreview(
+                this.files[0]
+            );
+
+        }
+
+    }
+);
+
+
+/* Drag Over */
+
+uploadBox.addEventListener(
+    "dragover",
+    function(event) {
+
+        event.preventDefault();
+
+        uploadBox.classList.add(
+            "dragover"
+        );
+
+    }
+);
+
+
+/* Drag Leave */
+
+uploadBox.addEventListener(
+    "dragleave",
+    function() {
+
+        uploadBox.classList.remove(
+            "dragover"
+        );
+
+    }
+);
+
+
+/* Drop */
+
+uploadBox.addEventListener(
+    "drop",
+    function(event) {
+
+        event.preventDefault();
+
+        uploadBox.classList.remove(
+            "dragover"
+        );
+
+
+        const files =
+            event.dataTransfer.files;
+
+
+        if (files.length > 0) {
+
+            imageInput.files =
+                files;
+
+            showImagePreview(
+                files[0]
+            );
+
+        }
+
+    }
+);
+
+
+/* Initial Filtering */
+
+filterDependentFields();
+
+
+/* Subject Changed */
+
+subjectSelect.addEventListener(
+    "change",
+    function() {
+
+        chapterSelect.value = "";
+
+        {% if institution_type == 'OBE' %}
+        coSelect.value = "";
+        {% endif %}
+
+        filterDependentFields();
+
+    }
+);
+
+</script>
+
+{% endblock %}

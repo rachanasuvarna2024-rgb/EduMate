@@ -1,0 +1,461 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+<h2>Edit Institution</h2>
+
+
+<!-- ===================================================== -->
+<!-- ERROR MESSAGE -->
+<!-- ===================================================== -->
+
+{% if err %}
+
+<div class="error-message">
+    {{ err }}
+</div>
+
+{% endif %}
+
+
+<div class="card">
+
+    <form method="POST">
+
+
+        <!-- ================================================= -->
+        <!-- INSTITUTION NAME -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="institution_name">
+                Institution Name
+            </label>
+
+            <input
+                type="text"
+                id="institution_name"
+                name="institution_name"
+                value="{{ institution['institution_name'] or '' }}"
+                required
+            >
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- INSTITUTION CODE -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="institution_code">
+                Institution Code
+            </label>
+
+            <input
+                type="text"
+                id="institution_code"
+                name="institution_code"
+                value="{{ institution['institution_code'] or '' }}"
+                required
+            >
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- CATEGORY -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="institution_category">
+                Institution Category
+            </label>
+
+            <select
+                id="institution_category"
+                name="institution_category"
+                required
+            >
+
+                <option value="">
+                    Select Category
+                </option>
+
+                <option
+                    value="School"
+                    {% if institution['institution_category'] == 'School' %}
+                    selected
+                    {% endif %}
+                >
+                    School
+                </option>
+
+                <option
+                    value="Jr College"
+                    {% if institution['institution_category'] == 'Jr College' %}
+                    selected
+                    {% endif %}
+                >
+                    Jr College
+                </option>
+
+                <option
+                    value="Degree College"
+                    {% if institution['institution_category'] == 'Degree College' %}
+                    selected
+                    {% endif %}
+                >
+                    Degree College
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- INSTITUTION TYPE -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="institution_type">
+                Institution Type
+            </label>
+
+            <select
+                id="institution_type"
+                name="institution_type"
+                required
+            >
+
+                <option value="">
+                    Select Type
+                </option>
+
+                <option
+                    value="Traditional"
+                    {% if institution['institution_type'] == 'Traditional' %}
+                    selected
+                    {% endif %}
+                >
+                    Traditional
+                </option>
+
+                <option
+                    value="OBE"
+                    {% if institution['institution_type'] == 'OBE' %}
+                    selected
+                    {% endif %}
+                >
+                    OBE
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- ADDRESS -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="address">
+                Address
+            </label>
+
+            <textarea
+                id="address"
+                name="address"
+            >{{ institution['address'] or '' }}</textarea>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- CITY -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="city">
+                City
+            </label>
+
+            <input
+                type="text"
+                id="city"
+                name="city"
+                value="{{ institution['city'] or '' }}"
+            >
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- STATE -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="state">
+                State
+            </label>
+
+            <input
+                type="text"
+                id="state"
+                name="state"
+                value="{{ institution['state'] or '' }}"
+            >
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- PINCODE -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="pincode">
+                Pincode
+            </label>
+
+            <input
+                type="text"
+                id="pincode"
+                name="pincode"
+                value="{{ institution['pincode'] or '' }}"
+            >
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- EMAIL -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="email">
+                Email
+            </label>
+
+            <input
+                type="email"
+                id="email"
+                name="email"
+                value="{{ institution['email'] or '' }}"
+            >
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- PHONE -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="phone">
+                Phone
+            </label>
+
+            <input
+                type="text"
+                id="phone"
+                name="phone"
+                value="{{ institution['phone'] or '' }}"
+            >
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- WEBSITE -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="website">
+                Website
+            </label>
+
+            <input
+                type="url"
+                id="website"
+                name="website"
+                placeholder="https://example.com"
+                value="{{ institution['website'] or '' }}"
+            >
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- STATUS -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="status">
+                Status
+            </label>
+
+            <select
+                id="status"
+                name="status"
+                required
+            >
+
+                <option
+                    value="Active"
+                    {% if institution['status'] == 'Active' %}
+                    selected
+                    {% endif %}
+                >
+                    Active
+                </option>
+
+                <option
+                    value="Inactive"
+                    {% if institution['status'] == 'Inactive' %}
+                    selected
+                    {% endif %}
+                >
+                    Inactive
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- BUTTONS -->
+        <!-- ================================================= -->
+
+        <div class="form-actions">
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                Update Institution
+            </button>
+
+
+            <a
+                href="{{ url_for('admin.view_institutions') }}"
+                class="btn btn-secondary"
+            >
+                Cancel
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+</div>
+
+<!-- ========================================================= -->
+
+<!-- CSS -->
+
+<!-- ========================================================= -->
+
+<style>
+
+.container {
+    max-width: 850px;
+    margin: auto;
+}
+
+.card {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+label {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: 600;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: #0069d9;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: #ffffff;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.error-message {
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background: #ffebee;
+    color: #c62828;
+}
+
+</style>
+
+{% endblock %}

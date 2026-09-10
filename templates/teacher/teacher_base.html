@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Portal {% endblock %}
+
+{% block portal_title %}
+Teacher Portal
+{% endblock %}
+
+{% block sidebar %}
+
+<h3>Question Bank</h3>
+
+<a href="{{ url_for('teacher.add_question') }}">
+    Add Question
+</a>
+
+<a href="{{ url_for('teacher.view_questions') }}">
+    View Question Bank
+</a>
+
+
+<h3>Assessments</h3>
+
+<a href="{{ url_for('teacher.create_test') }}">
+    Create Test
+</a>
+
+<a href="{{ url_for('teacher.view_tests') }}">
+    Manage / Publish Tests
+</a>
+
+
+<h3>Analytics & Reports</h3>
+
+<a href="{{ url_for('teacher.view_results') }}">
+    Student Results
+</a>
+
+<a href="{{ url_for('teacher.student_progress') }}">
+    Class Analytics
+</a>
+
+<a href="#">
+    CO Attainment Report
+</a>
+
+
+<h3>Account</h3>
+
+<a href="{{ url_for('teacher.teacher_profile') }}">
+    My Profile
+</a>
+
+<a href="{{ url_for('auth.logout') }}">
+    Logout
+</a>
+
+{% endblock %}
+

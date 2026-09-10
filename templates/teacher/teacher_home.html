@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}EduMate - Teacher Dashboard{% endblock %}
+
+{% block portal_title %}Teacher Dashboard{% endblock %}
+
+{% block sidebar %}
+
+<h3>Question Bank</h3>
+
+<a href="{{ url_for('teacher.add_question') }}">
+    Add Question
+</a>
+
+<a href="{{ url_for('teacher.view_questions') }}">
+    View Question Bank
+</a>
+
+<h3>Assessments</h3>
+
+<a href="{{ url_for('teacher.create_test') }}">
+    Create Test
+</a>
+
+<a href="{{ url_for('teacher.view_tests') }}">
+    View and Manage Tests
+</a>
+
+<h3>Analytics & Reports</h3>
+
+<a href="{{ url_for('teacher.view_results') }}">
+    Student Results
+</a>
+
+<a href="{{ url_for('teacher.student_progress') }}">
+    Class Analytics
+</a>
+
+<a href="#">
+    CO Attainment Report
+</a>
+
+<h3>Account</h3>
+
+<a href="{{ url_for('teacher.teacher_profile') }}">
+    My Profile
+</a>
+
+<a href="{{ url_for('auth.logout') }}">
+    Logout
+</a>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+
+<h2>Welcome Teacher</h2>
+
+<p>
+    Welcome to the EduMate Teacher Portal.
+    Use the sidebar to manage the question bank, create and manage
+    assessments, and view student performance.
+</p>
+
+</div>
+
+{% endblock %}
