@@ -39,7 +39,6 @@ def teacher_home():
         "teacher/teacher_home.html"
     )
 
-
 # ============================================================
 # ============================================================
 # QUESTION BANK
@@ -1659,7 +1658,6 @@ def create_test():
         subjects=subjects
     )
 
-
 # ============================================================
 # VIEW / MANAGE TESTS
 # ============================================================
@@ -1726,7 +1724,6 @@ def view_tests():
         "teacher/view_tests.html",
         tests=tests
     )
-
 
 # ============================================================
 # EDIT TEST
@@ -2406,28 +2403,704 @@ def manage_questions(test_id):
             url_for("teacher.view_tests")
         )
 
-
 # ============================================================
-# VIEW RESULTS
+# REMOVE QUESTION FROM TEST
 # ============================================================
 
-@teacher_bp.route("/view_results")
+@teacher_bp.route(
+    "/remove_question_from_test/<int:test_id>/<int:test_question_id>",
+    methods=["POST"]
+)
 @role_required("Teacher")
-def view_results():
+def remove_question_from_test(test_id, test_question_id):
 
-    return "View Results Page"
+    teacher_id = session.get("user_id")
 
+    if not teacher_id:
+        flash("Teacher session not found.", "error")
+        return redirect(url_for("auth.login"))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        # -------------------------------------------------
+        # VERIFY TEST BELONGS TO LOGGED-IN TEACHER
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT test_id
+            FROM test
+            WHERE test_id = %s
+              AND teacher_id = %s
+        """, (test_id, teacher_id))
+
+        test = cursor.fetchone()
+
+        if not test:
+            flash(
+                "Test not found or you are not authorized to manage it.",
+                "error"
+            )
+
+            cursor.close()
+            conn.close()
+
+            return redirect(url_for("teacher.view_tests"))
+
+        # -------------------------------------------------
+        # VERIFY QUESTION EXISTS IN THIS TEST
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT test_question_id
+            FROM test_question
+            WHERE test_question_id = %s
+              AND test_id = %s
+        """, (test_question_id, test_id))
+
+        test_question = cursor.fetchone()
+
+        if not test_question:
+            flash(
+                "Question not found in this test.",
+                "error"
+            )
+
+            cursor.close()
+            conn.close()
+
+            return redirect(
+                url_for(
+                    "teacher.manage_questions",
+                    test_id=test_id
+                )
+            )
+
+        # -------------------------------------------------
+        # REMOVE QUESTION
+        # -------------------------------------------------
+
+        cursor.execute("""
+            DELETE FROM test_question
+            WHERE test_question_id = %s
+              AND test_id = %s
+        """, (test_question_id, test_id))
+
+        conn.commit()
+
+        flash(
+            "Question removed from the test successfully.",
+            "success"
+        )
+
+        cursor.close()
+        conn.close()
+
+        return redirect(
+            url_for(
+                "teacher.manage_questions",
+                test_id=test_id
+            )
+        )
+
+    except Exception as e:
+
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+        try:
+            cursor.close()
+        except Exception:
+            pass
+
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+        flash(
+            f"Database error: {str(e)}",
+            "error"
+        )
+
+        return redirect(
+            url_for(
+                "teacher.manage_questions",
+                test_id=test_id
+            )
+        )
 
 # ============================================================
-# STUDENT ANALYTICS
+# PUBLISH TEST
 # ============================================================
 
-@teacher_bp.route("/student_progress")
+@teacher_bp.route("/publish_test/<int:test_id>", methods=["POST"])
 @role_required("Teacher")
-def student_progress():
+def publish_test(test_id):
 
-    return "Student Progress Page"
+    teacher_id = session.get("user_id")
 
+    if not teacher_id:
+        flash(
+            "Teacher session not found.",
+            "error"
+        )
+        return redirect(url_for("auth.login"))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        # -------------------------------------------------
+        # CHECK TEST BELONGS TO TEACHER
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                test_id,
+                test_name,
+                status
+            FROM test
+            WHERE test_id = %s
+              AND teacher_id = %s
+        """, (test_id, teacher_id))
+
+        test = cursor.fetchone()
+
+        if not test:
+
+            flash(
+                "Test not found or you are not authorized to publish it.",
+                "error"
+            )
+
+            cursor.close()
+            conn.close()
+
+            return redirect(
+                url_for("teacher.view_tests")
+            )
+
+        # -------------------------------------------------
+        # CHECK CURRENT STATUS
+        # -------------------------------------------------
+
+        if test["status"] != "Draft":
+
+            flash(
+                "Only draft tests can be published.",
+                "error"
+            )
+
+            cursor.close()
+            conn.close()
+
+            return redirect(
+                url_for("teacher.view_tests")
+            )
+
+        # -------------------------------------------------
+        # CHECK WHETHER QUESTIONS HAVE BEEN ADDED
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT COUNT(*) AS question_count
+            FROM test_question
+            WHERE test_id = %s
+        """, (test_id,))
+
+        result = cursor.fetchone()
+
+        question_count = result["question_count"]
+
+        if question_count == 0:
+
+            flash(
+                "Cannot publish the test because no questions have been added.",
+                "error"
+            )
+
+            cursor.close()
+            conn.close()
+
+            return redirect(
+                url_for(
+                    "teacher.manage_questions",
+                    test_id=test_id
+                )
+            )
+
+        # -------------------------------------------------
+        # PUBLISH TEST
+        # -------------------------------------------------
+
+        cursor.execute("""
+            UPDATE test
+            SET status = 'Published'
+            WHERE test_id = %s
+              AND teacher_id = %s
+        """, (test_id, teacher_id))
+
+        conn.commit()
+
+        flash(
+            f"Test '{test['test_name']}' published successfully.",
+            "success"
+        )
+
+        cursor.close()
+        conn.close()
+
+        return redirect(
+            url_for("teacher.view_tests")
+        )
+
+    except Exception as e:
+
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+        try:
+            cursor.close()
+        except Exception:
+            pass
+
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+        flash(
+            f"Database error: {str(e)}",
+            "error"
+        )
+
+        return redirect(
+            url_for("teacher.view_tests")
+        )
+# ============================================================
+# STUDENT RESULTS
+# ============================================================
+
+# ---------------------------------
+# STUDENT RESULTS
+# ---------------------------------
+@teacher_bp.route("/student_results")
+@role_required("Teacher")
+def student_results():
+
+    teacher_id = session.get("user_id")
+
+    if not teacher_id:
+        flash("Teacher session not found.", "error")
+        return redirect(url_for("auth.login_page"))
+
+    # Get selected test from URL
+    selected_test_id = request.args.get("test_id", type=int)
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        # -----------------------------------------
+        # 1. GET TEACHER'S TESTS
+        # -----------------------------------------
+        cursor.execute("""
+            SELECT
+                t.test_id,
+                t.test_name,
+                t.total_marks,
+                sub.subject_name
+
+            FROM test t
+
+            JOIN subject sub
+                ON sub.subject_id = t.subject_id
+
+            WHERE t.teacher_id = %s
+
+            ORDER BY t.test_id DESC
+        """, (teacher_id,))
+
+        tests = cursor.fetchall()
+
+        selected_test = None
+        results = []
+
+        # -----------------------------------------
+        # 2. GET SELECTED TEST DETAILS
+        # -----------------------------------------
+        if selected_test_id:
+
+            cursor.execute("""
+                SELECT
+                    t.test_id,
+                    t.test_name,
+                    t.total_marks,
+                    sub.subject_name
+
+                FROM test t
+
+                JOIN subject sub
+                    ON sub.subject_id = t.subject_id
+
+                WHERE t.test_id = %s
+                  AND t.teacher_id = %s
+            """, (selected_test_id, teacher_id))
+
+            selected_test = cursor.fetchone()
+
+            # -----------------------------------------
+            # 3. GET STUDENT RESULTS FOR SELECTED TEST
+            # -----------------------------------------
+            if selected_test:
+
+                cursor.execute("""
+                    SELECT
+                        ta.attempt_id,
+
+                        s.student_name,
+                        s.email,
+
+                        ta.score,
+
+                        ROUND(
+                            (
+                                ta.score /
+                                NULLIF(t.total_marks, 0)
+                            ) * 100,
+                            2
+                        ) AS percentage,
+
+                        ta.started_at,
+                        ta.submitted_at,
+                        ta.status
+
+                    FROM test_attempt ta
+
+                    JOIN student s
+                        ON s.student_id = ta.student_id
+
+                    JOIN test t
+                        ON t.test_id = ta.test_id
+
+                    WHERE t.test_id = %s
+                      AND t.teacher_id = %s
+                      AND ta.status = 'Submitted'
+
+                    ORDER BY
+                        ta.submitted_at DESC
+
+                """, (selected_test_id, teacher_id))
+
+                results = cursor.fetchall()
+
+            else:
+
+                flash(
+                    "The selected test was not found.",
+                    "error"
+                )
+
+                selected_test_id = None
+
+        # -----------------------------------------
+        # 4. RENDER PAGE
+        # -----------------------------------------
+        return render_template(
+            "teacher/student_results.html",
+            tests=tests,
+            selected_test_id=selected_test_id,
+            selected_test=selected_test,
+            results=results
+        )
+
+    except Exception as e:
+
+        flash(
+            f"Database error: {str(e)}",
+            "error"
+        )
+
+        return redirect(
+            url_for("teacher.teacher_home")
+        )
+
+    finally:
+
+        cursor.close()
+        conn.close()
+
+# ============================================================
+# CLASS ANALYTICS
+# ============================================================
+# ---------------------------------
+# CLASS ANALYTICS
+# ---------------------------------
+@teacher_bp.route("/class_analytics")
+@role_required("Teacher")
+def class_analytics():
+
+    teacher_id = session.get("user_id")
+
+    if not teacher_id:
+        flash("Teacher session not found.", "error")
+        return redirect(url_for("auth.login_page"))
+
+    # Get selected test from URL
+    selected_test_id = request.args.get("test_id", type=int)
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        # ---------------------------------
+        # 1. GET TEACHER'S TESTS
+        # ---------------------------------
+        cursor.execute("""
+            SELECT
+                t.test_id,
+                t.test_name,
+                t.total_marks,
+                sub.subject_name
+            FROM test t
+            JOIN subject sub
+                ON sub.subject_id = t.subject_id
+            WHERE t.teacher_id = %s
+            ORDER BY t.test_id DESC
+        """, (teacher_id,))
+
+        tests = cursor.fetchall()
+
+        # ---------------------------------
+        # DEFAULT VALUES
+        # ---------------------------------
+        overview = {
+            "total_students": 0,
+            "tests_completed": 0,
+            "average_percentage": 0,
+            "highest_percentage": 0
+        }
+
+        best_student = None
+        worst_student = None
+        student_performance = []
+        weak_topics = []
+        selected_test = None
+
+        # ---------------------------------
+        # 2. ANALYTICS FOR SELECTED TEST
+        # ---------------------------------
+        if selected_test_id:
+
+            # ---------------------------------
+            # CHECK THAT TEST BELONGS TO TEACHER
+            # ---------------------------------
+            cursor.execute("""
+                SELECT
+                    t.test_id,
+                    t.test_name,
+                    t.total_marks,
+                    sub.subject_name
+                FROM test t
+                JOIN subject sub
+                    ON sub.subject_id = t.subject_id
+                WHERE t.test_id = %s
+                  AND t.teacher_id = %s
+            """, (selected_test_id, teacher_id))
+
+            selected_test = cursor.fetchone()
+
+            # ---------------------------------
+            # INVALID TEST
+            # ---------------------------------
+            if not selected_test:
+
+                flash(
+                    "The selected test was not found.",
+                    "error"
+                )
+
+                selected_test_id = None
+
+            else:
+
+                # ---------------------------------
+                # 3. TEST OVERVIEW
+                # ---------------------------------
+                cursor.execute("""
+                    SELECT
+                        COUNT(DISTINCT ta.student_id)
+                            AS total_students,
+
+                        COUNT(DISTINCT ta.attempt_id)
+                            AS tests_completed,
+
+                        ROUND(
+                            AVG(
+                                (
+                                    ta.score /
+                                    NULLIF(t.total_marks, 0)
+                                ) * 100
+                            ),
+                            2
+                        ) AS average_percentage,
+
+                        ROUND(
+                            MAX(
+                                (
+                                    ta.score /
+                                    NULLIF(t.total_marks, 0)
+                                ) * 100
+                            ),
+                            2
+                        ) AS highest_percentage
+
+                    FROM test_attempt ta
+
+                    JOIN test t
+                        ON t.test_id = ta.test_id
+
+                    WHERE t.test_id = %s
+                      AND t.teacher_id = %s
+                      AND ta.status = 'Submitted'
+                """, (selected_test_id, teacher_id))
+
+                overview = cursor.fetchone()
+
+                # ---------------------------------
+                # 4. STUDENT-WISE PERFORMANCE
+                # ---------------------------------
+                cursor.execute("""
+                    SELECT
+                        s.student_id,
+                        s.student_name,
+                        s.email,
+
+                        ta.score,
+
+                        t.total_marks,
+
+                        ROUND(
+                            (
+                                ta.score /
+                                NULLIF(t.total_marks, 0)
+                            ) * 100,
+                            2
+                        ) AS average_percentage
+
+                    FROM test_attempt ta
+
+                    JOIN student s
+                        ON s.student_id = ta.student_id
+
+                    JOIN test t
+                        ON t.test_id = ta.test_id
+
+                    WHERE t.test_id = %s
+                      AND t.teacher_id = %s
+                      AND ta.status = 'Submitted'
+
+                    ORDER BY average_percentage DESC
+                """, (selected_test_id, teacher_id))
+
+                student_performance = cursor.fetchall()
+
+                # ---------------------------------
+                # 5. HIGHEST-PERFORMING STUDENT
+                # ---------------------------------
+                if student_performance:
+                    best_student = student_performance[0]
+
+                # ---------------------------------
+                # 6. LOWEST-PERFORMING STUDENT
+                # ---------------------------------
+                if student_performance:
+                    worst_student = student_performance[-1]
+
+                # ---------------------------------
+                # 7. TOPICS NEEDING ATTENTION
+                # ---------------------------------
+                cursor.execute("""
+                    SELECT
+                        c.chapter_id,
+                        c.chapter_name,
+
+                        COUNT(DISTINCT ta.student_id)
+                            AS students_weak,
+
+                        COUNT(*)
+                            AS incorrect_answers
+
+                    FROM student_answer sa
+
+                    JOIN test_attempt ta
+                        ON ta.attempt_id = sa.attempt_id
+
+                    JOIN test t
+                        ON t.test_id = ta.test_id
+
+                    JOIN question q
+                        ON q.question_id = sa.question_id
+
+                    JOIN chapter c
+                        ON c.chapter_id = q.chapter_id
+
+                    WHERE t.test_id = %s
+                      AND t.teacher_id = %s
+                      AND ta.status = 'Submitted'
+                      AND sa.is_correct = 0
+
+                    GROUP BY
+                        c.chapter_id,
+                        c.chapter_name
+
+                    ORDER BY
+                        students_weak DESC,
+                        incorrect_answers DESC
+                """, (selected_test_id, teacher_id))
+
+                weak_topics = cursor.fetchall()
+
+        # ---------------------------------
+        # 8. RENDER PAGE
+        # ---------------------------------
+        return render_template(
+            "teacher/class_analytics.html",
+            tests=tests,
+            selected_test_id=selected_test_id,
+            selected_test=selected_test,
+            overview=overview,
+            best_student=best_student,
+            worst_student=worst_student,
+            student_performance=student_performance,
+            weak_topics=weak_topics
+        )
+
+    except Exception as e:
+
+        flash(
+            f"Database error: {str(e)}",
+            "error"
+        )
+
+        return redirect(
+            url_for("teacher.teacher_home")
+        )
+
+    finally:
+
+        cursor.close()
+        conn.close()
 
 # ============================================================
 # PROFILE

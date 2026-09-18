@@ -2,44 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+
     <title>{% block title %}EduMate{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        /* =========================================
+           GLOBAL FIXED SIDEBAR
+        ========================================= */
+
+        .dashboard {
+            align-items: flex-start;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            align-self: flex-start;
+            overflow-y: auto;
+        }
+    </style>
+
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
 
 <header>
+
     <!-- Sidebar Toggle Button -->
-    <button id="sidebarToggle" class="toggle-btn" aria-label="Toggle Sidebar">☰</button>
+    <button
+        id="sidebarToggle"
+        class="toggle-btn"
+        aria-label="Toggle Sidebar"
+    >
+        ☰
+    </button>
+
     <h1>EduMate</h1>
-    <h3>{% block portal_title %}Smart Student Assessment System{% endblock %}</h3>
+
+    <h3>
+        {% block portal_title %}
+        Smart Student Assessment System
+        {% endblock %}
+    </h3>
+
 </header>
 
+
 <div class="dashboard">
+
     <div class="sidebar" id="sidebar">
+
         {% block sidebar %}
         <!-- Role specific sidebar links go here -->
         {% endblock %}
+
     </div>
 
+
     <div class="content">
+
         {% block content %}
         <!-- Page specific content goes here -->
         {% endblock %}
+
     </div>
+
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const toggleBtn = document.getElementById("sidebarToggle");
-        const sidebar = document.getElementById("sidebar");
 
-        toggleBtn.addEventListener("click", function () {
-            sidebar.classList.toggle("collapsed");
-        });
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const toggleBtn = document.getElementById("sidebarToggle");
+    const sidebar = document.getElementById("sidebar");
+
+    toggleBtn.addEventListener("click", function () {
+        sidebar.classList.toggle("collapsed");
     });
+
+});
+
 </script>
 
+
 {% block extra_js %}{% endblock %}
+
 </body>
 </html>

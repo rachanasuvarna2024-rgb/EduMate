@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Parent Portal{% endblock %}
+
+{% block portal_title %}
+Parent Portal
+{% endblock %}
+
+{% block sidebar %}
+
+<h3>Child's Performance</h3>
+
+<a href="{{ url_for('parent.child_test_results') }}">
+    Test Results
+</a>
+
+<a href="#">
+    Progress Summary
+</a>
+
+
+<h3>Account</h3>
+
+<a href="#">
+    My Profile
+</a>
+
+<a href="{{ url_for('auth.logout') }}">
+    Logout
+</a>
+
+{% endblock %}

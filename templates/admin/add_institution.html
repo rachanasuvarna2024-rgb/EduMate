@@ -1,0 +1,1168 @@
+{% extends "admin/admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>Add Institution</h2>
+
+    {% if msg %}
+    <div class="success-message">
+        {{ msg }}
+    </div>
+    {% endif %}
+
+    {% if err %}
+    <div class="error-message">
+        {{ err }}
+    </div>
+    {% endif %}
+
+
+    <div class="card">
+
+        <form
+            action="{{ url_for('admin.add_institution') }}"
+            method="POST"
+            id="institutionForm"
+            novalidate
+        >
+
+            <!-- ================================================= -->
+            <!-- INSTITUTION DETAILS -->
+            <!-- ================================================= -->
+
+            <h3>Institution Details</h3>
+
+
+            <!-- Institution Name -->
+            <div class="form-group">
+
+                <label for="institution_name">
+                    Institution Name
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="institution_name"
+                    name="institution_name"
+                    class="form-control"
+                    maxlength="150"
+                    placeholder="Enter institution name"
+                    required
+                >
+
+                <small
+                    class="field-error"
+                    id="institution_name_error"
+                ></small>
+
+            </div>
+
+
+            <!-- Institution Code -->
+            <div class="form-group">
+
+                <label for="institution_code">
+                    Institution Code
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="institution_code"
+                    name="institution_code"
+                    class="form-control"
+                    maxlength="30"
+                    placeholder="Example: SPS001"
+                    required
+                >
+
+                <small
+                    class="field-error"
+                    id="institution_code_error"
+                ></small>
+
+            </div>
+
+
+            <!-- Institution Category -->
+            <div class="form-group">
+
+                <label for="institution_category">
+                    Institution Category
+                    <span class="required">*</span>
+                </label>
+
+                <select
+                    id="institution_category"
+                    name="institution_category"
+                    class="form-control"
+                    required
+                >
+
+                    <option value="">
+                        -- Select Category --
+                    </option>
+
+                    <option value="School">
+                        School
+                    </option>
+
+                    <option value="Jr College">
+                        Jr College
+                    </option>
+
+                    <option value="Degree College">
+                        Degree College
+                    </option>
+
+                </select>
+
+                <small
+                    class="field-error"
+                    id="institution_category_error"
+                ></small>
+
+            </div>
+
+
+            <!-- Institution Type -->
+            <div class="form-group">
+
+                <label for="institution_type">
+                    Institution Type
+                    <span class="required">*</span>
+                </label>
+
+                <select
+                    id="institution_type"
+                    name="institution_type"
+                    class="form-control"
+                    required
+                >
+
+                    <option value="">
+                        -- Select Type --
+                    </option>
+
+                    <option value="Traditional">
+                        Traditional
+                    </option>
+
+                    <option value="OBE">
+                        OBE
+                    </option>
+
+                </select>
+
+                <small
+                    class="field-error"
+                    id="institution_type_error"
+                ></small>
+
+            </div>
+
+
+            <!-- Address -->
+            <div class="form-group">
+
+                <label for="address">
+                    Address
+                    <span class="required">*</span>
+                </label>
+
+                <textarea
+                    id="address"
+                    name="address"
+                    class="form-control"
+                    rows="2"
+                    maxlength="250"
+                    placeholder="Enter complete institution address"
+                    required
+                ></textarea>
+
+                <small
+                    class="field-error"
+                    id="address_error"
+                ></small>
+
+            </div>
+
+
+            <!-- City -->
+            <div class="form-group">
+
+                <label for="city">
+                    City
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    class="form-control"
+                    maxlength="100"
+                    placeholder="Enter city"
+                    required
+                >
+
+                <small
+                    class="field-error"
+                    id="city_error"
+                ></small>
+
+            </div>
+
+
+            <!-- State -->
+            <div class="form-group">
+
+                <label for="state">
+                    State / Union Territory
+                    <span class="required">*</span>
+                </label>
+
+                <select
+                    id="state"
+                    name="state"
+                    class="form-control"
+                    required
+                >
+
+                    <option value="">
+                        -- Select State / Union Territory --
+                    </option>
+
+                    <optgroup label="States">
+
+                        <option value="Andhra Pradesh">
+                            Andhra Pradesh
+                        </option>
+
+                        <option value="Arunachal Pradesh">
+                            Arunachal Pradesh
+                        </option>
+
+                        <option value="Assam">
+                            Assam
+                        </option>
+
+                        <option value="Bihar">
+                            Bihar
+                        </option>
+
+                        <option value="Chhattisgarh">
+                            Chhattisgarh
+                        </option>
+
+                        <option value="Goa">
+                            Goa
+                        </option>
+
+                        <option value="Gujarat">
+                            Gujarat
+                        </option>
+
+                        <option value="Haryana">
+                            Haryana
+                        </option>
+
+                        <option value="Himachal Pradesh">
+                            Himachal Pradesh
+                        </option>
+
+                        <option value="Jharkhand">
+                            Jharkhand
+                        </option>
+
+                        <option value="Karnataka">
+                            Karnataka
+                        </option>
+
+                        <option value="Kerala">
+                            Kerala
+                        </option>
+
+                        <option value="Madhya Pradesh">
+                            Madhya Pradesh
+                        </option>
+
+                        <option value="Maharashtra">
+                            Maharashtra
+                        </option>
+
+                        <option value="Manipur">
+                            Manipur
+                        </option>
+
+                        <option value="Meghalaya">
+                            Meghalaya
+                        </option>
+
+                        <option value="Mizoram">
+                            Mizoram
+                        </option>
+
+                        <option value="Nagaland">
+                            Nagaland
+                        </option>
+
+                        <option value="Odisha">
+                            Odisha
+                        </option>
+
+                        <option value="Punjab">
+                            Punjab
+                        </option>
+
+                        <option value="Rajasthan">
+                            Rajasthan
+                        </option>
+
+                        <option value="Sikkim">
+                            Sikkim
+                        </option>
+
+                        <option value="Tamil Nadu">
+                            Tamil Nadu
+                        </option>
+
+                        <option value="Telangana">
+                            Telangana
+                        </option>
+
+                        <option value="Tripura">
+                            Tripura
+                        </option>
+
+                        <option value="Uttar Pradesh">
+                            Uttar Pradesh
+                        </option>
+
+                        <option value="Uttarakhand">
+                            Uttarakhand
+                        </option>
+
+                        <option value="West Bengal">
+                            West Bengal
+                        </option>
+
+                    </optgroup>
+
+
+                    <optgroup label="Union Territories">
+
+                        <option value="Andaman and Nicobar Islands">
+                            Andaman and Nicobar Islands
+                        </option>
+
+                        <option value="Chandigarh">
+                            Chandigarh
+                        </option>
+
+                        <option value="Dadra and Nagar Haveli and Daman and Diu">
+                            Dadra and Nagar Haveli and Daman and Diu
+                        </option>
+
+                        <option value="Delhi">
+                            Delhi
+                        </option>
+
+                        <option value="Jammu and Kashmir">
+                            Jammu and Kashmir
+                        </option>
+
+                        <option value="Ladakh">
+                            Ladakh
+                        </option>
+
+                        <option value="Lakshadweep">
+                            Lakshadweep
+                        </option>
+
+                        <option value="Puducherry">
+                            Puducherry
+                        </option>
+
+                    </optgroup>
+
+                </select>
+
+                <small
+                    class="field-error"
+                    id="state_error"
+                ></small>
+
+            </div>
+
+
+            <!-- Pincode -->
+            <div class="form-group">
+
+                <label for="pincode">
+                    Pincode
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="pincode"
+                    name="pincode"
+                    class="form-control"
+                    maxlength="6"
+                    inputmode="numeric"
+                    placeholder="Enter 6-digit pincode"
+                    required
+                >
+
+                <small
+                    class="field-error"
+                    id="pincode_error"
+                ></small>
+
+            </div>
+
+
+            <!-- Email -->
+            <div class="form-group">
+
+                <label for="email">
+                    Institution Email
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    class="form-control"
+                    maxlength="150"
+                    placeholder="example@institution.edu"
+                    required
+                >
+
+                <small
+                    class="field-error"
+                    id="email_error"
+                ></small>
+
+            </div>
+
+
+            <!-- Phone -->
+            <div class="form-group">
+
+                <label for="phone">
+                    Phone Number
+                </label>
+
+                <input
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    class="form-control"
+                    maxlength="10"
+                    inputmode="numeric"
+                    placeholder="Enter 10-digit phone number"
+                >
+
+                <small
+                    class="field-error"
+                    id="phone_error"
+                ></small>
+
+            </div>
+
+
+            <!-- Website -->
+            <div class="form-group">
+
+                <label for="website">
+                    Website
+                </label>
+
+                <input
+                    type="text"
+                    id="website"
+                    name="website"
+                    class="form-control"
+                    maxlength="200"
+                    placeholder="https://www.example.edu"
+                >
+
+                <small
+                    class="field-error"
+                    id="website_error"
+                ></small>
+
+            </div>
+
+            <br>
+
+            <!-- SUBMIT -->
+
+            <button
+                type="submit"
+                class="btn-submit"
+            >
+                Add Institution
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<style>
+
+/* ========================================================= */
+/* FORM */
+/* ========================================================= */
+
+.form-group {
+    margin-bottom: 10px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.required {
+    color: #dc3545;
+}
+
+.field-error {
+    display: block;
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 3px;
+    min-height: 15px;
+}
+
+/* ========================================================= */
+/* SUBMIT */
+/* ========================================================= */
+
+.btn-submit {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.btn-submit:hover {
+    opacity: 0.9;
+}
+
+
+/* ========================================================= */
+/* MESSAGES */
+/* ========================================================= */
+
+.success-message {
+    color: #155724;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+}
+
+.error-message {
+    color: #721c24;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+}
+
+
+/* ========================================================= */
+/* INVALID INPUT */
+/* ========================================================= */
+
+.form-control.invalid {
+    border-color: #dc3545;
+    background-color: #fff8f8;
+}
+
+.form-control.valid {
+    border-color: #28a745;
+}
+
+</style>
+
+
+<script>
+
+/* ========================================================= */
+/* ELEMENTS */
+/* ========================================================= */
+
+const form =
+    document.getElementById("institutionForm");
+
+const categorySelect =
+    document.getElementById("institution_category");
+
+
+/* ========================================================= */
+/* FORM VALIDATION */
+/* ========================================================= */
+
+form.addEventListener(
+    "submit",
+    function (event) {
+
+        let valid = true;
+
+
+        /* Clear all errors */
+
+        document
+            .querySelectorAll(".field-error")
+            .forEach(error => {
+
+                error.textContent = "";
+
+            });
+
+
+        document
+            .querySelectorAll(".form-control")
+            .forEach(input => {
+
+                input.classList.remove(
+                    "invalid"
+                );
+
+            });
+
+
+        /* ------------------------------------------------- */
+        /* GET VALUES */
+        /* ------------------------------------------------- */
+
+        const name =
+            document
+                .getElementById(
+                    "institution_name"
+                )
+                .value
+                .trim();
+
+
+        const code =
+            document
+                .getElementById(
+                    "institution_code"
+                )
+                .value
+                .trim();
+
+
+        const category =
+            categorySelect.value;
+
+
+        const type =
+            document
+                .getElementById(
+                    "institution_type"
+                )
+                .value;
+
+
+        const address =
+            document
+                .getElementById(
+                    "address"
+                )
+                .value
+                .trim();
+
+
+        const city =
+            document
+                .getElementById(
+                    "city"
+                )
+                .value
+                .trim();
+
+
+        const state =
+            document
+                .getElementById(
+                    "state"
+                )
+                .value;
+
+
+        const pincode =
+            document
+                .getElementById(
+                    "pincode"
+                )
+                .value
+                .trim();
+
+
+        const email =
+            document
+                .getElementById(
+                    "email"
+                )
+                .value
+                .trim();
+
+
+        const phone =
+            document
+                .getElementById(
+                    "phone"
+                )
+                .value
+                .trim();
+
+
+        const website =
+            document
+                .getElementById(
+                    "website"
+                )
+                .value
+                .trim();
+
+
+        /* ------------------------------------------------- */
+        /* NAME */
+        /* ------------------------------------------------- */
+
+        if (!name) {
+
+            showError(
+                "institution_name",
+                "institution_name_error",
+                "Institution name is required."
+            );
+
+            valid = false;
+
+        } else if (name.length < 2) {
+
+            showError(
+                "institution_name",
+                "institution_name_error",
+                "Institution name must contain at least 2 characters."
+            );
+
+            valid = false;
+
+        } else if (name.length > 150) {
+
+            showError(
+                "institution_name",
+                "institution_name_error",
+                "Institution name cannot exceed 150 characters."
+            );
+
+            valid = false;
+
+        }
+
+
+        /* ------------------------------------------------- */
+        /* CODE */
+        /* ------------------------------------------------- */
+
+        if (!/^[A-Za-z0-9_-]{2,30}$/.test(code)) {
+
+            showError(
+                "institution_code",
+                "institution_code_error",
+                "Code must contain 2-30 letters, numbers, underscores or hyphens."
+            );
+
+            valid = false;
+
+        }
+
+
+        /* ------------------------------------------------- */
+        /* CATEGORY */
+        /* ------------------------------------------------- */
+
+        if (
+            ![
+                "School",
+                "Jr College",
+                "Degree College"
+            ].includes(category)
+        ) {
+
+            showError(
+                "institution_category",
+                "institution_category_error",
+                "Please select institution category."
+            );
+
+            valid = false;
+
+        }
+
+
+        /* ------------------------------------------------- */
+        /* TYPE */
+        /* ------------------------------------------------- */
+
+        if (
+            ![
+                "Traditional",
+                "OBE"
+            ].includes(type)
+        ) {
+
+            showError(
+                "institution_type",
+                "institution_type_error",
+                "Please select institution type."
+            );
+
+            valid = false;
+
+        }
+
+
+        /* ------------------------------------------------- */
+        /* ADDRESS */
+        /* ------------------------------------------------- */
+
+        if (!address) {
+
+            showError(
+                "address",
+                "address_error",
+                "Address is required."
+            );
+
+            valid = false;
+
+        } else if (address.length < 5) {
+
+            showError(
+                "address",
+                "address_error",
+                "Please enter a complete address."
+            );
+
+            valid = false;
+
+        }
+
+
+        /* ------------------------------------------------- */
+        /* CITY */
+        /* ------------------------------------------------- */
+
+        if (
+            !/^[A-Za-z][A-Za-z .'-]{1,99}$/.test(city)
+        ) {
+
+            showError(
+                "city",
+                "city_error",
+                "Please enter a valid city."
+            );
+
+            valid = false;
+
+        }
+
+
+        /* ------------------------------------------------- */
+        /* STATE */
+        /* ------------------------------------------------- */
+
+        if (!state) {
+
+            showError(
+                "state",
+                "state_error",
+                "Please select a state or union territory."
+            );
+
+            valid = false;
+
+        }
+
+
+        /* ------------------------------------------------- */
+        /* PINCODE */
+        /* ------------------------------------------------- */
+
+        if (!/^[0-9]{6}$/.test(pincode)) {
+
+            showError(
+                "pincode",
+                "pincode_error",
+                "Pincode must contain exactly 6 digits."
+            );
+
+            valid = false;
+
+        }
+
+
+        /* ------------------------------------------------- */
+        /* EMAIL */
+        /* ------------------------------------------------- */
+
+        const emailPattern =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+        if (!emailPattern.test(email)) {
+
+            showError(
+                "email",
+                "email_error",
+                "Enter a valid email address."
+            );
+
+            valid = false;
+
+        }
+
+
+        /* ------------------------------------------------- */
+        /* PHONE */
+        /* ------------------------------------------------- */
+
+        if (
+            phone &&
+            !/^[0-9]{10}$/.test(phone)
+        ) {
+
+            showError(
+                "phone",
+                "phone_error",
+                "Phone number must contain exactly 10 digits."
+            );
+
+            valid = false;
+
+        }
+
+
+        /* ------------------------------------------------- */
+        /* WEBSITE */
+        /* ------------------------------------------------- */
+
+        if (website) {
+
+            let validWebsite = false;
+
+            try {
+
+                let websiteValue =
+                    website;
+
+                if (
+                    !websiteValue
+                        .startsWith("http://") &&
+                    !websiteValue
+                        .startsWith("https://")
+                ) {
+
+                    websiteValue =
+                        "https://" +
+                        websiteValue;
+
+                }
+
+                const url =
+                    new URL(
+                        websiteValue
+                    );
+
+                validWebsite =
+                    url.hostname.length > 0;
+
+            } catch {
+
+                validWebsite = false;
+
+            }
+
+
+            if (!validWebsite) {
+
+                showError(
+                    "website",
+                    "website_error",
+                    "Enter a valid website URL."
+                );
+
+                valid = false;
+
+            }
+
+        }
+
+
+        /* ------------------------------------------------- */
+        /* STOP SUBMISSION */
+        /* ------------------------------------------------- */
+
+        if (!valid) {
+
+            event.preventDefault();
+
+            const firstError =
+                document.querySelector(
+                    ".field-error:not(:empty)"
+                );
+
+            if (firstError) {
+
+                firstError.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+            }
+
+            return false;
+
+        }
+
+    }
+);
+
+
+/* ========================================================= */
+/* ERROR HELPER */
+/* ========================================================= */
+
+function showError(
+    inputId,
+    errorId,
+    message
+) {
+
+    const input =
+        document.getElementById(
+            inputId
+        );
+
+    const error =
+        document.getElementById(
+            errorId
+        );
+
+    if (input) {
+
+        input.classList.add(
+            "invalid"
+        );
+
+    }
+
+    if (error) {
+
+        error.textContent =
+            message;
+
+    }
+
+}
+
+
+/* ========================================================= */
+/* LIVE INPUT CLEANUP */
+/* ========================================================= */
+
+document
+    .getElementById("pincode")
+    .addEventListener(
+        "input",
+        function () {
+
+            this.value =
+                this.value
+                    .replace(
+                        /[^0-9]/g,
+                        ""
+                    )
+                    .slice(0, 6);
+
+        }
+    );
+
+
+document
+    .getElementById("phone")
+    .addEventListener(
+        "input",
+        function () {
+
+            this.value =
+                this.value
+                    .replace(
+                        /[^0-9]/g,
+                        ""
+                    )
+                    .slice(0, 10);
+
+        }
+    );
+
+
+document
+    .getElementById("institution_code")
+    .addEventListener(
+        "input",
+        function () {
+
+            this.value =
+                this.value
+                    .replace(
+                        /[^A-Za-z0-9_-]/g,
+                        ""
+                    )
+                    .toUpperCase()
+                    .slice(0, 30);
+
+        }
+    );
+
+</script>
+
+{% endblock %}

@@ -378,7 +378,7 @@ def get_designations(institution_category=None):
 def admin_home():
 
     return render_template(
-        "admin_home.html"
+        "admin/admin_home.html"
     )
 
 
@@ -447,19 +447,19 @@ def add_institution():
 
         if not institution_name:
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="Institution name is required."
             )
 
         if not institution_code:
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="Institution code is required."
             )
 
         if not INSTITUTION_CODE_PATTERN.fullmatch(institution_code):
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="Institution code can contain only letters, numbers, underscore and hyphen."
             )
 
@@ -469,7 +469,7 @@ def add_institution():
             "Degree College"
         ]:
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="Please select a valid institution category."
             )
 
@@ -478,43 +478,43 @@ def add_institution():
             "OBE"
         ]:
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="Please select a valid institution type."
             )
 
         if not address:
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="Address is required."
             )
 
         if not city:
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="City is required."
             )
 
         if not state:
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="State is required."
             )
 
         if not PINCODE_PATTERN.fullmatch(pincode):
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="Pincode must contain exactly 6 digits."
             )
 
         if not EMAIL_PATTERN.fullmatch(email):
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="Please enter a valid email address."
             )
 
         if phone and not PHONE_PATTERN.fullmatch(phone):
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="Phone number must contain exactly 10 digits."
             )
 
@@ -529,7 +529,7 @@ def add_institution():
             if cursor.fetchone():
 
                 return render_template(
-                    "add_institution.html",
+                    "admin/add_institution.html",
                     err="Institution code already exists."
                 )
 
@@ -542,7 +542,7 @@ def add_institution():
             if cursor.fetchone():
 
                 return render_template(
-                    "add_institution.html",
+                    "admin/add_institution.html",
                     err="Institution email already exists."
                 )
 
@@ -583,7 +583,7 @@ def add_institution():
             conn.commit()
 
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 msg="Institution added successfully!"
             )
 
@@ -592,12 +592,12 @@ def add_institution():
             conn.rollback()
 
             return render_template(
-                "add_institution.html",
+                "admin/add_institution.html",
                 err="Error adding institution: " + str(e)
             )
 
     return render_template(
-        "add_institution.html"
+        "admin/add_institution.html"
     )
 
 # ============================================================
@@ -612,7 +612,7 @@ def manage_institution():
 
     if not conn:
         return render_template(
-            "manage_institution.html",
+            "admin/manage_institution.html",
             institutions=[],
             courses=[],
             departments=[],
@@ -682,7 +682,7 @@ def manage_institution():
             if not selected_institution_id:
 
                 return render_template(
-                    "manage_institution.html",
+                    "admin/manage_institution.html",
 
                     institutions=institutions,
 
@@ -723,7 +723,7 @@ def manage_institution():
             if not institution:
 
                 return render_template(
-                    "manage_institution.html",
+                    "admin/manage_institution.html",
 
                     institutions=institutions,
 
@@ -863,7 +863,7 @@ def manage_institution():
             # =================================================
 
             return render_template(
-                "manage_institution.html",
+                "admin/manage_institution.html",
 
                 institutions=institutions,
 
@@ -897,7 +897,7 @@ def manage_institution():
         if not institution_id:
 
             return render_template(
-                "manage_institution.html",
+                "admin/manage_institution.html",
 
                 institutions=institutions,
 
@@ -938,7 +938,7 @@ def manage_institution():
         if not institution:
 
             return render_template(
-                "manage_institution.html",
+                "admin/manage_institution.html",
 
                 institutions=institutions,
 
@@ -1115,7 +1115,7 @@ def manage_institution():
         conn.rollback()
 
         return render_template(
-            "manage_institution.html",
+            "admin/manage_institution.html",
 
             institutions=institutions,
 
@@ -1188,7 +1188,7 @@ def view_institutions():
         # ====================================================
 
         return render_template(
-            "view_institutions.html",
+            "admin/view_institutions.html",
             institutions=institutions,
             msg=msg,
             err=err
@@ -1202,7 +1202,7 @@ def view_institutions():
     except Exception as e:
 
         return render_template(
-            "view_institutions.html",
+            "admin/view_institutions.html",
             institutions=[],
             msg=None,
             err="Database error: " + str(e)
@@ -1310,7 +1310,7 @@ def edit_institution(institution_id):
             if not institution_name:
 
                 return render_template(
-                    "edit_institution.html",
+                    "admin/edit_institution.html",
                     institution=institution,
                     err="Institution name is required."
                 )
@@ -1319,7 +1319,7 @@ def edit_institution(institution_id):
             if not institution_code:
 
                 return render_template(
-                    "edit_institution.html",
+                    "admin/edit_institution.html",
                     institution=institution,
                     err="Institution code is required."
                 )
@@ -1328,7 +1328,7 @@ def edit_institution(institution_id):
             if not institution_category:
 
                 return render_template(
-                    "edit_institution.html",
+                    "admin/edit_institution.html",
                     institution=institution,
                     err="Institution category is required."
                 )
@@ -1337,7 +1337,7 @@ def edit_institution(institution_id):
             if not institution_type:
 
                 return render_template(
-                    "edit_institution.html",
+                    "admin/edit_institution.html",
                     institution=institution,
                     err="Institution type is required."
                 )
@@ -1346,7 +1346,7 @@ def edit_institution(institution_id):
             if not status:
 
                 return render_template(
-                    "edit_institution.html",
+                    "admin/edit_institution.html",
                     institution=institution,
                     err="Status is required."
                 )
@@ -1372,7 +1372,7 @@ def edit_institution(institution_id):
             if duplicate:
 
                 return render_template(
-                    "edit_institution.html",
+                    "admin/edit_institution.html",
                     institution=institution,
                     err="Institution code already exists."
                 )
@@ -1453,7 +1453,7 @@ def edit_institution(institution_id):
         # ====================================================
 
         return render_template(
-            "edit_institution.html",
+            "admin/edit_institution.html",
             institution=institution
         )
 
@@ -1467,7 +1467,7 @@ def edit_institution(institution_id):
         conn.rollback()
 
         return render_template(
-            "edit_institution.html",
+            "admin/edit_institution.html",
             institution=institution if "institution" in locals() else {},
             err="Database error: " + str(e)
         )
@@ -2501,7 +2501,7 @@ def assign_academic_setup():
     # RENDER
     # ============================================================
     return render_template(
-        'assign_academic_setup.html',
+        'admin/assign_academic_setup.html',
 
         institutions=institutions,
         academic_years=academic_years,
@@ -2696,7 +2696,7 @@ def stream_master():
     streams = cursor.fetchall()
 
     return render_template(
-        "stream_master.html",
+        "admin/stream_master.html",
         streams=streams,
         selected_category=selected_category,
         msg=msg,
@@ -2828,7 +2828,7 @@ def edit_stream(stream_id):
         )
 
     return render_template(
-        "edit_stream.html",
+        "admin/edit_stream.html",
         stream=stream,
         err=err
     )
@@ -3344,7 +3344,7 @@ def course_master():
     # ========================================================
 
     return render_template(
-        "course_master.html",
+        "admin/course_master.html",
         courses=courses,
         msg=msg,
         err=err
@@ -3785,7 +3785,7 @@ def edit_course(course_id):
     # ========================================================
 
     return render_template(
-        "edit_course.html",
+        "admin/edit_course.html",
         course=course,
         academic_year=academic_year,
         err=err
@@ -3992,7 +3992,7 @@ def department_master():
     departments = cursor.fetchall()
 
     return render_template(
-        "department_master.html",
+        "admin/department_master.html",
         departments=departments,
         msg=msg,
         err=err
@@ -4115,7 +4115,7 @@ def edit_department(department_id):
         )
 
     return render_template(
-        "edit_department.html",
+        "admin/edit_department.html",
         department=department,
         err=err
     )
@@ -4249,7 +4249,7 @@ def designation_master():
     designations = cursor.fetchall()
 
     return render_template(
-        "designation_master.html",
+        "admin/designation_master.html",
         designations=designations,
         msg=msg,
         err=err
@@ -4369,7 +4369,7 @@ def edit_designation(designation_id):
         )
 
     return render_template(
-        "edit_designation.html",
+        "admin/edit_designation.html",
         designation=designation,
         err=err
     )
@@ -4445,7 +4445,7 @@ def add_teacher():
 
         if not institution_id:
             return render_template(
-                "add_teacher.html",
+                "admin/add_teacher.html",
                 *get_teacher_form_data(),
                 err="Please select an institution."
             )
@@ -4453,7 +4453,7 @@ def add_teacher():
 
         if not teacher_name:
             return render_template(
-                "add_teacher.html",
+                "admin/add_teacher.html",
                 *get_teacher_form_data(),
                 err="Teacher name is required."
             )
@@ -4461,7 +4461,7 @@ def add_teacher():
 
         if not email:
             return render_template(
-                "add_teacher.html",
+                "admin/add_teacher.html",
                 *get_teacher_form_data(),
                 err="Email is required."
             )
@@ -4469,7 +4469,7 @@ def add_teacher():
 
         if not password:
             return render_template(
-                "add_teacher.html",
+                "admin/add_teacher.html",
                 *get_teacher_form_data(),
                 err="Password is required."
             )
@@ -4477,11 +4477,10 @@ def add_teacher():
 
         if password != confirm_password:
             return render_template(
-                "add_teacher.html",
+                "admin/add_teacher.html",
                 *get_teacher_form_data(),
                 err="Passwords do not match."
             )
-
 
         # -------------------------------------------------
         # CONNECTION
@@ -4492,7 +4491,7 @@ def add_teacher():
         if not conn:
 
             return render_template(
-                "add_teacher.html",
+                "admin/add_teacher.html",
                 *get_teacher_form_data(),
                 err="Unable to connect to database."
             )
@@ -4518,7 +4517,7 @@ def add_teacher():
             if not institution:
 
                 return render_template(
-                    "add_teacher.html",
+                    "admin/add_teacher.html",
                     *get_teacher_form_data(),
                     err="Invalid institution selected."
                 )
@@ -4546,7 +4545,7 @@ def add_teacher():
                 if not cursor.fetchone():
 
                     return render_template(
-                        "add_teacher.html",
+                        "admin/add_teacher.html",
                         *get_teacher_form_data(),
                         err="Selected department does not belong to the selected institution."
                     )
@@ -4574,7 +4573,7 @@ def add_teacher():
                 if not cursor.fetchone():
 
                     return render_template(
-                        "add_teacher.html",
+                        "admin/add_teacher.html",
                         *get_teacher_form_data(),
                         err="Selected designation does not belong to the selected institution."
                     )
@@ -4593,7 +4592,7 @@ def add_teacher():
             if cursor.fetchone():
 
                 return render_template(
-                    "add_teacher.html",
+                    "admin/add_teacher.html",
                     *get_teacher_form_data(),
                     err="A teacher with this email already exists."
                 )
@@ -4637,7 +4636,7 @@ def add_teacher():
                 ):
 
                     return render_template(
-                        "add_teacher.html",
+                        "admin/add_teacher.html",
                         *get_teacher_form_data(),
                         err="One or more selected subjects are invalid."
                     )
@@ -4716,7 +4715,7 @@ def add_teacher():
             conn.rollback()
 
             return render_template(
-                "add_teacher.html",
+                "admin/add_teacher.html",
                 *get_teacher_form_data(),
                 err="Failed to add teacher: " + str(e)
             )
@@ -4737,7 +4736,7 @@ def add_teacher():
 
 
     return render_template(
-        "add_teacher.html",
+        "admin/add_teacher.html",
         institutions=institutions,
         departments=departments,
         designations=designations,
@@ -4753,7 +4752,7 @@ def view_teachers():
     if not conn:
 
         return render_template(
-            "view_teachers.html",
+            "admin/view_teachers.html",
             teachers=[],
             err="Unable to connect to database."
         )
@@ -4850,7 +4849,7 @@ def view_teachers():
 
 
         return render_template(
-            "view_teachers.html",
+            "admin/view_teachers.html",
             teachers=teachers,
             msg=request.args.get("msg"),
             err=request.args.get("err")
@@ -4860,7 +4859,7 @@ def view_teachers():
     except Exception as e:
 
         return render_template(
-            "view_teachers.html",
+            "admin/view_teachers.html",
             teachers=[],
             err="Unable to load teachers: " + str(e)
         )
@@ -5000,7 +4999,7 @@ def edit_teacher(teacher_id):
                     get_teacher_form_data()
 
                 return render_template(
-                    "edit_teacher.html",
+                    "admin/edit_teacher.html",
                     teacher=teacher,
                     assigned_subject_ids=assigned_subject_ids,
                     institutions=institutions,
@@ -5017,7 +5016,7 @@ def edit_teacher(teacher_id):
                     get_teacher_form_data()
 
                 return render_template(
-                    "edit_teacher.html",
+                    "admin/edit_teacher.html",
                     teacher=teacher,
                     assigned_subject_ids=assigned_subject_ids,
                     institutions=institutions,
@@ -5034,7 +5033,7 @@ def edit_teacher(teacher_id):
                     get_teacher_form_data()
 
                 return render_template(
-                    "edit_teacher.html",
+                    "admin/edit_teacher.html",
                     teacher=teacher,
                     assigned_subject_ids=assigned_subject_ids,
                     institutions=institutions,
@@ -5057,7 +5056,7 @@ def edit_teacher(teacher_id):
                         get_teacher_form_data()
 
                     return render_template(
-                        "edit_teacher.html",
+                        "admin/edit_teacher.html",
                         teacher=teacher,
                         assigned_subject_ids=assigned_subject_ids,
                         institutions=institutions,
@@ -5089,7 +5088,7 @@ def edit_teacher(teacher_id):
                     get_teacher_form_data()
 
                 return render_template(
-                    "edit_teacher.html",
+                    "admin/edit_teacher.html",
                     teacher=teacher,
                     assigned_subject_ids=assigned_subject_ids,
                     institutions=institutions,
@@ -5125,7 +5124,7 @@ def edit_teacher(teacher_id):
                         get_teacher_form_data()
 
                     return render_template(
-                        "edit_teacher.html",
+                        "admin/edit_teacher.html",
                         teacher=teacher,
                         assigned_subject_ids=assigned_subject_ids,
                         institutions=institutions,
@@ -5161,7 +5160,7 @@ def edit_teacher(teacher_id):
                         get_teacher_form_data()
 
                     return render_template(
-                        "edit_teacher.html",
+                        "admin/edit_teacher.html",
                         teacher=teacher,
                         assigned_subject_ids=assigned_subject_ids,
                         institutions=institutions,
@@ -5192,7 +5191,7 @@ def edit_teacher(teacher_id):
                     get_teacher_form_data()
 
                 return render_template(
-                    "edit_teacher.html",
+                    "admin/edit_teacher.html",
                     teacher=teacher,
                     assigned_subject_ids=assigned_subject_ids,
                     institutions=institutions,
@@ -5241,7 +5240,7 @@ def edit_teacher(teacher_id):
                         get_teacher_form_data()
 
                     return render_template(
-                        "edit_teacher.html",
+                        "admin/edit_teacher.html",
                         teacher=teacher,
                         assigned_subject_ids=assigned_subject_ids,
                         institutions=institutions,
@@ -5351,7 +5350,7 @@ def edit_teacher(teacher_id):
 
 
         return render_template(
-            "edit_teacher.html",
+            "admin/edit_teacher.html",
             teacher=teacher,
             assigned_subject_ids=assigned_subject_ids,
             institutions=institutions,
@@ -5483,7 +5482,7 @@ def add_parent():
     if request.method == "GET":
 
         return render_template(
-            "add_parent.html",
+            "admin/add_parent.html",
             institutions=institutions
         )
 
@@ -5510,7 +5509,7 @@ def add_parent():
     if not institution_id:
 
         return render_template(
-            "add_parent.html",
+            "admin/add_parent.html",
             institutions=institutions,
             message="Please select an institution."
         )
@@ -5518,7 +5517,7 @@ def add_parent():
     if not name:
 
         return render_template(
-            "add_parent.html",
+            "admin/add_parent.html",
             institutions=institutions,
             message="Name is required."
         )
@@ -5526,7 +5525,7 @@ def add_parent():
     if not email or not EMAIL_PATTERN.fullmatch(email):
 
         return render_template(
-            "add_parent.html",
+            "admin/add_parent.html",
             institutions=institutions,
             message="Please enter a valid email address."
         )
@@ -5534,7 +5533,7 @@ def add_parent():
     if not password:
 
         return render_template(
-            "add_parent.html",
+            "admin/add_parent.html",
             institutions=institutions,
             message="Password is required."
         )
@@ -5542,7 +5541,7 @@ def add_parent():
     if mobile and not PHONE_PATTERN.fullmatch(mobile):
 
         return render_template(
-            "add_parent.html",
+            "admin/add_parent.html",
             institutions=institutions,
             message="Mobile number must contain exactly 10 digits."
         )
@@ -5558,7 +5557,7 @@ def add_parent():
         if cursor.fetchone():
 
             return render_template(
-                "add_parent.html",
+                "admin/add_parent.html",
                 institutions=institutions,
                 message="Parent email already exists."
             )
@@ -5584,7 +5583,7 @@ def add_parent():
         conn.commit()
 
         return render_template(
-            "add_parent.html",
+            "admin/add_parent.html",
             institutions=institutions,
             message="Parent added successfully!"
         )
@@ -5594,7 +5593,7 @@ def add_parent():
         conn.rollback()
 
         return render_template(
-            "add_parent.html",
+            "admin/add_parent.html",
             institutions=institutions,
             message="Error adding parent: " + str(e)
         )
@@ -5624,7 +5623,7 @@ def view_parents():
     parents = cursor.fetchall()
 
     return render_template(
-        "view_parents.html",
+        "admin/view_parents.html",
         parents=parents
     )
 
@@ -5680,7 +5679,7 @@ def add_student():
     if request.method == "GET":
 
         return render_template(
-            "add_student.html",
+            "admin/add_student.html",
             institutions=institutions,
             parents=[],
             standards=[]
@@ -5820,7 +5819,7 @@ def add_student():
             message = "Error adding student: " + str(e)
 
     return render_template(
-        "add_student.html",
+        "admin/add_student.html",
         institutions=institutions,
         parents=parents,
         standards=standards,
@@ -5865,7 +5864,7 @@ def view_students():
     students = cursor.fetchall()
 
     return render_template(
-        "view_students.html",
+        "admin/view_students.html",
         students=students
     )
 
@@ -5998,7 +5997,7 @@ def add_standard():
     courses = get_courses()
 
     return render_template(
-        "add_standard.html",
+        "admin/add_standard.html",
         msg=msg,
         err=err,
         institutions=institutions,
@@ -6120,7 +6119,7 @@ def edit_standard(standard_id):
         )
 
     return render_template(
-        "edit_standard.html",
+        "admin/edit_standard.html",
         standard=standard,
         institutions=institutions,
         courses=courses,
@@ -6510,7 +6509,7 @@ def subject_master():
     # ========================================================
 
     return render_template(
-        "subject_master.html",
+        "admin/subject_master.html",
         courses=courses,
         subjects=subjects,
         msg=msg,
@@ -6905,7 +6904,7 @@ def edit_subject(subject_master_id):
     # ========================================================
 
     return render_template(
-        "edit_subject.html",
+        "admin/edit_subject.html",
         subject=subject,
         courses=courses,
         err=err
@@ -7170,7 +7169,7 @@ def add_chapter():
     chapters = cursor.fetchall()
 
     return render_template(
-        "add_chapter.html",
+        "admin/add_chapter.html",
         msg=msg,
         err=err,
         subjects=subjects,
@@ -7297,7 +7296,7 @@ def edit_chapter(chapter_id):
     subjects = get_subjects()
 
     return render_template(
-        "edit_chapter.html",
+        "admin/edit_chapter.html",
         chapter=chapter,
         subjects=subjects,
         err=err
@@ -7344,7 +7343,7 @@ def delete_chapter(chapter_id):
 def student_progress_for_admin():
 
     return render_template(
-        "student_progress_for_admin.html"
+        "admin/student_progress_for_admin.html"
     )
 
 
@@ -7458,7 +7457,7 @@ def admin_profile():
         )
 
     return render_template(
-        "admin_profile.html",
+        "admin/admin_profile.html",
         admin=admin_data,
         msg=msg,
         err=err

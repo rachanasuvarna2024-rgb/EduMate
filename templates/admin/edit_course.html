@@ -1,0 +1,625 @@
+{% extends "admin/admin_home.html" %}
+
+{% block content %}
+
+<style>
+
+.container {
+    width: 90%;
+    margin: 30px auto;
+}
+
+h2 {
+    margin-bottom: 25px;
+}
+
+.card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #555;
+}
+
+.btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #333;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #222;
+}
+
+.btn-secondary {
+    background: #777;
+    color: white;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-left: 8px;
+}
+
+.success-message {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.error-message {
+    background: #ffebee;
+    color: #c62828;
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.info-message {
+    background: #f5f5f5;
+    color: #555;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+</style>
+
+
+<div class="container">
+
+    <h2>Edit Course</h2>
+
+
+    <!-- ===================================================== -->
+    <!-- ERROR MESSAGE -->
+    <!-- ===================================================== -->
+
+    {% if err %}
+
+    <div class="error-message">
+        {{ err }}
+    </div>
+
+    {% endif %}
+
+
+    <!-- ===================================================== -->
+    <!-- EDIT COURSE FORM -->
+    <!-- ===================================================== -->
+
+    <div class="card">
+
+        <h3>Course Details</h3>
+
+
+        <form
+            method="POST"
+            action="{{ url_for('admin.edit_course', course_id=course.course_id) }}"
+            onsubmit="return validateEditCourseForm();"
+        >
+
+
+            <!-- ================================================= -->
+            <!-- COURSE NAME -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="course_name">
+                    Course Name
+                </label>
+
+                <input
+                    type="text"
+                    id="course_name"
+                    name="course_name"
+                    maxlength="200"
+                    value="{{ course.course_name }}"
+                    required
+                >
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- INSTITUTION CATEGORY -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="institution_category">
+                    Institution Category
+                </label>
+
+                <select
+                    id="institution_category"
+                    name="institution_category"
+                    required
+                    onchange="updateAcademicYearOptions();"
+                >
+
+                    <option value="">
+                        -- Select Institution Category --
+                    </option>
+
+                    <option
+                        value="School"
+                        {% if course.institution_category == "School" %}
+                        selected
+                        {% endif %}
+                    >
+                        School
+                    </option>
+
+                    <option
+                        value="Jr College"
+                        {% if course.institution_category == "Jr College" %}
+                        selected
+                        {% endif %}
+                    >
+                        Jr College
+                    </option>
+
+                    <option
+                        value="Degree College"
+                        {% if course.institution_category == "Degree College" %}
+                        selected
+                        {% endif %}
+                    >
+                        Degree College
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- ACADEMIC YEAR -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="academic_year">
+                    Academic Year
+                </label>
+
+                <select
+                    id="academic_year"
+                    name="academic_year"
+                    required
+                >
+
+                    <option value="">
+                        -- Select Academic Year --
+                    </option>
+
+                </select>
+
+
+                <div
+                    class="info-message"
+                    id="academicYearInfo"
+                >
+                    Academic year options depend on the
+                    institution category.
+                </div>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- STATUS -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="status">
+                    Status
+                </label>
+
+                <select
+                    id="status"
+                    name="status"
+                    required
+                >
+
+                    <option
+                        value="Active"
+                        {% if course.status == "Active" %}
+                        selected
+                        {% endif %}
+                    >
+                        Active
+                    </option>
+
+                    <option
+                        value="Inactive"
+                        {% if course.status == "Inactive" %}
+                        selected
+                        {% endif %}
+                    >
+                        Inactive
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- BUTTONS -->
+            <!-- ================================================= -->
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                Update Course
+            </button>
+
+
+            <a
+                href="{{ url_for('admin.course_master') }}"
+                class="btn-secondary"
+            >
+                Cancel
+            </a>
+
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* ============================================================
+   EXISTING ACADEMIC YEAR
+   ============================================================ */
+
+const existingAcademicYear =
+    {{ academic_year | tojson }};
+
+
+/* ============================================================
+   UPDATE ACADEMIC YEAR OPTIONS
+   ============================================================ */
+
+function updateAcademicYearOptions() {
+
+    const category =
+        document.getElementById(
+            "institution_category"
+        ).value;
+
+    const academicYear =
+        document.getElementById(
+            "academic_year"
+        );
+
+    const info =
+        document.getElementById(
+            "academicYearInfo"
+        );
+
+
+    /* --------------------------------------------------------
+       CLEAR OPTIONS
+       -------------------------------------------------------- */
+
+    academicYear.innerHTML = "";
+
+
+    /* --------------------------------------------------------
+       NO CATEGORY
+       -------------------------------------------------------- */
+
+    if (!category) {
+
+        const option =
+            document.createElement("option");
+
+        option.value = "";
+
+        option.textContent =
+            "-- Select Institution Category --";
+
+        academicYear.appendChild(option);
+
+        academicYear.disabled = true;
+
+        return;
+    }
+
+
+    academicYear.disabled = false;
+
+
+    /* ========================================================
+       SCHOOL
+       ======================================================== */
+
+    if (category === "School") {
+
+        addAcademicYearOption(
+            "Not Applicable"
+        );
+
+        info.textContent =
+            "School courses use 'Not Applicable'.";
+
+    }
+
+
+    /* ========================================================
+       JR COLLEGE
+       ======================================================== */
+
+    else if (category === "Jr College") {
+
+        addAcademicYearOption("FY");
+
+        addAcademicYearOption("SY");
+
+        info.textContent =
+            "Jr College courses can use FY or SY.";
+
+    }
+
+
+    /* ========================================================
+       DEGREE COLLEGE
+       ======================================================== */
+
+    else if (category === "Degree College") {
+
+        addAcademicYearOption("FY");
+
+        addAcademicYearOption("SY");
+
+        addAcademicYearOption("TY");
+
+        addAcademicYearOption("4th Year");
+
+        info.textContent =
+            "Degree College courses can use FY, SY, TY or 4th Year.";
+
+    }
+
+
+    /* --------------------------------------------------------
+       SELECT EXISTING VALUE
+       -------------------------------------------------------- */
+
+    if (existingAcademicYear) {
+
+        academicYear.value =
+            existingAcademicYear;
+
+    }
+
+}
+
+
+/* ============================================================
+   ADD ACADEMIC YEAR OPTION
+   ============================================================ */
+
+function addAcademicYearOption(value) {
+
+    const academicYear =
+        document.getElementById(
+            "academic_year"
+        );
+
+    const option =
+        document.createElement("option");
+
+    option.value = value;
+
+    option.textContent = value;
+
+    academicYear.appendChild(option);
+
+}
+
+
+/* ============================================================
+   FORM VALIDATION
+   ============================================================ */
+
+function validateEditCourseForm() {
+
+    const courseName =
+        document.getElementById(
+            "course_name"
+        ).value.trim();
+
+    const category =
+        document.getElementById(
+            "institution_category"
+        ).value;
+
+    const academicYear =
+        document.getElementById(
+            "academic_year"
+        ).value;
+
+    const status =
+        document.getElementById(
+            "status"
+        ).value;
+
+
+    /* --------------------------------------------------------
+       COURSE NAME
+       -------------------------------------------------------- */
+
+    if (!courseName) {
+
+        alert(
+            "Course name is required."
+        );
+
+        return false;
+    }
+
+
+    /* --------------------------------------------------------
+       CATEGORY
+       -------------------------------------------------------- */
+
+    if (
+        category !== "School" &&
+        category !== "Jr College" &&
+        category !== "Degree College"
+    ) {
+
+        alert(
+            "Please select a valid institution category."
+        );
+
+        return false;
+    }
+
+
+    /* --------------------------------------------------------
+       ACADEMIC YEAR
+       -------------------------------------------------------- */
+
+    if (!academicYear) {
+
+        alert(
+            "Please select an academic year."
+        );
+
+        return false;
+    }
+
+
+    /* --------------------------------------------------------
+       CATEGORY + ACADEMIC YEAR
+       -------------------------------------------------------- */
+
+    if (
+        category === "School" &&
+        academicYear !== "Not Applicable"
+    ) {
+
+        alert(
+            "School courses must use " +
+            "'Not Applicable'."
+        );
+
+        return false;
+    }
+
+
+    if (
+        category === "Jr College" &&
+        academicYear !== "FY" &&
+        academicYear !== "SY"
+    ) {
+
+        alert(
+            "Jr College courses must use FY or SY."
+        );
+
+        return false;
+    }
+
+
+    if (
+        category === "Degree College" &&
+        academicYear !== "FY" &&
+        academicYear !== "SY" &&
+        academicYear !== "TY" &&
+        academicYear !== "4th Year"
+    ) {
+
+        alert(
+            "Degree College courses must use " +
+            "FY, SY, TY or 4th Year."
+        );
+
+        return false;
+    }
+
+
+    /* --------------------------------------------------------
+       STATUS
+       -------------------------------------------------------- */
+
+    if (
+        status !== "Active" &&
+        status !== "Inactive"
+    ) {
+
+        alert(
+            "Please select a valid status."
+        );
+
+        return false;
+    }
+
+
+    return true;
+}
+
+
+/* ============================================================
+   INITIALIZE ACADEMIC YEAR DROPDOWN
+   ============================================================ */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        updateAcademicYearOptions();
+
+    }
+);
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,471 @@
+{% extends "admin/admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>Subject Master</h2>
+
+    {% if msg %}
+    <div class="success-message">
+        {{ msg }}
+    </div>
+    {% endif %}
+
+    {% if err %}
+    <div class="error-message">
+        {{ err }}
+    </div>
+    {% endif %}
+
+
+    <!-- ===================================================== -->
+    <!-- ADD SUBJECT -->
+    <!-- ===================================================== -->
+
+    <div class="card">
+
+        <h3>Add Subject</h3>
+
+        <form method="POST"
+              action="{{ url_for('admin.subject_master') }}">
+
+
+            <!-- ================================================= -->
+            <!-- SUBJECT NAME -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="subject_name">
+                    Subject Name
+                </label>
+
+                <input
+                    type="text"
+                    id="subject_name"
+                    name="subject_name"
+                    placeholder="Enter subject name"
+                    required
+                >
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- COURSE -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="course_id">
+                    Course
+                </label>
+
+                <select
+                    id="course_id"
+                    name="course_id"
+                    required
+                    onchange="updateCourseDetails()"
+                >
+
+                    <option value="">
+                        -- Select Course --
+                    </option>
+
+                    {% for course in courses %}
+
+                    <option
+                        value="{{ course.course_id }}"
+                        data-category="{{ course.institution_category }}"
+                        data-academic-year="{{ course.academic_year }}"
+                    >
+                        {{ course.course_name }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- ACADEMIC YEAR -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="academic_year">
+                    Academic Year
+                </label>
+
+                <input
+                    type="text"
+                    id="academic_year"
+                    value=""
+                    placeholder="Automatically selected"
+                    readonly
+                >
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- INSTITUTION CATEGORY -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="institution_category">
+                    Institution Category
+                </label>
+
+                <input
+                    type="text"
+                    id="institution_category"
+                    value=""
+                    placeholder="Automatically selected"
+                    readonly
+                >
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- STATUS -->
+            <!-- ================================================= -->
+
+            <div class="form-group">
+
+                <label for="status">
+                    Status
+                </label>
+
+                <select
+                    id="status"
+                    name="status"
+                    required
+                >
+
+                    <option value="Active">
+                        Active
+                    </option>
+
+                    <option value="Inactive">
+                        Inactive
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- SUBMIT -->
+            <!-- ================================================= -->
+
+            <button
+                type="submit"
+                class="btn"
+            >
+                Add Subject
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- EXISTING SUBJECTS -->
+    <!-- ===================================================== -->
+
+    <div class="card">
+
+        <h3>Existing Subjects</h3>
+
+
+        {% if subjects %}
+
+        <table class="data-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>Subject Name</th>
+
+                    <th>Course</th>
+
+                    <th>Academic Year</th>
+
+                    <th>Institution Category</th>
+
+                    <th>Status</th>
+
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for subject in subjects %}
+
+                <tr>
+
+                    <!-- ID -->
+
+                    <td>
+                        {{ subject.subject_master_id }}
+                    </td>
+
+
+                    <!-- SUBJECT NAME -->
+
+                    <td>
+                        {{ subject.subject_name }}
+                    </td>
+
+
+                    <!-- COURSE -->
+
+                    <td>
+                        {{ subject.course_name }}
+                    </td>
+
+
+                    <!-- ACADEMIC YEAR -->
+
+                    <td>
+                        {{ subject.academic_year }}
+                    </td>
+
+
+                    <!-- INSTITUTION CATEGORY -->
+
+                    <td>
+                        {{ subject.institution_category }}
+                    </td>
+
+
+                    <!-- STATUS -->
+
+                    <td>
+                        {{ subject.status }}
+                    </td>
+
+
+                    <!-- ACTIONS -->
+
+                    <td>
+
+                        <div class="action-buttons">
+
+
+                            <!-- ================================= -->
+                            <!-- EDIT -->
+                            <!-- ================================= -->
+
+                            <a
+                                href="{{ url_for(
+                                    'admin.edit_subject',
+                                    subject_master_id=subject.subject_master_id
+                                ) }}"
+                                class="btn btn-small"
+                            >
+                                Edit
+                            </a>
+
+
+                            <!-- ================================= -->
+                            <!-- ACTIVATE / DEACTIVATE -->
+                            <!-- ================================= -->
+
+                            <form
+                                method="POST"
+                                action="{{ url_for(
+                                    'admin.toggle_subject',
+                                    subject_master_id=subject.subject_master_id
+                                ) }}"
+                                style="display: inline;"
+                            >
+
+                                {% if subject.status == 'Active' %}
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-small"
+                                    onclick="return confirm(
+                                        'Deactivate this subject?'
+                                    );"
+                                >
+                                    Deactivate
+                                </button>
+
+                                {% else %}
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-small"
+                                >
+                                    Activate
+                                </button>
+
+                                {% endif %}
+
+                            </form>
+
+
+                            <!-- ================================= -->
+                            <!-- DELETE -->
+                            <!-- ================================= -->
+
+                            <form
+                                method="POST"
+                                action="{{ url_for(
+                                    'admin.delete_subject',
+                                    subject_master_id=subject.subject_master_id
+                                ) }}"
+                                style="display: inline;"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-small"
+                                    onclick="return confirm(
+                                        'Delete this subject permanently?'
+                                    );"
+                                >
+                                    Delete
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        {% else %}
+
+        <p>
+            No subjects found.
+        </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
+<script>
+
+function updateCourseDetails() {
+
+    const courseSelect =
+        document.getElementById("course_id");
+
+    const academicYear =
+        document.getElementById("academic_year");
+
+    const institutionCategory =
+        document.getElementById("institution_category");
+
+
+    const selectedOption =
+        courseSelect.options[
+            courseSelect.selectedIndex
+        ];
+
+
+    if (
+        !selectedOption ||
+        !selectedOption.value
+    ) {
+
+        academicYear.value = "";
+
+        institutionCategory.value = "";
+
+        return;
+    }
+
+
+    academicYear.value =
+        selectedOption.dataset.academicYear || "";
+
+
+    institutionCategory.value =
+        selectedOption.dataset.category || "";
+
+}
+
+</script>
+
+
+<!-- ========================================================= -->
+<!-- BUTTON SPACING -->
+<!-- ========================================================= -->
+
+<style>
+
+.action-buttons {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    white-space: nowrap;
+
+}
+
+
+.action-buttons form {
+
+    margin: 0;
+
+    padding: 0;
+
+}
+
+
+.action-buttons .btn {
+
+    margin: 0;
+
+}
+
+
+/* Automatically populated fields */
+
+input[readonly] {
+
+    background-color: #f5f5f5;
+
+    cursor: not-allowed;
+
+}
+
+</style>
+
+{% endblock %}

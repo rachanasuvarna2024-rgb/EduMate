@@ -1,0 +1,863 @@
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Class Analytics - EduMate{% endblock %}
+
+{% block portal_title %}Teacher Portal{% endblock %}
+
+{% block content %}
+
+<style>
+
+    .analytics-page {
+        padding: 5px 0 25px;
+    }
+
+    /* ---------------------------------
+       HEADER
+    --------------------------------- */
+
+    .analytics-header {
+        margin-bottom: 18px;
+    }
+
+    .analytics-header h2 {
+        margin: 0;
+        font-size: 25px;
+        color: #222;
+    }
+
+    .analytics-header p {
+        margin: 5px 0 0;
+        color: #777;
+        font-size: 13px;
+    }
+
+
+    /* ---------------------------------
+       TEST FILTER
+    --------------------------------- */
+
+    .test-filter {
+        background: #fff;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        padding: 15px 17px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .filter-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 7px;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .test-select {
+    flex: 1;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 13px;
+    color: #333;
+    outline: none;
+    }
+
+    .test-select:focus {
+        border-color: #999;
+    }
+
+    .view-button {
+        padding: 10px 17px;
+        border: none;
+        border-radius: 8px;
+        background: #333;
+        color: #fff;
+        font-size: 13px;
+        cursor: pointer;
+    }
+
+    .view-button:hover {
+        opacity: 0.9;
+    }
+
+
+    /* ---------------------------------
+       SELECTED TEST INFO
+    --------------------------------- */
+
+    .selected-test {
+        background: #fafafa;
+        border: 1px solid #e8e8e8;
+        border-radius: 10px;
+        padding: 12px 15px;
+        margin-bottom: 17px;
+    }
+
+    .selected-test-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #222;
+    }
+
+    .selected-test-details {
+        margin-top: 4px;
+        font-size: 12px;
+        color: #777;
+    }
+
+
+    /* ---------------------------------
+       OVERVIEW CARDS
+    --------------------------------- */
+
+    .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 17px;
+    }
+
+    .overview-card {
+        background: #fff;
+        border: 1px solid #e7e7e7;
+        border-radius: 11px;
+        padding: 14px 15px;
+        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.035);
+    }
+
+    .overview-label {
+        font-size: 11px;
+        color: #777;
+        margin-bottom: 6px;
+    }
+
+    .overview-value {
+        font-size: 23px;
+        font-weight: 700;
+        color: #222;
+    }
+
+
+    /* ---------------------------------
+       STUDENT HIGHLIGHTS
+    --------------------------------- */
+
+    .highlight-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 17px;
+    }
+
+    .student-highlight {
+        background: #fff;
+        border: 1px solid #e7e7e7;
+        border-radius: 11px;
+        padding: 14px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.035);
+    }
+
+    .highlight-title {
+        font-size: 11px;
+        color: #888;
+        margin-bottom: 4px;
+    }
+
+    .highlight-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: #222;
+    }
+
+    .highlight-tests {
+        margin-top: 3px;
+        font-size: 11px;
+        color: #888;
+    }
+
+    .highlight-score {
+        font-size: 22px;
+        font-weight: 700;
+        color: #333;
+        text-align: right;
+    }
+
+    .highlight-score span {
+        display: block;
+        font-size: 10px;
+        font-weight: 400;
+        color: #888;
+        margin-top: 1px;
+    }
+
+
+    /* ---------------------------------
+       SECTIONS
+    --------------------------------- */
+
+    .analytics-section {
+        background: #fff;
+        border: 1px solid #e7e7e7;
+        border-radius: 11px;
+        padding: 15px;
+        margin-bottom: 17px;
+        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.035);
+    }
+
+    .section-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .section-heading h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #222;
+    }
+
+    .section-heading span {
+        font-size: 11px;
+        color: #888;
+    }
+
+
+    /* ---------------------------------
+       TOPICS
+    --------------------------------- */
+
+    .topic-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 9px;
+    }
+
+    .topic-card {
+        background: #fafafa;
+        border: 1px solid #eeeeee;
+        border-radius: 9px;
+        padding: 11px;
+    }
+
+    .topic-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 6px;
+    }
+
+    .topic-stats {
+        display: flex;
+        gap: 10px;
+        font-size: 11px;
+        color: #777;
+    }
+
+    .topic-badge {
+        display: inline-block;
+        margin-top: 7px;
+        padding: 3px 7px;
+        border-radius: 12px;
+        font-size: 10px;
+        background: #fff3f3;
+        color: #b34b4b;
+    }
+
+
+    /* ---------------------------------
+       TABLE
+    --------------------------------- */
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    .analytics-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .analytics-table th {
+        text-align: left;
+        padding: 9px 10px;
+        background: #f7f7f7;
+        color: #777;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .analytics-table td {
+        padding: 9px 10px;
+        border-top: 1px solid #eeeeee;
+        color: #444;
+        white-space: nowrap;
+    }
+
+    .analytics-table tr:hover {
+        background: #fafafa;
+    }
+
+    .student-name {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .percentage {
+        font-weight: 600;
+    }
+
+
+    /* ---------------------------------
+       EMPTY / INITIAL STATE
+    --------------------------------- */
+
+    .empty-state {
+        text-align: center;
+        padding: 25px 10px;
+        color: #888;
+        font-size: 13px;
+    }
+
+    .initial-state {
+        background: #fff;
+        border: 1px solid #e7e7e7;
+        border-radius: 11px;
+        padding: 35px 20px;
+        text-align: center;
+        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.035);
+    }
+
+    .initial-state h3 {
+        margin: 0 0 7px;
+        font-size: 17px;
+        color: #333;
+    }
+
+    .initial-state p {
+        margin: 0;
+        font-size: 13px;
+        color: #888;
+    }
+
+
+    /* ---------------------------------
+       RESPONSIVE
+    --------------------------------- */
+
+    @media (max-width: 900px) {
+
+        .overview-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .topic-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+    }
+
+
+    @media (max-width: 600px) {
+
+        .overview-grid,
+        .highlight-grid,
+        .topic-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .test-select {
+            max-width: none;
+        }
+
+        .student-highlight {
+            align-items: flex-start;
+        }
+
+    }
+
+</style>
+
+
+<div class="analytics-page">
+
+    <!-- ---------------------------------
+         HEADER
+    --------------------------------- -->
+
+    <div class="analytics-header">
+
+        <h2>Class Analytics</h2>
+
+        <p>
+            View class performance for an individual test.
+        </p>
+
+    </div>
+
+
+    <!-- ---------------------------------
+         TEST FILTER
+    --------------------------------- -->
+
+    <div class="test-filter">
+
+        <form method="GET"
+              action="{{ url_for('teacher.class_analytics') }}">
+
+            <label class="filter-label">
+                Select Test
+            </label>
+
+            <div class="filter-row">
+
+                <select
+                    name="test_id"
+                    class="test-select"
+                    required
+                >
+
+                    <option value="">
+                        -- Select a Test --
+                    </option>
+
+                    {% for test in tests %}
+
+                    <option
+                        value="{{ test.test_id }}"
+                        {% if selected_test_id == test.test_id %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ test.test_name }}
+                        — {{ test.subject_name }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+                <button
+                    type="submit"
+                    class="view-button"
+                >
+                    View Analytics
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    {% if selected_test %}
+
+
+        <!-- ---------------------------------
+             SELECTED TEST
+        --------------------------------- -->
+
+        <div class="selected-test">
+
+            <div class="selected-test-name">
+                {{ selected_test.test_name }}
+            </div>
+
+            <div class="selected-test-details">
+
+                Subject:
+                {{ selected_test.subject_name }}
+
+                &nbsp; • &nbsp;
+
+                Total Marks:
+                {{ selected_test.total_marks }}
+
+            </div>
+
+        </div>
+
+
+        <!-- ---------------------------------
+             OVERVIEW
+        --------------------------------- -->
+
+        <div class="overview-grid">
+
+            <div class="overview-card">
+
+                <div class="overview-label">
+                    Students Attempted
+                </div>
+
+                <div class="overview-value">
+                    {{ overview.total_students or 0 }}
+                </div>
+
+            </div>
+
+
+            <div class="overview-card">
+
+                <div class="overview-label">
+                    Average Score
+                </div>
+
+                <div class="overview-value">
+
+                    {{ overview.average_percentage or 0 }}%
+
+                </div>
+
+            </div>
+
+
+            <div class="overview-card">
+
+                <div class="overview-label">
+                    Highest Score
+                </div>
+
+                <div class="overview-value">
+
+                    {{ overview.highest_percentage or 0 }}%
+
+                </div>
+
+            </div>
+
+
+            <div class="overview-card">
+
+                <div class="overview-label">
+                    Submissions
+                </div>
+
+                <div class="overview-value">
+
+                    {{ overview.tests_completed or 0 }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ---------------------------------
+             BEST / LOWEST STUDENT
+        --------------------------------- -->
+
+        <div class="highlight-grid">
+
+
+            <!-- BEST -->
+
+            <div class="student-highlight">
+
+                <div>
+
+                    <div class="highlight-title">
+                        Highest Performing Student
+                    </div>
+
+                    {% if best_student %}
+
+                        <div class="highlight-name">
+                            {{ best_student.student_name }}
+                        </div>
+
+                        <div class="highlight-tests">
+                            Submitted this test
+                        </div>
+
+                    {% else %}
+
+                        <div class="highlight-name">
+                            No data
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                {% if best_student %}
+
+                    <div class="highlight-score">
+
+                        {{ best_student.average_percentage }}%
+
+                        <span>
+                            Score
+                        </span>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- LOWEST -->
+
+            <div class="student-highlight">
+
+                <div>
+
+                    <div class="highlight-title">
+                        Lowest Performing Student
+                    </div>
+
+                    {% if worst_student %}
+
+                        <div class="highlight-name">
+                            {{ worst_student.student_name }}
+                        </div>
+
+                        <div class="highlight-tests">
+                            Submitted this test
+                        </div>
+
+                    {% else %}
+
+                        <div class="highlight-name">
+                            No data
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                {% if worst_student %}
+
+                    <div class="highlight-score">
+
+                        {{ worst_student.average_percentage }}%
+
+                        <span>
+                            Score
+                        </span>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+
+        </div>
+
+
+        <!-- ---------------------------------
+             TOPICS NEEDING ATTENTION
+        --------------------------------- -->
+
+        <div class="analytics-section">
+
+            <div class="section-heading">
+
+                <h3>
+                    Topics Needing Attention
+                </h3>
+
+                <span>
+                    Based on incorrect answers
+                </span>
+
+            </div>
+
+
+            {% if weak_topics %}
+
+                <div class="topic-grid">
+
+                    {% for topic in weak_topics[:6] %}
+
+                        <div class="topic-card">
+
+                            <div class="topic-name">
+                                {{ topic.chapter_name }}
+                            </div>
+
+                            <div class="topic-stats">
+
+                                <span>
+                                    {{ topic.students_weak }}
+                                    student{% if topic.students_weak != 1 %}s{% endif %}
+                                </span>
+
+                                <span>
+                                    {{ topic.incorrect_answers }}
+                                    incorrect
+                                </span>
+
+                            </div>
+
+                            <div class="topic-badge">
+                                Needs Practice
+                            </div>
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <div class="empty-state">
+                    No topic-level incorrect answer data available for this test.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+
+        <!-- ---------------------------------
+             STUDENT PERFORMANCE
+        --------------------------------- -->
+
+        <div class="analytics-section">
+
+            <div class="section-heading">
+
+                <h3>
+                    Student Performance
+                </h3>
+
+                <span>
+                    {{ student_performance|length }}
+                    student{% if student_performance|length != 1 %}s{% endif %}
+                </span>
+
+            </div>
+
+
+            {% if student_performance %}
+
+                <div class="table-wrapper">
+
+                    <table class="analytics-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Student
+                                </th>
+
+                                <th>
+                                    Email
+                                </th>
+
+                                <th>
+                                    Score
+                                </th>
+
+                                <th>
+                                    Percentage
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% for student in student_performance %}
+
+                                <tr>
+
+                                    <td class="student-name">
+                                        {{ student.student_name }}
+                                    </td>
+
+                                    <td>
+                                        {{ student.email }}
+                                    </td>
+
+                                    <td>
+                                        {{ student.score }}
+                                        / {{ student.total_marks }}
+                                    </td>
+
+                                    <td class="percentage">
+                                        {{ student.average_percentage }}%
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <div class="empty-state">
+                    No students have submitted this test yet.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+
+    {% else %}
+
+
+        <!-- ---------------------------------
+             INITIAL STATE
+        --------------------------------- -->
+
+        <div class="initial-state">
+
+            <h3>
+                Select a test to view analytics
+            </h3>
+
+            <p>
+                Choose a test from the dropdown above to view
+                class performance, student scores and topics
+                needing attention.
+            </p>
+
+        </div>
+
+
+    {% endif %}
+
+
+</div>
+
+{% endblock %}

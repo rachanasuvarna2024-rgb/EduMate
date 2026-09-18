@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Student Portal{% endblock %}
+
+{% block portal_title %}
+
+Student Portal
+
+{% endblock %}
+
+
+{% block sidebar %}
+
+<h3>Assessments</h3>
+
+<a href="{{ url_for('student.available_tests') }}">
+    Available Tests
+</a>
+
+<a href="{{ url_for('student.test_history') }}">
+    Previous Test Results
+</a>
+
+
+<h3>Progress & Analytics</h3>
+
+<a href="{{ url_for('student.my_progress') }}">
+    Learning Progress
+</a>
+
+<a href="#">
+    Personalized Revision Planner
+</a>
+
+<a href="#">
+    Learning Journey Timeline
+</a>
+
+
+<h3>Account</h3>
+
+<a href="{{ url_for('student.student_profile') }}">
+    My Profile
+</a>
+
+<a href="{{ url_for('auth.logout') }}">
+    Logout
+</a>
+
+{% endblock %}

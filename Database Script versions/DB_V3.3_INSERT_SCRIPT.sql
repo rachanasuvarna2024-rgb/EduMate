@@ -1431,46 +1431,14 @@ WHERE i.institution_code = 'BFC001';
 -- ============================================================
 -- 17. PARENTS
 -- ============================================================
+TRUNCATE TABLE parent;
 
 INSERT INTO parent
-(
-    institution_id,
-    parent_name,
-    email,
-    phone,
-    password,
-    status
-)
-SELECT
-    institution_id,
-    'Rohan Sharma',
-    'rohan.parent@sunriseschool.edu',
-    '9876600001',
-    'parent123',
-    'Active'
-FROM institution
-WHERE institution_code = 'SPS001';
-
-
-INSERT INTO parent
-(
-    institution_id,
-    parent_name,
-    email,
-    phone,
-    password,
-    status
-)
-SELECT
-    institution_id,
-    'Aarav Patil',
-    'aarav.parent@brightfuture.edu',
-    '9876600002',
-    'parent123',
-    'Active'
-FROM institution
-WHERE institution_code = 'BFC001';
-
+    (student_id, parent_name, email, phone, password, status)
+VALUES
+    (1, 'Suresh Sharma', 'suresh.parent@sunriseschool.edu', '9876600001', 'parent123', 'Active'),
+    (2, 'Meena Patil', 'meena.parent@brightfuture.edu', '9876600002', 'parent123', 'Active'),
+    (3, 'Rajesh Mehta', 'rajesh.parent@sunriseschool.edu', '9876600003', 'parent123', 'Active');
 
 -- ============================================================
 -- 18. STUDENTS
@@ -1506,6 +1474,40 @@ JOIN standard st
 JOIN parent p
     ON p.institution_id = i.institution_id
    AND p.email = 'rohan.parent@sunriseschool.edu'
+WHERE i.institution_code = 'SPS001';
+
+-- ============================================================
+-- NEW STANDARD X STUDENT - SUNRISE PUBLIC SCHOOL
+-- ============================================================
+
+INSERT INTO student
+(
+    institution_id,
+    standard_id,
+    parent_id,
+    student_name,
+    email,
+    phone,
+    password,
+    status
+)
+SELECT
+    i.institution_id,
+    st.standard_id,
+    p.parent_id,
+    'Neha Mehta',
+    'neha@sunriseschool.edu',
+    '9876700003',
+    'student123',
+    'Active'
+FROM institution i
+JOIN standard st
+    ON st.institution_id = i.institution_id
+   AND st.standard_name = 'X'
+   AND st.academic_year = '2026-27'
+JOIN parent p
+    ON p.institution_id = i.institution_id
+   AND p.email = 'neha.parent@sunriseschool.edu'
 WHERE i.institution_code = 'SPS001';
 
 

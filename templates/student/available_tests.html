@@ -1,0 +1,403 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Available Tests - EduMate{% endblock %}
+
+{% block content %}
+
+<div class="available-tests-page">
+
+    <!-- =========================================
+         PAGE HEADER
+    ========================================== -->
+
+    <div class="page-header">
+
+        <h1>Available Tests</h1>
+
+        <p>
+            View and attempt tests assigned to you.
+        </p>
+
+    </div>
+
+
+    <!-- =========================================
+         TEST LIST
+    ========================================== -->
+
+    {% if tests %}
+
+        <div class="tests-list">
+
+            {% for test in tests %}
+
+            <div class="test-tile">
+
+                <!-- TEST INFORMATION -->
+
+                <div class="test-details">
+
+                    <h2>
+                        {{ test.test_name }}
+                    </h2>
+
+                    {% if test.subject_name %}
+
+                    <p class="subject">
+                        {{ test.subject_name }}
+
+                        {% if test.standard_name %}
+                            <span>|</span>
+                            Standard {{ test.standard_name }}
+                        {% endif %}
+                    </p>
+
+                    {% endif %}
+
+
+                    {% if test.description %}
+
+                    <p class="description">
+                        {{ test.description }}
+                    </p>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- TEST INFO -->
+
+                <div class="test-info">
+
+                    <div class="info-item">
+
+                        <span class="info-label">
+                            Total Marks
+                        </span>
+
+                        <strong>
+                            {{ test.total_marks }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info-item">
+
+                        <span class="info-label">
+                            Duration
+                        </span>
+
+                        <strong>
+                            {{ test.duration_minutes }} min
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ACTION -->
+
+                <div class="test-action">
+
+                    {% if test.attempt_status == 'In Progress' %}
+
+                        <form
+                            action="{{ url_for(
+                                'student.start_test',
+                                test_id=test.test_id
+                            ) }}"
+                            method="GET"
+                        >
+
+                            <button
+                                type="submit"
+                                class="start-test-btn"
+                            >
+                                Continue Test
+                            </button>
+
+                        </form>
+
+                    {% else %}
+
+                        <form
+                            action="{{ url_for(
+                                'student.start_test',
+                                test_id=test.test_id
+                            ) }}"
+                            method="GET"
+                        >
+
+                            <button
+                                type="submit"
+                                class="start-test-btn"
+                            >
+                                Start Test
+                            </button>
+
+                        </form>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <!-- =====================================
+             EMPTY STATE
+        ====================================== -->
+
+        <div class="empty-state">
+
+            <h3>No Tests Available</h3>
+
+            <p>
+                There are currently no tests available for you.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<!-- =============================================
+     PAGE CSS
+============================================= -->
+
+<style>
+
+/* =========================================
+   PAGE
+========================================= */
+
+.available-tests-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+.page-header {
+    margin-bottom: 25px;
+}
+
+.page-header h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+}
+
+.page-header p {
+    margin: 0;
+    color: #666;
+}
+
+
+/* =========================================
+   TEST LIST
+========================================= */
+
+.tests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+
+/* =========================================
+   TEST TILE
+========================================= */
+
+.test-tile {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 22px;
+
+    display: flex;
+    align-items: center;
+    gap: 25px;
+
+    transition: 0.2s;
+}
+
+.test-tile:hover {
+    border-color: #bbb;
+}
+
+
+/* =========================================
+   TEST DETAILS
+========================================= */
+
+.test-details {
+    flex: 1;
+}
+
+.test-details h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+}
+
+.subject {
+    margin: 0 0 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.subject span {
+    margin: 0 5px;
+    color: #999;
+}
+
+.description {
+    margin: 0;
+    color: #777;
+    line-height: 1.5;
+}
+
+
+/* =========================================
+   TEST INFORMATION
+========================================= */
+
+.test-info {
+    display: flex;
+    gap: 25px;
+    min-width: 170px;
+}
+
+.info-item {
+    text-align: center;
+}
+
+.info-label {
+    display: block;
+    font-size: 12px;
+    color: #777;
+    margin-bottom: 5px;
+}
+
+.info-item strong {
+    display: block;
+    font-size: 16px;
+}
+
+
+/* =========================================
+   ACTION
+========================================= */
+
+.test-action {
+    min-width: 145px;
+    text-align: center;
+}
+
+
+/* =========================================
+   START / CONTINUE BUTTON
+========================================= */
+
+.start-test-btn {
+    padding: 10px 18px;
+
+    border: none;
+    border-radius: 6px;
+
+    background: #333;
+    color: white;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.start-test-btn:hover {
+    opacity: 0.85;
+}
+
+
+/* =========================================
+   EMPTY STATE
+========================================= */
+
+.empty-state {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+
+    padding: 40px;
+
+    text-align: center;
+}
+
+.empty-state h3 {
+    margin: 0 0 8px;
+}
+
+.empty-state p {
+    margin: 0;
+    color: #777;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 800px) {
+
+    .test-tile {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .test-info {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .test-action {
+        width: 100%;
+        text-align: left;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .available-tests-page {
+        padding: 15px;
+    }
+
+    .test-tile {
+        padding: 18px;
+    }
+
+    .test-info {
+        gap: 30px;
+    }
+
+}
+
+</style>
+
+{% endblock %}

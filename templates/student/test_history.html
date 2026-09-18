@@ -1,0 +1,279 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Previous Test Results - EduMate{% endblock %}
+
+{% block content %}
+
+<div class="history-page">
+
+    <div class="page-header">
+
+        <h1>Previous Test Results</h1>
+
+        <p>
+            View your previously completed tests and scores.
+        </p>
+
+    </div>
+
+
+    {% if results %}
+
+        <div class="results-list">
+
+            {% for result in results %}
+
+            <div class="result-card">
+
+                <div class="result-main">
+
+                    <h2>
+                        {{ result.test_name }}
+                    </h2>
+
+                    <p class="subject">
+                        {{ result.subject_name }}
+                    </p>
+
+                    <p class="standard">
+                        Standard {{ result.standard_name }}
+                    </p>
+
+                </div>
+
+
+                <div class="result-score">
+
+                    <span class="score-label">
+                        Score
+                    </span>
+
+                    <strong>
+                        {{ result.score }} / {{ result.total_marks }}
+                    </strong>
+
+                    <span class="percentage">
+                        {{ result.percentage }}%
+                    </span>
+
+                </div>
+
+
+                <div class="result-details">
+
+                    <span>
+                        Submitted:
+                        {{ result.submitted_at }}
+                    </span>
+
+                    <span class="submitted-label">
+                        Attempted
+                    </span>
+
+                    <a
+                        href="{{ url_for(
+                            'student.test_result',
+                            attempt_id=result.attempt_id
+                        ) }}"
+                        class="view-result-btn"
+                    >
+                        View Result
+                    </a>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-state">
+
+            <h3>No Previous Results</h3>
+
+            <p>
+                You have not completed any tests yet.
+            </p>
+
+            <a
+                href="{{ url_for('student.available_tests') }}"
+                class="back-btn"
+            >
+                View Available Tests
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<style>
+
+.history-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.page-header {
+    margin-bottom: 25px;
+}
+
+.page-header h1 {
+    margin-bottom: 8px;
+}
+
+.page-header p {
+    color: #666;
+}
+
+
+/* RESULTS */
+
+.result-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 22px;
+    margin-bottom: 16px;
+
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.result-main {
+    flex: 1;
+}
+
+.result-main h2 {
+    margin: 0 0 7px;
+    font-size: 19px;
+}
+
+.subject {
+    margin: 0 0 5px;
+    font-weight: 600;
+}
+
+.standard {
+    margin: 0;
+    color: #777;
+}
+
+
+/* SCORE */
+
+.result-score {
+    text-align: center;
+    min-width: 130px;
+}
+
+.score-label {
+    display: block;
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 4px;
+}
+
+.result-score strong {
+    display: block;
+    font-size: 18px;
+}
+
+.percentage {
+    display: block;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+
+/* DETAILS */
+
+.result-details {
+    min-width: 190px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    align-items: flex-start;
+}
+
+.result-details span {
+    font-size: 13px;
+    color: #777;
+}
+
+
+/* ATTEMPTED LABEL */
+
+.submitted-label {
+    font-weight: 600;
+}
+
+
+/* BUTTON */
+
+.view-result-btn,
+.back-btn {
+    display: inline-block;
+    padding: 9px 16px;
+    background: #333;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.view-result-btn:hover,
+.back-btn:hover {
+    opacity: 0.85;
+}
+
+
+/* EMPTY */
+
+.empty-state {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+}
+
+.empty-state h3 {
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: #777;
+    margin-bottom: 20px;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 800px) {
+
+    .result-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .result-score {
+        text-align: left;
+    }
+
+    .result-details {
+        width: 100%;
+    }
+
+}
+
+</style>
+
+{% endblock %}

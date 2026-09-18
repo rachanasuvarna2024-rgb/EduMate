@@ -1,0 +1,85 @@
+{% extends "admin/admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>View Parents</h2>
+
+    <p>View and manage all parents registered in EduMate.</p>
+
+    {% if parents %}
+
+    <div class="card">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Parent ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Mobile</th>
+                    <th>Action</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for parent in parents %}
+
+                <tr>
+
+                    <td>{{ parent.parent_id }}</td>
+
+                    <td>{{ parent.name }}</td>
+
+                    <td>{{ parent.email }}</td>
+
+                    <td>{{ parent.mobile or '-' }}</td>
+
+                    <td>
+
+                        <a href="{{ url_for('admin.edit_parent', parent_id=parent.parent_id) }}"
+                           class="btn">
+                            Edit
+                        </a>
+
+
+                        <form action="{{ url_for('admin.delete_parent', parent_id=parent.parent_id) }}"
+                              method="POST"
+                              style="display:inline;">
+                            <br/><br/>
+                            <button type="submit"
+                                    onclick="return confirm('Are you sure you want to delete this parent?');">
+                                Delete
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+        <div class="info-box">
+            No parents have been added yet.
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

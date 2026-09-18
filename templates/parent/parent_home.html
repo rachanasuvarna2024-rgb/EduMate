@@ -1,0 +1,40 @@
+{% extends "parent/parent_base.html" %}
+
+{% block title %}EduMate - Parent Dashboard{% endblock %}
+
+{% block portal_title %}
+
+Parent Dashboard
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="container">
+
+    <h2>Welcome Parent</h2>
+
+    {% if parent %}
+
+    <p>
+        Welcome,
+        <strong>{{ parent.parent_name }}</strong>,
+        to your EduMate Parent Portal.
+        You can view your child's test results and
+        track their academic progress.
+    </p>
+
+    {% else %}
+
+    <p>
+        Welcome to your EduMate Parent Portal.
+        You can view your child's test results and
+        track their academic progress.
+    </p>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

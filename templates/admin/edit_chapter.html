@@ -1,0 +1,139 @@
+{% extends "admin/admin_home.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Edit Chapter</h2>
+    <p>Update the chapter details below.</p>
+
+    {% if err %}
+        <div class="alert alert-danger">{{ err }}</div>
+    {% endif %}
+
+    <div class="card form-card">
+        <form method="POST" action="{{ url_for('admin.edit_chapter', chapter_id=chapter.chapter_id) }}" id="editChapterForm" novalidate>
+            
+            <div class="form-group">
+                <label for="subject_id">Subject <span class="required">*</span></label>
+                <select id="subject_id" name="subject_id" required>
+                    <option value="">Select Subject</option>
+                    {% for subject in subjects %}
+                        <option value="{{ subject.subject_id }}" {% if subject.subject_id == chapter.subject_id %}selected{% endif %}>
+                            {{ subject.subject_name }} ({{ subject.standard_name }})
+                        </option>
+                    {% endfor %}
+                </select>
+                <small id="subjectError" class="error"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="chapter_number">Chapter Number</label>
+                <input type="number" 
+                       id="chapter_number" 
+                       name="chapter_number" 
+                       value="{{ chapter.chapter_number if chapter.chapter_number is not none else '' }}" 
+                       placeholder="e.g., 1, 2, 3" 
+                       min="1">
+                <small id="numberError" class="error"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="chapter_name">Chapter Name <span class="required">*</span></label>
+                <input type="text" 
+                       id="chapter_name" 
+                       name="chapter_name" 
+                       value="{{ chapter.chapter_name }}" 
+                       placeholder="e.g., Introduction, Algebra" 
+                       maxlength="200" 
+                       required>
+                <small id="nameError" class="error"></small>
+            </div>
+            
+            <div class="form-actions" style="margin-top: 15px;">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{{ url_for('admin.add_chapter') }}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.error {
+    color: red;
+    display: none;
+    margin-top: 3px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+}
+</style>
+
+<script>
+const form = document.getElementById("editChapterForm");
+const subjectSelect = document.getElementById("subject_id");
+const numberInput = document.getElementById("chapter_number");
+const nameInput = document.getElementById("chapter_name");
+
+const subjectError = document.getElementById("subjectError");
+const numberError = document.getElementById("numberError");
+const nameError = document.getElementById("nameError");
+
+function validateSubject() {
+    if (subjectSelect.value === "") {
+        subjectError.textContent = "Please select a subject.";
+        subjectError.style.display = "block";
+        return false;
+    }
+    subjectError.textContent = "";
+    subjectError.style.display = "none";
+    return true;
+}
+
+function validateChapterNumber() {
+    const val = numberInput.value.trim();
+    if (val !== "" && (isNaN(val) || parseInt(val, 10) <= 0)) {
+        numberError.textContent = "Chapter number must be a positive integer.";
+        numberError.style.display = "block";
+        return false;
+    }
+    numberError.textContent = "";
+    numberError.style.display = "none";
+    return true;
+}
+
+function validateChapterName() {
+    const name = nameInput.value.trim();
+    const pattern = /^[A-Za-z0-9]{1,200}$/;
+
+    if (name === "") {
+        nameError.textContent = "Chapter name is required.";
+        nameError.style.display = "block";
+        return false;
+    }
+
+    if (!pattern.test(name)) {
+        nameError.textContent = "Chapter name must contain only letters and numbers (no spaces or special characters allowed).";
+        nameError.style.display = "block";
+        return false;
+    }
+
+    nameError.textContent = "";
+    nameError.style.display = "none";
+    return true;
+}
+
+subjectSelect.addEventListener("change", validateSubject);
+numberInput.addEventListener("input", validateChapterNumber);
+nameInput.addEventListener("input", validateChapterName);
+
+form.addEventListener("submit", function(event) {
+    const isSubjectValid = validateSubject();
+    const isNumberValid = validateChapterNumber();
+    const isNameValid = validateChapterName();
+
+    if (!isSubjectValid || !isNumberValid || !isNameValid) {
+        event.preventDefault();
+    }
+});
+</script>
+{% endblock %}

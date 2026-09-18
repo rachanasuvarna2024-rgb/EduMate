@@ -1,0 +1,507 @@
+{% extends "admin/admin_home.html" %}
+
+{% block content %}
+
+<div class="container">
+
+<h2>Manage Institution</h2>
+
+{% if msg %}
+<div class="success-message">
+    {{ msg }}
+</div>
+{% endif %}
+
+{% if err %}
+<div class="error-message">
+    {{ err }}
+</div>
+{% endif %}
+
+
+<!-- ===================================================== -->
+<!-- INSTITUTION DETAILS -->
+<!-- ===================================================== -->
+
+<div class="card">
+
+    <h3>Institution Details</h3>
+
+
+    <!-- ================================================= -->
+    <!-- SELECT INSTITUTION -->
+    <!-- ================================================= -->
+
+    <div class="form-group">
+
+        <label for="institution_id">
+            Select Institution
+        </label>
+
+        <select
+            id="institution_id"
+            name="institution_id"
+            onchange="institutionChanged()"
+        >
+
+            <option value="">
+                -- Select Institution --
+            </option>
+
+            {% for institution in institutions %}
+
+            <option
+                value="{{ institution.institution_id }}"
+                data-category="{{ institution.institution_category }}"
+                {% if selected_institution_id|string
+                      == institution.institution_id|string %}
+                    selected
+                {% endif %}
+            >
+                {{ institution.institution_name }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- INSTITUTION CATEGORY -->
+    <!-- ================================================= -->
+
+    <div class="form-group">
+
+        <label for="institution_category">
+            Institution Category
+        </label>
+
+        <select
+            id="institution_category"
+            disabled
+        >
+
+            <option value="">
+                -- Select Category --
+            </option>
+
+            <option value="School">
+                School
+            </option>
+
+            <option value="Jr College">
+                Jr College
+            </option>
+
+            <option value="Degree College">
+                Degree College
+            </option>
+
+        </select>
+
+    </div>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- ASSIGN MASTER DATA -->
+<!-- ===================================================== -->
+
+{% if selected_institution_id %}
+
+<form method="POST">
+
+    <!-- Institution ID -->
+
+    <input
+        type="hidden"
+        name="institution_id"
+        value="{{ selected_institution_id }}"
+    >
+
+
+    <!-- ================================================= -->
+    <!-- COURSES -->
+    <!-- ================================================= -->
+
+    <div class="card">
+
+        <h3>Courses</h3>
+
+        <p class="help-text">
+            Select the courses offered by this institution.
+        </p>
+
+        <div class="checkbox-container">
+
+            {% if courses %}
+
+                {% for course in courses %}
+
+                <label class="checkbox-item">
+
+                    <input
+                        type="checkbox"
+                        name="courses"
+                        value="{{ course.course_id }}"
+
+                        {% if course.course_id|string in selected_courses %}
+                            checked
+                        {% endif %}
+                    >
+
+                    {{ course.course_name }}
+
+                </label>
+
+                {% endfor %}
+
+            {% else %}
+
+                <p class="empty-message">
+                    No courses available for this institution category.
+                </p>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- DEPARTMENTS -->
+    <!-- ================================================= -->
+
+    <div class="card">
+
+        <h3>Departments</h3>
+
+        <p class="help-text">
+            Select the departments available in this institution.
+        </p>
+
+        <div class="checkbox-container">
+
+            {% if departments %}
+
+                {% for department in departments %}
+
+                <label class="checkbox-item">
+
+                    <input
+                        type="checkbox"
+                        name="departments"
+                        value="{{ department.department_id }}"
+
+                        {% if department.department_id|string in selected_departments %}
+                            checked
+                        {% endif %}
+                    >
+
+                    {{ department.department_name }}
+
+                </label>
+
+                {% endfor %}
+
+            {% else %}
+
+                <p class="empty-message">
+                    No departments available for this institution category.
+                </p>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- DESIGNATIONS -->
+    <!-- ================================================= -->
+
+    <div class="card">
+
+        <h3>Designations</h3>
+
+        <p class="help-text">
+            Select the designations applicable to this institution.
+        </p>
+
+        <div class="checkbox-container">
+
+            {% if designations %}
+
+                {% for designation in designations %}
+
+                <label class="checkbox-item">
+
+                    <input
+                        type="checkbox"
+                        name="designations"
+                        value="{{ designation.designation_id }}"
+
+                        {% if designation.designation_id|string in selected_designations %}
+                            checked
+                        {% endif %}
+                    >
+
+                    {{ designation.designation_name }}
+
+                </label>
+
+                {% endfor %}
+
+            {% else %}
+
+                <p class="empty-message">
+                    No designations available for this institution category.
+                </p>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- SAVE -->
+    <!-- ================================================= -->
+
+    <div class="form-actions">
+
+        <button
+            type="submit"
+            class="btn btn-primary"
+        >
+            Save Assignments
+        </button>
+
+    </div>
+
+</form>
+
+{% endif %}
+
+
+</div>
+
+<!-- ========================================================= -->
+
+<!-- JAVASCRIPT -->
+
+<!-- ========================================================= -->
+
+<script>
+
+/*
+ * Set the Institution Category based directly on
+ * the selected institution.
+ *
+ * The category is already present in the institutions
+ * returned from the database.
+ */
+
+function setInstitutionCategory() {
+
+    const institutionSelect =
+        document.getElementById("institution_id");
+
+    const categorySelect =
+        document.getElementById("institution_category");
+
+    const selectedOption =
+        institutionSelect.options[
+            institutionSelect.selectedIndex
+        ];
+
+
+    /*
+     * No institution selected
+     */
+
+    if (
+        !selectedOption ||
+        !selectedOption.value
+    ) {
+
+        categorySelect.value = "";
+
+        return;
+    }
+
+
+    /*
+     * Get category from data-category
+     */
+
+    const category =
+        selectedOption.getAttribute("data-category");
+
+
+    /*
+     * Set category dropdown
+     */
+
+    if (category) {
+
+        categorySelect.value = category;
+
+    } else {
+
+        categorySelect.value = "";
+
+    }
+}
+
+
+/*
+ * When institution is selected:
+ *
+ * 1. Show its category immediately.
+ * 2. Reload the page.
+ * 3. Flask loads courses/departments/designations
+ *    according to that institution's category.
+ */
+
+function institutionChanged() {
+
+    const institutionSelect =
+        document.getElementById("institution_id");
+
+    const institutionId =
+        institutionSelect.value;
+
+
+    /*
+     * Update category immediately
+     */
+
+    setInstitutionCategory();
+
+
+    /*
+     * If nothing selected, go back to
+     * manage institution page.
+     */
+
+    if (!institutionId) {
+
+        window.location.href =
+            "{{ url_for('admin.manage_institution') }}";
+
+        return;
+    }
+
+
+    /*
+     * Reload page with selected institution.
+     */
+
+    window.location.href =
+        "{{ url_for('admin.manage_institution') }}"
+        + "?institution_id="
+        + encodeURIComponent(institutionId);
+}
+
+
+/*
+ * Run when the page loads.
+ *
+ * This is important because after Flask reloads
+ * the page with ?institution_id=2, the institution
+ * is already selected and we need to display its
+ * category automatically.
+ */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        setInstitutionCategory();
+
+    }
+);
+
+</script>
+
+<!-- ========================================================= -->
+
+<!-- CSS -->
+
+<!-- ========================================================= -->
+
+<style>
+
+.card {
+    background: #ffffff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 7px;
+}
+
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #ffffff;
+}
+
+.form-group select:disabled {
+    background: #f5f5f5;
+    color: #333;
+    cursor: not-allowed;
+}
+
+.checkbox-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.checkbox-item {
+    display: block;
+    padding: 8px;
+    cursor: pointer;
+}
+
+.checkbox-item input {
+    margin-right: 8px;
+}
+
+.help-text {
+    color: #666;
+    font-size: 14px;
+}
+
+.empty-message {
+    color: #777;
+    font-style: italic;
+}
+
+.form-actions {
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+</style>
+
+{% endblock %}
