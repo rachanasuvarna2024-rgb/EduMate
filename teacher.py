@@ -28,6 +28,54 @@ teacher_bp = Blueprint(
 
 
 # ============================================================
+# TEACHER TEMPLATE CONTEXT
+# ============================================================
+# Makes the logged-in teacher's institution type available
+# to teacher_base.html on every Teacher page.
+# Traditional -> CO Attainment Report is hidden
+# OBE         -> CO Attainment Report is shown
+# ============================================================
+
+@teacher_bp.app_context_processor
+def inject_teacher_institution_type():
+
+    teacher_id = session.get("user_id")
+    institution_type = None
+    conn = None
+    cursor = None
+
+    if teacher_id:
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            cursor.execute("""
+                SELECT i.institution_type
+                FROM teacher t
+                JOIN institution i ON i.institution_id = t.institution_id
+                WHERE t.teacher_id = %s
+            """, (teacher_id,))
+
+            teacher_info = cursor.fetchone()
+
+            if teacher_info:
+                institution_type = teacher_info["institution_type"]
+
+        except Exception as e:
+            print("\n========== TEACHER INSTITUTION TYPE ERROR ==========")
+            print(e)
+            print("=====================================================\n")
+
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+
+    return {"institution_type": institution_type}
+
+
+# ============================================================
 # TEACHER DASHBOARD
 # ============================================================
 
@@ -39,11 +87,10 @@ def teacher_home():
         "teacher/teacher_home.html"
     )
 
-# ============================================================
+
 # ============================================================
 # QUESTION BANK
 # ============================================================
-# ===========================================================
 
 # ============================================================
 # ADD QUESTION
@@ -97,6 +144,7 @@ def add_question():
         SELECT
             s.subject_id,
             s.subject_name,
+            s.assessment_type,
             st.standard_name
         FROM teacher_subject ts
         JOIN subject s
@@ -105,7 +153,9 @@ def add_question():
             ON st.standard_id = s.standard_id
         WHERE ts.teacher_id = %s
           AND s.status = 'Active'
-        ORDER BY st.standard_name, s.subject_name
+        ORDER BY
+            st.standard_name,
+            s.subject_name
     """, (teacher_id,))
 
     subjects = cursor.fetchall()
@@ -113,6 +163,8 @@ def add_question():
 
     # -------------------------------------------------
     # CHAPTERS
+    #
+    # ONLY NEEDED FOR TRADITIONAL SUBJECTS
     # -------------------------------------------------
 
     cursor.execute("""
@@ -124,8 +176,11 @@ def add_question():
         FROM chapter c
         JOIN teacher_subject ts
             ON ts.subject_id = c.subject_id
+        JOIN subject s
+            ON s.subject_id = c.subject_id
         WHERE ts.teacher_id = %s
           AND c.status = 'Active'
+          AND s.assessment_type = 'Traditional'
         ORDER BY
             c.subject_id,
             c.chapter_number,
@@ -137,7 +192,8 @@ def add_question():
 
     # -------------------------------------------------
     # COURSE OUTCOMES
-    # ONLY FETCH THEM FOR OBE INSTITUTIONS
+    #
+    # ONLY NEEDED FOR OBE SUBJECTS
     # -------------------------------------------------
 
     course_outcomes = []
@@ -153,7 +209,10 @@ def add_question():
             FROM course_outcome co
             JOIN teacher_subject ts
                 ON ts.subject_id = co.subject_id
+            JOIN subject s
+                ON s.subject_id = co.subject_id
             WHERE ts.teacher_id = %s
+              AND s.assessment_type = 'OBE'
             ORDER BY
                 co.subject_id,
                 co.co_code
@@ -169,10 +228,6 @@ def add_question():
     if request.method == "POST":
 
         subject_id = request.form.get("subject_id")
-        chapter_id = request.form.get("chapter_id")
-
-        # CO is accepted ONLY for OBE
-        co_id = request.form.get("co_id") if institution_type == "OBE" else None
 
         question_text = request.form.get(
             "question_text",
@@ -212,6 +267,46 @@ def add_question():
         )
 
         is_pyq = True if request.form.get("is_pyq") == "1" else False
+
+
+        # -------------------------------------------------
+        # GET SUBJECT ASSESSMENT TYPE
+        # -------------------------------------------------
+
+        subject_assessment_type = None
+
+        if subject_id:
+
+            cursor.execute("""
+                SELECT assessment_type
+                FROM subject
+                WHERE subject_id = %s
+                  AND status = 'Active'
+            """, (subject_id,))
+
+            subject_info = cursor.fetchone()
+
+            if subject_info:
+                subject_assessment_type = subject_info["assessment_type"]
+
+
+        # -------------------------------------------------
+        # CHAPTER / CO
+        #
+        # Traditional -> chapter_id
+        # OBE         -> co_id
+        # -------------------------------------------------
+
+        chapter_id = None
+        co_id = None
+
+        if subject_assessment_type == "Traditional":
+
+            chapter_id = request.form.get("chapter_id") or None
+
+        elif subject_assessment_type == "OBE":
+
+            co_id = request.form.get("co_id") or None
 
 
         # -------------------------------------------------
@@ -368,10 +463,62 @@ def add_question():
 
 
         # -------------------------------------------------
-        # CHAPTER VALIDATION
+        # VERIFY SUBJECT ASSESSMENT TYPE
         # -------------------------------------------------
 
-        if chapter_id:
+        cursor.execute("""
+            SELECT assessment_type
+            FROM subject
+            WHERE subject_id = %s
+              AND status = 'Active'
+        """, (subject_id,))
+
+        subject_info = cursor.fetchone()
+
+        if not subject_info:
+
+            flash(
+                "Selected subject was not found.",
+                "error"
+            )
+
+            cursor.close()
+            conn.close()
+
+            return render_template(
+                "teacher/add_question.html",
+                subjects=subjects,
+                chapters=chapters,
+                course_outcomes=course_outcomes,
+                institution_type=institution_type
+            )
+
+        subject_assessment_type = subject_info["assessment_type"]
+
+
+        # -------------------------------------------------
+        # TRADITIONAL -> CHAPTER VALIDATION
+        # -------------------------------------------------
+
+        if subject_assessment_type == "Traditional":
+
+            if not chapter_id:
+
+                flash(
+                    "Please select a chapter.",
+                    "error"
+                )
+
+                cursor.close()
+                conn.close()
+
+                return render_template(
+                    "teacher/add_question.html",
+                    subjects=subjects,
+                    chapters=chapters,
+                    course_outcomes=course_outcomes,
+                    institution_type=institution_type
+                )
 
             cursor.execute("""
                 SELECT chapter_id
@@ -404,13 +551,33 @@ def add_question():
                     institution_type=institution_type
                 )
 
+            # Traditional questions must not have a CO
+            co_id = None
+
 
         # -------------------------------------------------
-        # CO VALIDATION
-        # ONLY FOR OBE
+        # OBE -> COURSE OUTCOME VALIDATION
         # -------------------------------------------------
 
-        if institution_type == "OBE" and co_id:
+        elif subject_assessment_type == "OBE":
+
+            if not co_id:
+
+                flash(
+                    "Please select a Course Outcome.",
+                    "error"
+                )
+
+                cursor.close()
+                conn.close()
+
+                return render_template(
+                    "teacher/add_question.html",
+                    subjects=subjects,
+                    chapters=chapters,
+                    course_outcomes=course_outcomes,
+                    institution_type=institution_type
+                )
 
             cursor.execute("""
                 SELECT co_id
@@ -441,6 +608,32 @@ def add_question():
                     course_outcomes=course_outcomes,
                     institution_type=institution_type
                 )
+
+            # OBE questions must not have a chapter
+            chapter_id = None
+
+
+        # -------------------------------------------------
+        # INVALID ASSESSMENT TYPE
+        # -------------------------------------------------
+
+        else:
+
+            flash(
+                "Invalid assessment type for the selected subject.",
+                "error"
+            )
+
+            cursor.close()
+            conn.close()
+
+            return render_template(
+                "teacher/add_question.html",
+                subjects=subjects,
+                chapters=chapters,
+                course_outcomes=course_outcomes,
+                institution_type=institution_type
+            )
 
 
         # -------------------------------------------------
@@ -487,7 +680,6 @@ def add_question():
 
         # -------------------------------------------------
         # INSERT QUESTION
-        # QUESTION TYPE IS ALWAYS MCQ FOR NOW
         # -------------------------------------------------
 
         cursor.execute("""
@@ -518,7 +710,7 @@ def add_question():
             )
         """, (
             subject_id,
-            chapter_id if chapter_id else None,
+            chapter_id,
             co_id,
             question_text,
             image_filename,
@@ -754,6 +946,7 @@ def edit_question(question_id):
             SELECT
                 s.subject_id,
                 s.subject_name,
+                s.assessment_type,
                 st.standard_name
             FROM teacher_subject ts
             JOIN subject s
@@ -762,7 +955,9 @@ def edit_question(question_id):
                 ON st.standard_id = s.standard_id
             WHERE ts.teacher_id = %s
               AND s.status = 'Active'
-            ORDER BY st.standard_name, s.subject_name
+            ORDER BY
+                st.standard_name,
+                s.subject_name
         """, (teacher_id,))
 
         subjects = cursor.fetchall()
@@ -781,8 +976,11 @@ def edit_question(question_id):
             FROM chapter c
             JOIN teacher_subject ts
                 ON ts.subject_id = c.subject_id
+            JOIN subject s
+                ON s.subject_id = c.subject_id
             WHERE ts.teacher_id = %s
               AND c.status = 'Active'
+              AND s.assessment_type = 'Traditional'
             ORDER BY
                 c.subject_id,
                 c.chapter_number
@@ -792,7 +990,7 @@ def edit_question(question_id):
 
 
         # ====================================================
-        # GET COURSE OUTCOMES - OBE ONLY
+        # GET COURSE OUTCOMES
         # ====================================================
 
         course_outcomes = []
@@ -808,8 +1006,13 @@ def edit_question(question_id):
                 FROM course_outcome co
                 JOIN teacher_subject ts
                     ON ts.subject_id = co.subject_id
+                JOIN subject s
+                    ON s.subject_id = co.subject_id
                 WHERE ts.teacher_id = %s
-                ORDER BY co.subject_id, co.co_code
+                  AND s.assessment_type = 'OBE'
+                ORDER BY
+                    co.subject_id,
+                    co.co_code
             """, (teacher_id,))
 
             course_outcomes = cursor.fetchall()
@@ -823,42 +1026,93 @@ def edit_question(question_id):
 
             subject_id = request.form.get("subject_id")
 
-            chapter_id = request.form.get("chapter_id")
-
             question_text = request.form.get(
-                "question_text"
-            )
+                "question_text",
+                ""
+            ).strip()
 
-            option_a = request.form.get("option_a")
+            option_a = request.form.get(
+                "option_a",
+                ""
+            ).strip()
 
-            option_b = request.form.get("option_b")
+            option_b = request.form.get(
+                "option_b",
+                ""
+            ).strip()
 
-            option_c = request.form.get("option_c")
+            option_c = request.form.get(
+                "option_c",
+                ""
+            ).strip()
 
-            option_d = request.form.get("option_d")
+            option_d = request.form.get(
+                "option_d",
+                ""
+            ).strip()
 
             correct_answer = request.form.get(
                 "correct_answer"
             )
 
-            difficulty = request.form.get("difficulty")
+            difficulty = request.form.get(
+                "difficulty"
+            )
 
-            marks = request.form.get("marks")
+            marks = request.form.get(
+                "marks"
+            )
 
-            is_pyq = 1 if request.form.get("is_pyq") else 0
+            is_pyq = (
+                1
+                if request.form.get("is_pyq")
+                else 0
+            )
 
 
             # =================================================
-            # CO
+            # GET SUBJECT ASSESSMENT TYPE
             # =================================================
 
-            if institution_type == "OBE":
+            subject_assessment_type = None
 
-                co_id = request.form.get("co_id") or None
+            if subject_id:
 
-            else:
+                cursor.execute("""
+                    SELECT assessment_type
+                    FROM subject
+                    WHERE subject_id = %s
+                      AND status = 'Active'
+                """, (subject_id,))
 
-                co_id = None
+                subject_info = cursor.fetchone()
+
+                if subject_info:
+                    subject_assessment_type = (
+                        subject_info["assessment_type"]
+                    )
+
+
+            # =================================================
+            # CHAPTER / CO
+            # =================================================
+
+            chapter_id = None
+            co_id = None
+
+            if subject_assessment_type == "Traditional":
+
+                chapter_id = (
+                    request.form.get("chapter_id")
+                    or None
+                )
+
+            elif subject_assessment_type == "OBE":
+
+                co_id = (
+                    request.form.get("co_id")
+                    or None
+                )
 
 
             # =================================================
@@ -878,7 +1132,7 @@ def edit_question(question_id):
                 )
 
 
-            if not chapter_id:
+            if not subject_assessment_type:
 
                 return render_template(
                     "teacher/edit_question.html",
@@ -887,7 +1141,7 @@ def edit_question(question_id):
                     chapters=chapters,
                     course_outcomes=course_outcomes,
                     institution_type=institution_type,
-                    error="Please select a chapter."
+                    error="Unable to determine the assessment type for the selected subject."
                 )
 
 
@@ -961,41 +1215,72 @@ def edit_question(question_id):
 
 
             # =================================================
-            # CHECK CHAPTER BELONGS TO SUBJECT
+            # TRADITIONAL SUBJECT
             # =================================================
 
-            cursor.execute("""
-                SELECT chapter_id
-                FROM chapter
-                WHERE chapter_id = %s
-                  AND subject_id = %s
-                  AND status = 'Active'
-            """, (
-                chapter_id,
-                subject_id
-            ))
+            if subject_assessment_type == "Traditional":
 
-            valid_chapter = cursor.fetchone()
+                if not chapter_id:
+
+                    return render_template(
+                        "teacher/edit_question.html",
+                        question=question,
+                        subjects=subjects,
+                        chapters=chapters,
+                        course_outcomes=course_outcomes,
+                        institution_type=institution_type,
+                        error="Please select a chapter."
+                    )
 
 
-            if not valid_chapter:
+                cursor.execute("""
+                    SELECT chapter_id
+                    FROM chapter
+                    WHERE chapter_id = %s
+                      AND subject_id = %s
+                      AND status = 'Active'
+                """, (
+                    chapter_id,
+                    subject_id
+                ))
 
-                return render_template(
-                    "teacher/edit_question.html",
-                    question=question,
-                    subjects=subjects,
-                    chapters=chapters,
-                    course_outcomes=course_outcomes,
-                    institution_type=institution_type,
-                    error="Invalid chapter selected."
-                )
+                valid_chapter = cursor.fetchone()
+
+
+                if not valid_chapter:
+
+                    return render_template(
+                        "teacher/edit_question.html",
+                        question=question,
+                        subjects=subjects,
+                        chapters=chapters,
+                        course_outcomes=course_outcomes,
+                        institution_type=institution_type,
+                        error="Invalid chapter selected."
+                    )
+
+
+                co_id = None
 
 
             # =================================================
-            # CHECK CO FOR OBE
+            # OBE SUBJECT
             # =================================================
 
-            if institution_type == "OBE" and co_id:
+            elif subject_assessment_type == "OBE":
+
+                if not co_id:
+
+                    return render_template(
+                        "teacher/edit_question.html",
+                        question=question,
+                        subjects=subjects,
+                        chapters=chapters,
+                        course_outcomes=course_outcomes,
+                        institution_type=institution_type,
+                        error="Please select a Course Outcome."
+                    )
+
 
                 cursor.execute("""
                     SELECT co_id
@@ -1023,13 +1308,18 @@ def edit_question(question_id):
                     )
 
 
+                chapter_id = None
+
+
             # =================================================
             # IMAGE HANDLING
             # =================================================
 
             image_filename = question["question_image"]
 
-            remove_image = request.form.get("remove_image")
+            remove_image = request.form.get(
+                "remove_image"
+            )
 
             question_image = request.files.get(
                 "question_image"
@@ -1087,6 +1377,7 @@ def edit_question(question_id):
                     "uploads",
                     "questions"
                 )
+
 
                 os.makedirs(
                     upload_folder,
@@ -1203,6 +1494,7 @@ def edit_question(question_id):
                 "success"
             )
 
+
             return redirect(
                 url_for("teacher.view_questions")
             )
@@ -1275,10 +1567,8 @@ def delete_question(question_id):
                 q.question_id,
                 q.question_image
             FROM question q
-
             JOIN teacher_subject ts
                 ON ts.subject_id = q.subject_id
-
             WHERE q.question_id = %s
               AND ts.teacher_id = %s
         """, (
@@ -1431,6 +1721,7 @@ def create_test():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
+
     # --------------------------------------------------------
     # GET SUBJECTS ASSIGNED TO LOGGED-IN TEACHER
     # --------------------------------------------------------
@@ -1485,6 +1776,7 @@ def create_test():
         # ----------------------------------------------------
 
         if not subject_id:
+
             flash(
                 "Please select a subject.",
                 "error"
@@ -1500,6 +1792,7 @@ def create_test():
 
 
         if not test_name:
+
             flash(
                 "Please enter a test name.",
                 "error"
@@ -1515,6 +1808,7 @@ def create_test():
 
 
         if not total_marks:
+
             flash(
                 "Please enter total marks.",
                 "error"
@@ -1530,6 +1824,7 @@ def create_test():
 
 
         if not duration_minutes:
+
             flash(
                 "Please enter test duration.",
                 "error"
@@ -1562,6 +1857,7 @@ def create_test():
         )
 
         assigned_subject = cursor.fetchone()
+
 
         if not assigned_subject:
 
@@ -1622,9 +1918,11 @@ def create_test():
             )
         )
 
+
         conn.commit()
 
         test_id = cursor.lastrowid
+
 
         cursor.close()
         conn.close()
@@ -1638,6 +1936,7 @@ def create_test():
             "Test created successfully. You can now add questions.",
             "success"
         )
+
 
         return redirect(
             url_for(
@@ -1653,10 +1952,12 @@ def create_test():
     cursor.close()
     conn.close()
 
+
     return render_template(
         "teacher/create_test.html",
         subjects=subjects
     )
+
 
 # ============================================================
 # VIEW / MANAGE TESTS
@@ -1680,6 +1981,7 @@ def view_tests():
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
+
 
     # --------------------------------------------------------
     # GET TESTS CREATED BY LOGGED-IN TEACHER
@@ -1724,6 +2026,7 @@ def view_tests():
         "teacher/view_tests.html",
         tests=tests
     )
+
 
 # ============================================================
 # EDIT TEST
@@ -1956,6 +2259,7 @@ def edit_test(test_id):
 
             assigned_subject = cursor.fetchone()
 
+
             if not assigned_subject:
 
                 flash(
@@ -2005,8 +2309,6 @@ def edit_test(test_id):
             # IF SUBJECT CHANGED:
             #
             # REMOVE QUESTIONS CURRENTLY ATTACHED TO TEST
-            #
-            # Because those questions belong to the old subject.
             # ------------------------------------------------
 
             if subject_changed:
@@ -2185,6 +2487,7 @@ def manage_questions(test_id):
             conn.close()
             return redirect(url_for("teacher.view_tests"))
 
+
         # -------------------------------------------------
         # ADD SELECTED QUESTIONS TO TEST
         # -------------------------------------------------
@@ -2198,10 +2501,15 @@ def manage_questions(test_id):
                 cursor.close()
                 conn.close()
                 return redirect(
-                    url_for("teacher.manage_questions", test_id=test_id)
+                    url_for(
+                        "teacher.manage_questions",
+                        test_id=test_id
+                    )
                 )
 
+
             # Get current last question order
+
             cursor.execute("""
                 SELECT COALESCE(MAX(question_order), 0) AS max_order
                 FROM test_question
@@ -2209,6 +2517,7 @@ def manage_questions(test_id):
             """, (test_id,))
 
             max_order = cursor.fetchone()["max_order"]
+
 
             for question_id in question_ids:
 
@@ -2237,6 +2546,7 @@ def manage_questions(test_id):
                 if not valid_question:
                     continue
 
+
                 # -------------------------------------------------
                 # CHECK IF ALREADY ADDED
                 # -------------------------------------------------
@@ -2246,12 +2556,16 @@ def manage_questions(test_id):
                     FROM test_question
                     WHERE test_id = %s
                       AND question_id = %s
-                """, (test_id, question_id))
+                """, (
+                    test_id,
+                    question_id
+                ))
 
                 already_added = cursor.fetchone()
 
                 if already_added:
                     continue
+
 
                 # -------------------------------------------------
                 # ADD QUESTION
@@ -2273,19 +2587,26 @@ def manage_questions(test_id):
                     max_order
                 ))
 
+
             conn.commit()
+
 
             flash(
                 "Selected questions added to the test successfully.",
                 "success"
             )
 
+
             cursor.close()
             conn.close()
 
             return redirect(
-                url_for("teacher.manage_questions", test_id=test_id)
+                url_for(
+                    "teacher.manage_questions",
+                    test_id=test_id
+                )
             )
+
 
         # -------------------------------------------------
         # QUESTIONS ALREADY ADDED TO TEST
@@ -2316,14 +2637,9 @@ def manage_questions(test_id):
 
         selected_questions = cursor.fetchall()
 
+
         # -------------------------------------------------
         # AVAILABLE QUESTIONS FROM QUESTION BANK
-        #
-        # ONLY:
-        # SAME STANDARD
-        # SAME SUBJECT
-        # ACTIVE QUESTIONS
-        # NOT ALREADY IN TEST
         # -------------------------------------------------
 
         cursor.execute("""
@@ -2370,8 +2686,10 @@ def manage_questions(test_id):
 
         available_questions = cursor.fetchall()
 
+
         cursor.close()
         conn.close()
+
 
         return render_template(
             "teacher/manage_questions.html",
@@ -2380,130 +2698,6 @@ def manage_questions(test_id):
             available_questions=available_questions
         )
 
-    except Exception as e:
-
-        try:
-            conn.rollback()
-        except Exception:
-            pass
-
-        try:
-            cursor.close()
-        except Exception:
-            pass
-
-        try:
-            conn.close()
-        except Exception:
-            pass
-
-        flash(f"Database error: {str(e)}", "error")
-
-        return redirect(
-            url_for("teacher.view_tests")
-        )
-
-# ============================================================
-# REMOVE QUESTION FROM TEST
-# ============================================================
-
-@teacher_bp.route(
-    "/remove_question_from_test/<int:test_id>/<int:test_question_id>",
-    methods=["POST"]
-)
-@role_required("Teacher")
-def remove_question_from_test(test_id, test_question_id):
-
-    teacher_id = session.get("user_id")
-
-    if not teacher_id:
-        flash("Teacher session not found.", "error")
-        return redirect(url_for("auth.login"))
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    try:
-
-        # -------------------------------------------------
-        # VERIFY TEST BELONGS TO LOGGED-IN TEACHER
-        # -------------------------------------------------
-
-        cursor.execute("""
-            SELECT test_id
-            FROM test
-            WHERE test_id = %s
-              AND teacher_id = %s
-        """, (test_id, teacher_id))
-
-        test = cursor.fetchone()
-
-        if not test:
-            flash(
-                "Test not found or you are not authorized to manage it.",
-                "error"
-            )
-
-            cursor.close()
-            conn.close()
-
-            return redirect(url_for("teacher.view_tests"))
-
-        # -------------------------------------------------
-        # VERIFY QUESTION EXISTS IN THIS TEST
-        # -------------------------------------------------
-
-        cursor.execute("""
-            SELECT test_question_id
-            FROM test_question
-            WHERE test_question_id = %s
-              AND test_id = %s
-        """, (test_question_id, test_id))
-
-        test_question = cursor.fetchone()
-
-        if not test_question:
-            flash(
-                "Question not found in this test.",
-                "error"
-            )
-
-            cursor.close()
-            conn.close()
-
-            return redirect(
-                url_for(
-                    "teacher.manage_questions",
-                    test_id=test_id
-                )
-            )
-
-        # -------------------------------------------------
-        # REMOVE QUESTION
-        # -------------------------------------------------
-
-        cursor.execute("""
-            DELETE FROM test_question
-            WHERE test_question_id = %s
-              AND test_id = %s
-        """, (test_question_id, test_id))
-
-        conn.commit()
-
-        flash(
-            "Question removed from the test successfully.",
-            "success"
-        )
-
-        cursor.close()
-        conn.close()
-
-        return redirect(
-            url_for(
-                "teacher.manage_questions",
-                test_id=test_id
-            )
-        )
 
     except Exception as e:
 
@@ -2528,11 +2722,166 @@ def remove_question_from_test(test_id, test_question_id):
         )
 
         return redirect(
+            url_for("teacher.view_tests")
+        )
+
+
+# ============================================================
+# REMOVE QUESTION FROM TEST
+# ============================================================
+
+@teacher_bp.route(
+    "/remove_question_from_test/<int:test_id>/<int:test_question_id>",
+    methods=["POST"]
+)
+@role_required("Teacher")
+def remove_question_from_test(test_id, test_question_id):
+
+    teacher_id = session.get("user_id")
+
+    if not teacher_id:
+        flash("Teacher session not found.", "error")
+        return redirect(url_for("auth.login"))
+
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+
+    try:
+
+        # -------------------------------------------------
+        # VERIFY TEST BELONGS TO LOGGED-IN TEACHER
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT test_id
+            FROM test
+            WHERE test_id = %s
+              AND teacher_id = %s
+        """, (
+            test_id,
+            teacher_id
+        ))
+
+        test = cursor.fetchone()
+
+
+        if not test:
+
+            flash(
+                "Test not found or you are not authorized to manage it.",
+                "error"
+            )
+
+            cursor.close()
+            conn.close()
+
+            return redirect(
+                url_for("teacher.view_tests")
+            )
+
+
+        # -------------------------------------------------
+        # VERIFY QUESTION EXISTS IN THIS TEST
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT test_question_id
+            FROM test_question
+            WHERE test_question_id = %s
+              AND test_id = %s
+        """, (
+            test_question_id,
+            test_id
+        ))
+
+        test_question = cursor.fetchone()
+
+
+        if not test_question:
+
+            flash(
+                "Question not found in this test.",
+                "error"
+            )
+
+            cursor.close()
+            conn.close()
+
+            return redirect(
+                url_for(
+                    "teacher.manage_questions",
+                    test_id=test_id
+                )
+            )
+
+
+        # -------------------------------------------------
+        # REMOVE QUESTION
+        # -------------------------------------------------
+
+        cursor.execute("""
+            DELETE FROM test_question
+            WHERE test_question_id = %s
+              AND test_id = %s
+        """, (
+            test_question_id,
+            test_id
+        ))
+
+        conn.commit()
+
+
+        flash(
+            "Question removed from the test successfully.",
+            "success"
+        )
+
+
+        cursor.close()
+        conn.close()
+
+
+        return redirect(
             url_for(
                 "teacher.manage_questions",
                 test_id=test_id
             )
         )
+
+
+    except Exception as e:
+
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+        try:
+            cursor.close()
+        except Exception:
+            pass
+
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+        flash(
+            f"Database error: {str(e)}",
+            "error"
+        )
+
+
+        return redirect(
+            url_for(
+                "teacher.manage_questions",
+                test_id=test_id
+            )
+        )
+
 
 # ============================================================
 # PUBLISH TEST
@@ -2551,8 +2900,10 @@ def publish_test(test_id):
         )
         return redirect(url_for("auth.login"))
 
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
+
 
     try:
 
@@ -2568,9 +2919,13 @@ def publish_test(test_id):
             FROM test
             WHERE test_id = %s
               AND teacher_id = %s
-        """, (test_id, teacher_id))
+        """, (
+            test_id,
+            teacher_id
+        ))
 
         test = cursor.fetchone()
+
 
         if not test:
 
@@ -2585,6 +2940,7 @@ def publish_test(test_id):
             return redirect(
                 url_for("teacher.view_tests")
             )
+
 
         # -------------------------------------------------
         # CHECK CURRENT STATUS
@@ -2604,6 +2960,7 @@ def publish_test(test_id):
                 url_for("teacher.view_tests")
             )
 
+
         # -------------------------------------------------
         # CHECK WHETHER QUESTIONS HAVE BEEN ADDED
         # -------------------------------------------------
@@ -2617,6 +2974,7 @@ def publish_test(test_id):
         result = cursor.fetchone()
 
         question_count = result["question_count"]
+
 
         if question_count == 0:
 
@@ -2635,6 +2993,7 @@ def publish_test(test_id):
                 )
             )
 
+
         # -------------------------------------------------
         # PUBLISH TEST
         # -------------------------------------------------
@@ -2644,21 +3003,28 @@ def publish_test(test_id):
             SET status = 'Published'
             WHERE test_id = %s
               AND teacher_id = %s
-        """, (test_id, teacher_id))
+        """, (
+            test_id,
+            teacher_id
+        ))
 
         conn.commit()
+
 
         flash(
             f"Test '{test['test_name']}' published successfully.",
             "success"
         )
 
+
         cursor.close()
         conn.close()
+
 
         return redirect(
             url_for("teacher.view_tests")
         )
+
 
     except Exception as e:
 
@@ -2677,21 +3043,21 @@ def publish_test(test_id):
         except Exception:
             pass
 
+
         flash(
             f"Database error: {str(e)}",
             "error"
         )
 
+
         return redirect(
             url_for("teacher.view_tests")
         )
+
 # ============================================================
 # STUDENT RESULTS
 # ============================================================
 
-# ---------------------------------
-# STUDENT RESULTS
-# ---------------------------------
 @teacher_bp.route("/student_results")
 @role_required("Teacher")
 def student_results():
@@ -2699,45 +3065,65 @@ def student_results():
     teacher_id = session.get("user_id")
 
     if not teacher_id:
-        flash("Teacher session not found.", "error")
-        return redirect(url_for("auth.login_page"))
+        flash(
+            "Teacher session not found.",
+            "error"
+        )
 
-    # Get selected test from URL
-    selected_test_id = request.args.get("test_id", type=int)
+        return redirect(
+            url_for("auth.login_page")
+        )
+
+    selected_test_id = request.args.get(
+        "test_id",
+        type=int
+    )
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
     try:
 
-        # -----------------------------------------
-        # 1. GET TEACHER'S TESTS
-        # -----------------------------------------
+        # ====================================================
+        # GET TEACHER'S TESTS
+        # ====================================================
+
         cursor.execute("""
             SELECT
                 t.test_id,
                 t.test_name,
                 t.total_marks,
-                sub.subject_name
+
+                sub.subject_name,
+                sub.assessment_type,
+
+                st.standard_name
 
             FROM test t
 
             JOIN subject sub
                 ON sub.subject_id = t.subject_id
 
+            LEFT JOIN standard st
+                ON st.standard_id = sub.standard_id
+
             WHERE t.teacher_id = %s
 
             ORDER BY t.test_id DESC
-        """, (teacher_id,))
+        """, (
+            teacher_id,
+        ))
 
         tests = cursor.fetchall()
 
         selected_test = None
         results = []
 
-        # -----------------------------------------
-        # 2. GET SELECTED TEST DETAILS
-        # -----------------------------------------
+
+        # ====================================================
+        # GET SELECTED TEST
+        # ====================================================
+
         if selected_test_id:
 
             cursor.execute("""
@@ -2745,28 +3131,45 @@ def student_results():
                     t.test_id,
                     t.test_name,
                     t.total_marks,
-                    sub.subject_name
+
+                    sub.subject_name,
+                    sub.assessment_type,
+
+                    st.standard_name
 
                 FROM test t
 
                 JOIN subject sub
                     ON sub.subject_id = t.subject_id
 
+                LEFT JOIN standard st
+                    ON st.standard_id = sub.standard_id
+
                 WHERE t.test_id = %s
                   AND t.teacher_id = %s
-            """, (selected_test_id, teacher_id))
+            """, (
+                selected_test_id,
+                teacher_id
+            ))
 
             selected_test = cursor.fetchone()
 
-            # -----------------------------------------
-            # 3. GET STUDENT RESULTS FOR SELECTED TEST
-            # -----------------------------------------
+
+            # =================================================
+            # TEST EXISTS
+            # =================================================
+
             if selected_test:
+
+                # =============================================
+                # GET SUBMITTED STUDENT RESULTS
+                # =============================================
 
                 cursor.execute("""
                     SELECT
                         ta.attempt_id,
 
+                        s.student_id,
                         s.student_name,
                         s.email,
 
@@ -2799,9 +3202,13 @@ def student_results():
                     ORDER BY
                         ta.submitted_at DESC
 
-                """, (selected_test_id, teacher_id))
+                """, (
+                    selected_test_id,
+                    teacher_id
+                ))
 
                 results = cursor.fetchall()
+
 
             else:
 
@@ -2812,18 +3219,29 @@ def student_results():
 
                 selected_test_id = None
 
-        # -----------------------------------------
-        # 4. RENDER PAGE
-        # -----------------------------------------
+
+        # ====================================================
+        # RENDER
+        # ====================================================
+
         return render_template(
             "teacher/student_results.html",
+
             tests=tests,
+
             selected_test_id=selected_test_id,
+
             selected_test=selected_test,
+
             results=results
         )
 
+
     except Exception as e:
+
+        print("\n========== STUDENT RESULTS ERROR ==========")
+        print(e)
+        print("============================================\n")
 
         flash(
             f"Database error: {str(e)}",
@@ -2834,17 +3252,393 @@ def student_results():
             url_for("teacher.teacher_home")
         )
 
+
     finally:
 
         cursor.close()
         conn.close()
+# ============================================================
+# VIEW INDIVIDUAL STUDENT RESULT
+# ============================================================
 
-# ============================================================
-# CLASS ANALYTICS
-# ============================================================
-# ---------------------------------
-# CLASS ANALYTICS
-# ---------------------------------
+@teacher_bp.route("/view_student_result/<int:attempt_id>")
+@role_required("Teacher")
+def view_student_result(attempt_id):
+
+    teacher_id = session.get("user_id")
+
+    if not teacher_id:
+
+        flash(
+            "Teacher session not found.",
+            "error"
+        )
+
+        return redirect(
+            url_for("auth.login_page")
+        )
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        # ====================================================
+        # GET ATTEMPT + TEST + STUDENT
+        #
+        # IMPORTANT:
+        # The test must belong to the logged-in teacher.
+        # ====================================================
+
+        cursor.execute("""
+            SELECT
+                ta.attempt_id,
+                ta.test_id,
+                ta.student_id,
+
+                ta.score,
+                ta.status,
+                ta.started_at,
+                ta.submitted_at,
+
+                s.student_name,
+                s.email,
+
+                t.test_name,
+                t.total_marks,
+
+                sub.subject_name,
+                sub.assessment_type,
+
+                st.standard_name
+
+            FROM test_attempt ta
+
+            JOIN student s
+                ON s.student_id = ta.student_id
+
+            JOIN test t
+                ON t.test_id = ta.test_id
+
+            JOIN subject sub
+                ON sub.subject_id = t.subject_id
+
+            LEFT JOIN standard st
+                ON st.standard_id = sub.standard_id
+
+            WHERE ta.attempt_id = %s
+              AND ta.status = 'Submitted'
+              AND t.teacher_id = %s
+
+        """, (
+            attempt_id,
+            teacher_id
+        ))
+
+        result = cursor.fetchone()
+
+        # ====================================================
+        # ATTEMPT NOT FOUND
+        # ====================================================
+
+        if not result:
+
+            flash(
+                "The student result was not found.",
+                "error"
+            )
+
+            return redirect(
+                url_for("teacher.student_results")
+            )
+
+        # ====================================================
+        # CALCULATE PERCENTAGE
+        # ====================================================
+
+        total_marks = result["total_marks"] or 0
+        score = result["score"] or 0
+
+        if float(total_marks) > 0:
+
+            result["percentage"] = round(
+                (
+                    float(score)
+                    /
+                    float(total_marks)
+                ) * 100,
+                2
+            )
+
+        else:
+
+            result["percentage"] = 0
+
+        # ====================================================
+        # GET ANSWERS
+        #
+        # Works for BOTH:
+        # Traditional → Chapter
+        # OBE         → Course Outcome
+        # ====================================================
+
+        cursor.execute("""
+            SELECT
+                sa.answer_id,
+
+                q.question_id,
+                q.question_text,
+
+                q.option_a,
+                q.option_b,
+                q.option_c,
+                q.option_d,
+
+                q.correct_answer AS correct_option,
+
+                sa.selected_answer,
+                sa.is_correct,
+                sa.marks_obtained,
+
+                c.chapter_name,
+
+                co.co_code,
+                co.co_description
+
+            FROM student_answer sa
+
+            JOIN question q
+                ON q.question_id = sa.question_id
+
+            LEFT JOIN chapter c
+                ON c.chapter_id = q.chapter_id
+
+            LEFT JOIN course_outcome co
+                ON co.co_id = q.co_id
+
+            WHERE sa.attempt_id = %s
+
+            ORDER BY
+                sa.answer_id ASC
+
+        """, (
+            attempt_id,
+        ))
+
+        answers = cursor.fetchall()
+
+        # ====================================================
+        # CONVERT OPTION LETTERS TO ACTUAL ANSWER TEXT
+        # ====================================================
+
+        option_map = {
+            "A": "option_a",
+            "B": "option_b",
+            "C": "option_c",
+            "D": "option_d"
+        }
+
+        for answer in answers:
+
+            # ------------------------------------------------
+            # STUDENT'S SELECTED ANSWER
+            # ------------------------------------------------
+
+            selected = answer["selected_answer"]
+
+            if selected:
+
+                selected = str(selected).strip().upper()
+
+                answer["selected_option"] = selected
+
+                selected_column = option_map.get(selected)
+
+                if selected_column:
+
+                    answer["selected_answer_text"] = (
+                        answer[selected_column]
+                    )
+
+                else:
+
+                    answer["selected_answer_text"] = selected
+
+            else:
+
+                answer["selected_option"] = None
+
+                answer["selected_answer_text"] = None
+
+            # ------------------------------------------------
+            # CORRECT ANSWER
+            # ------------------------------------------------
+
+            correct = answer["correct_option"]
+
+            if correct:
+
+                correct = str(correct).strip().upper()
+
+                answer["correct_option"] = correct
+
+                correct_column = option_map.get(correct)
+
+                if correct_column:
+
+                    answer["correct_answer_text"] = (
+                        answer[correct_column]
+                    )
+
+                else:
+
+                    answer["correct_answer_text"] = correct
+
+            else:
+
+                answer["correct_answer_text"] = "-"
+
+        # ====================================================
+        # ANSWER SUMMARY
+        # ====================================================
+
+        total_questions = len(answers)
+
+        correct_answers = 0
+        incorrect_answers = 0
+        unanswered = 0
+
+        for answer in answers:
+
+            selected_answer = answer["selected_answer"]
+
+            if not selected_answer:
+
+                unanswered += 1
+
+            elif answer["is_correct"] == 1:
+
+                correct_answers += 1
+
+            else:
+
+                incorrect_answers += 1
+
+        # ====================================================
+        # OBE CO PERFORMANCE FOR THIS STUDENT
+        # ====================================================
+
+        co_performance = []
+
+        if result["assessment_type"] == "OBE":
+
+            co_data = {}
+
+            for answer in answers:
+
+                if not answer.get("co_code"):
+                    continue
+
+                co_code = answer["co_code"]
+
+                if co_code not in co_data:
+
+                    co_data[co_code] = {
+                        "co_code": co_code,
+                        "co_description": answer["co_description"],
+                        "total_questions": 0,
+                        "correct_questions": 0,
+                        "incorrect_questions": 0
+                    }
+
+                co_data[co_code]["total_questions"] += 1
+
+                if answer["selected_answer"]:
+
+                    if answer["is_correct"] == 1:
+
+                        co_data[co_code][
+                            "correct_questions"
+                        ] += 1
+
+                    else:
+
+                        co_data[co_code][
+                            "incorrect_questions"
+                        ] += 1
+
+            for co in co_data.values():
+
+                total_questions_for_co = (
+                    co["total_questions"]
+                )
+
+                if total_questions_for_co > 0:
+
+                    co["attainment_percentage"] = round(
+                        (
+                            co["correct_questions"]
+                            /
+                            total_questions_for_co
+                        ) * 100,
+                        2
+                    )
+
+                else:
+
+                    co["attainment_percentage"] = 0
+
+            co_performance = list(
+                co_data.values()
+            )
+
+        # ====================================================
+        # RENDER
+        # ====================================================
+
+        return render_template(
+            "teacher/view_student_result.html",
+
+            result=result,
+
+            answers=answers,
+
+            total_questions=total_questions,
+
+            correct_answers=correct_answers,
+
+            incorrect_answers=incorrect_answers,
+
+            unanswered=unanswered,
+
+            co_performance=co_performance
+        )
+
+    except Exception as e:
+
+        print(
+            "\n========== VIEW STUDENT RESULT ERROR =========="
+        )
+
+        print(e)
+
+        print(
+            "===============================================\n"
+        )
+
+        flash(
+            f"Database error: {str(e)}",
+            "error"
+        )
+
+        return redirect(
+            url_for("teacher.student_results")
+        )
+
+    finally:
+
+        cursor.close()
+        conn.close()
 @teacher_bp.route("/class_analytics")
 @role_required("Teacher")
 def class_analytics():
@@ -2855,35 +3649,28 @@ def class_analytics():
         flash("Teacher session not found.", "error")
         return redirect(url_for("auth.login_page"))
 
-    # Get selected test from URL
     selected_test_id = request.args.get("test_id", type=int)
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
     try:
-
-        # ---------------------------------
-        # 1. GET TEACHER'S TESTS
-        # ---------------------------------
         cursor.execute("""
             SELECT
                 t.test_id,
                 t.test_name,
                 t.total_marks,
-                sub.subject_name
+                sub.subject_name,
+                sub.assessment_type,
+                st.standard_name
             FROM test t
-            JOIN subject sub
-                ON sub.subject_id = t.subject_id
+            JOIN subject sub ON sub.subject_id = t.subject_id
+            LEFT JOIN standard st ON st.standard_id = sub.standard_id
             WHERE t.teacher_id = %s
             ORDER BY t.test_id DESC
         """, (teacher_id,))
-
         tests = cursor.fetchall()
 
-        # ---------------------------------
-        # DEFAULT VALUES
-        # ---------------------------------
         overview = {
             "total_students": 0,
             "tests_completed": 0,
@@ -2893,83 +3680,54 @@ def class_analytics():
 
         best_student = None
         worst_student = None
-        student_performance = []
         weak_topics = []
+        co_performance = []
         selected_test = None
 
-        # ---------------------------------
-        # 2. ANALYTICS FOR SELECTED TEST
-        # ---------------------------------
         if selected_test_id:
-
-            # ---------------------------------
-            # CHECK THAT TEST BELONGS TO TEACHER
-            # ---------------------------------
             cursor.execute("""
                 SELECT
                     t.test_id,
                     t.test_name,
                     t.total_marks,
-                    sub.subject_name
+                    sub.subject_name,
+                    sub.assessment_type,
+                    st.standard_name
                 FROM test t
-                JOIN subject sub
-                    ON sub.subject_id = t.subject_id
+                JOIN subject sub ON sub.subject_id = t.subject_id
+                LEFT JOIN standard st ON st.standard_id = sub.standard_id
                 WHERE t.test_id = %s
                   AND t.teacher_id = %s
             """, (selected_test_id, teacher_id))
 
             selected_test = cursor.fetchone()
 
-            # ---------------------------------
-            # INVALID TEST
-            # ---------------------------------
             if not selected_test:
-
-                flash(
-                    "The selected test was not found.",
-                    "error"
-                )
-
+                flash("The selected test was not found.", "error")
                 selected_test_id = None
 
             else:
-
-                # ---------------------------------
-                # 3. TEST OVERVIEW
-                # ---------------------------------
+                # -----------------------------------------
+                # CLASS OVERVIEW
+                # -----------------------------------------
                 cursor.execute("""
                     SELECT
-                        COUNT(DISTINCT ta.student_id)
-                            AS total_students,
-
-                        COUNT(DISTINCT ta.attempt_id)
-                            AS tests_completed,
-
+                        COUNT(DISTINCT ta.student_id) AS total_students,
+                        COUNT(DISTINCT ta.attempt_id) AS tests_completed,
                         ROUND(
                             AVG(
-                                (
-                                    ta.score /
-                                    NULLIF(t.total_marks, 0)
-                                ) * 100
+                                (ta.score / NULLIF(t.total_marks, 0)) * 100
                             ),
                             2
                         ) AS average_percentage,
-
                         ROUND(
                             MAX(
-                                (
-                                    ta.score /
-                                    NULLIF(t.total_marks, 0)
-                                ) * 100
+                                (ta.score / NULLIF(t.total_marks, 0)) * 100
                             ),
                             2
                         ) AS highest_percentage
-
                     FROM test_attempt ta
-
-                    JOIN test t
-                        ON t.test_id = ta.test_id
-
+                    JOIN test t ON t.test_id = ta.test_id
                     WHERE t.test_id = %s
                       AND t.teacher_id = %s
                       AND ta.status = 'Submitted'
@@ -2977,103 +3735,184 @@ def class_analytics():
 
                 overview = cursor.fetchone()
 
-                # ---------------------------------
-                # 4. STUDENT-WISE PERFORMANCE
-                # ---------------------------------
+                if not overview:
+                    overview = {
+                        "total_students": 0,
+                        "tests_completed": 0,
+                        "average_percentage": 0,
+                        "highest_percentage": 0
+                    }
+
+                # -----------------------------------------
+                # HIGHEST PERFORMING STUDENT
+                # -----------------------------------------
                 cursor.execute("""
                     SELECT
                         s.student_id,
                         s.student_name,
                         s.email,
-
                         ta.score,
-
                         t.total_marks,
-
                         ROUND(
-                            (
-                                ta.score /
-                                NULLIF(t.total_marks, 0)
-                            ) * 100,
+                            (ta.score / NULLIF(t.total_marks, 0)) * 100,
                             2
                         ) AS average_percentage
-
                     FROM test_attempt ta
-
-                    JOIN student s
-                        ON s.student_id = ta.student_id
-
-                    JOIN test t
-                        ON t.test_id = ta.test_id
-
+                    JOIN student s ON s.student_id = ta.student_id
+                    JOIN test t ON t.test_id = ta.test_id
                     WHERE t.test_id = %s
                       AND t.teacher_id = %s
                       AND ta.status = 'Submitted'
-
                     ORDER BY average_percentage DESC
+                    LIMIT 1
                 """, (selected_test_id, teacher_id))
 
-                student_performance = cursor.fetchall()
+                best_student = cursor.fetchone()
 
-                # ---------------------------------
-                # 5. HIGHEST-PERFORMING STUDENT
-                # ---------------------------------
-                if student_performance:
-                    best_student = student_performance[0]
-
-                # ---------------------------------
-                # 6. LOWEST-PERFORMING STUDENT
-                # ---------------------------------
-                if student_performance:
-                    worst_student = student_performance[-1]
-
-                # ---------------------------------
-                # 7. TOPICS NEEDING ATTENTION
-                # ---------------------------------
+                # -----------------------------------------
+                # LOWEST PERFORMING STUDENT
+                # -----------------------------------------
                 cursor.execute("""
                     SELECT
-                        c.chapter_id,
-                        c.chapter_name,
-
-                        COUNT(DISTINCT ta.student_id)
-                            AS students_weak,
-
-                        COUNT(*)
-                            AS incorrect_answers
-
-                    FROM student_answer sa
-
-                    JOIN test_attempt ta
-                        ON ta.attempt_id = sa.attempt_id
-
-                    JOIN test t
-                        ON t.test_id = ta.test_id
-
-                    JOIN question q
-                        ON q.question_id = sa.question_id
-
-                    JOIN chapter c
-                        ON c.chapter_id = q.chapter_id
-
+                        s.student_id,
+                        s.student_name,
+                        s.email,
+                        ta.score,
+                        t.total_marks,
+                        ROUND(
+                            (ta.score / NULLIF(t.total_marks, 0)) * 100,
+                            2
+                        ) AS average_percentage
+                    FROM test_attempt ta
+                    JOIN student s ON s.student_id = ta.student_id
+                    JOIN test t ON t.test_id = ta.test_id
                     WHERE t.test_id = %s
                       AND t.teacher_id = %s
                       AND ta.status = 'Submitted'
-                      AND sa.is_correct = 0
-
-                    GROUP BY
-                        c.chapter_id,
-                        c.chapter_name
-
-                    ORDER BY
-                        students_weak DESC,
-                        incorrect_answers DESC
+                    ORDER BY average_percentage ASC
+                    LIMIT 1
                 """, (selected_test_id, teacher_id))
 
-                weak_topics = cursor.fetchall()
+                worst_student = cursor.fetchone()
 
-        # ---------------------------------
-        # 8. RENDER PAGE
-        # ---------------------------------
+                # -----------------------------------------
+                # OBE ANALYTICS
+                # -----------------------------------------
+                if selected_test["assessment_type"] == "OBE":
+
+                    cursor.execute("""
+                        SELECT
+                            co.co_id,
+                            co.co_code,
+                            co.co_description,
+                            COUNT(sa.answer_id) AS total_questions,
+                            COUNT(DISTINCT ta.student_id) AS students_attempted,
+                            SUM(
+                                CASE
+                                    WHEN sa.is_correct = 1 THEN 1
+                                    ELSE 0
+                                END
+                            ) AS correct_questions,
+                            SUM(
+                                CASE
+                                    WHEN sa.selected_answer IS NOT NULL
+                                         AND sa.is_correct = 0
+                                    THEN 1
+                                    ELSE 0
+                                END
+                            ) AS incorrect_questions
+                        FROM test_attempt ta
+                        JOIN student_answer sa
+                            ON sa.attempt_id = ta.attempt_id
+                        JOIN question q
+                            ON q.question_id = sa.question_id
+                        JOIN course_outcome co
+                            ON co.co_id = q.co_id
+                        WHERE ta.test_id = %s
+                          AND ta.status = 'Submitted'
+                        GROUP BY
+                            co.co_id,
+                            co.co_code,
+                            co.co_description
+                        ORDER BY co.co_code
+                    """, (selected_test_id,))
+
+                    co_performance = cursor.fetchall()
+
+                    for co in co_performance:
+
+                        total_questions = co["total_questions"] or 0
+                        correct_questions = co["correct_questions"] or 0
+
+                        if total_questions > 0:
+                            co["attainment_percentage"] = round(
+                                (correct_questions / total_questions) * 100,
+                                2
+                            )
+                        else:
+                            co["attainment_percentage"] = 0
+
+                # -----------------------------------------
+                # TRADITIONAL ANALYTICS
+                # -----------------------------------------
+                else:
+
+                    # Show ALL chapters that have student
+                    # answers, not only chapters with errors.
+                    cursor.execute("""
+                        SELECT
+                            c.chapter_id,
+                            c.chapter_name,
+
+                            COUNT(DISTINCT ta.student_id) AS students_attempted,
+
+                            COUNT(
+                                DISTINCT CASE
+                                    WHEN sa.is_correct = 0
+                                         AND sa.selected_answer IS NOT NULL
+                                    THEN ta.student_id
+                                END
+                            ) AS students_weak,
+
+                            COUNT(sa.answer_id) AS total_answers,
+
+                            SUM(
+                                CASE
+                                    WHEN sa.selected_answer IS NOT NULL
+                                         AND sa.is_correct = 0
+                                    THEN 1
+                                    ELSE 0
+                                END
+                            ) AS incorrect_answers
+
+                        FROM student_answer sa
+
+                        JOIN test_attempt ta
+                            ON ta.attempt_id = sa.attempt_id
+
+                        JOIN test t
+                            ON t.test_id = ta.test_id
+
+                        JOIN question q
+                            ON q.question_id = sa.question_id
+
+                        JOIN chapter c
+                            ON c.chapter_id = q.chapter_id
+
+                        WHERE t.test_id = %s
+                          AND t.teacher_id = %s
+                          AND ta.status = 'Submitted'
+
+                        GROUP BY
+                            c.chapter_id,
+                            c.chapter_name
+
+                        ORDER BY
+                            c.chapter_id
+                    """, (selected_test_id, teacher_id))
+
+                    weak_topics = cursor.fetchall()
+
         return render_template(
             "teacher/class_analytics.html",
             tests=tests,
@@ -3082,23 +3921,21 @@ def class_analytics():
             overview=overview,
             best_student=best_student,
             worst_student=worst_student,
-            student_performance=student_performance,
-            weak_topics=weak_topics
+            weak_topics=weak_topics,
+            co_performance=co_performance
         )
 
     except Exception as e:
 
-        flash(
-            f"Database error: {str(e)}",
-            "error"
-        )
+        print("\n========== CLASS ANALYTICS ERROR ==========")
+        print(e)
+        print("============================================\n")
 
-        return redirect(
-            url_for("teacher.teacher_home")
-        )
+        flash(f"Database error: {str(e)}", "error")
+
+        return redirect(url_for("teacher.teacher_home"))
 
     finally:
-
         cursor.close()
         conn.close()
 
@@ -3111,4 +3948,3 @@ def class_analytics():
 def teacher_profile():
 
     return "Teacher Profile Page"
-

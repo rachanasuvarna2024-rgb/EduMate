@@ -24,6 +24,7 @@ def student_home():
         "student/student_home.html"
     )
 
+
 # ---------------------------------
 # AVAILABLE TESTS
 # ---------------------------------
@@ -51,7 +52,7 @@ def available_tests():
 
                 sub.subject_name AS subject_name,
 
-                NULL AS standard_name,
+                st.standard_name AS standard_name,
 
                 (
                     SELECT ta.status
@@ -78,7 +79,16 @@ def available_tests():
             JOIN subject sub
                 ON sub.subject_id = t.subject_id
 
+            JOIN standard st
+                ON st.standard_id = sub.standard_id
+
+            JOIN student stu
+                ON stu.standard_id = st.standard_id
+               AND stu.institution_id = st.institution_id
+
             WHERE t.status = 'Published'
+
+              AND stu.student_id = %s
 
               AND NOT EXISTS (
                     SELECT 1
@@ -91,6 +101,7 @@ def available_tests():
             ORDER BY t.test_id DESC
 
         """, (
+            student_id,
             student_id,
             student_id,
             student_id
@@ -126,6 +137,7 @@ def available_tests():
         if conn:
             conn.close()
 
+
 # ---------------------------------
 # START / CONTINUE TEST
 # ---------------------------------
@@ -145,6 +157,10 @@ def start_test(test_id):
 
         # ---------------------------------
         # GET TEST DETAILS
+        #
+        # IMPORTANT:
+        # Test must belong to the student's
+        # institution AND standard.
         # ---------------------------------
         cursor.execute("""
             SELECT
@@ -156,17 +172,27 @@ def start_test(test_id):
 
                 sub.subject_name AS subject_name,
 
-                NULL AS standard_name
+                st.standard_name AS standard_name
 
             FROM test t
 
             JOIN subject sub
                 ON sub.subject_id = t.subject_id
 
+            JOIN standard st
+                ON st.standard_id = sub.standard_id
+
+            JOIN student stu
+                ON stu.standard_id = st.standard_id
+               AND stu.institution_id = st.institution_id
+
             WHERE t.test_id = %s
               AND t.status = 'Published'
+              AND stu.student_id = %s
+
         """, (
             test_id,
+            student_id
         ))
 
         test = cursor.fetchone()
@@ -174,7 +200,7 @@ def start_test(test_id):
         if not test:
 
             flash(
-                "Test not found or is no longer available.",
+                "Test not found or is not available for your class.",
                 "error"
             )
 
@@ -279,6 +305,7 @@ def start_test(test_id):
                 q.option_d,
                 q.marks,
                 q.question_type
+
             FROM test_question tq
 
             JOIN question q
@@ -542,6 +569,47 @@ def submit_test(test_id):
         cursor = conn.cursor(dictionary=True)
 
         # ---------------------------------
+        # VERIFY TEST IS AVAILABLE TO
+        # THIS STUDENT
+        # ---------------------------------
+        cursor.execute("""
+            SELECT
+                t.test_id
+            FROM test t
+
+            JOIN subject sub
+                ON sub.subject_id = t.subject_id
+
+            JOIN standard st
+                ON st.standard_id = sub.standard_id
+
+            JOIN student stu
+                ON stu.standard_id = st.standard_id
+               AND stu.institution_id = st.institution_id
+
+            WHERE t.test_id = %s
+              AND t.status = 'Published'
+              AND stu.student_id = %s
+
+        """, (
+            test_id,
+            student_id
+        ))
+
+        valid_test = cursor.fetchone()
+
+        if not valid_test:
+
+            flash(
+                "This test is not available for your class.",
+                "error"
+            )
+
+            return redirect(
+                url_for("student.available_tests")
+            )
+
+        # ---------------------------------
         # GET CURRENT ATTEMPT
         # ---------------------------------
         cursor.execute("""
@@ -609,6 +677,7 @@ def submit_test(test_id):
                 q.question_id,
                 q.correct_answer,
                 q.marks
+
             FROM test_question tq
 
             JOIN question q
@@ -802,7 +871,7 @@ def test_history():
 
                 sub.subject_name AS subject_name,
 
-                NULL AS standard_name,
+                st.standard_name AS standard_name,
 
                 ta.score,
                 ta.started_at,
@@ -816,6 +885,9 @@ def test_history():
 
             JOIN subject sub
                 ON sub.subject_id = t.subject_id
+
+            LEFT JOIN standard st
+                ON st.standard_id = sub.standard_id
 
             WHERE ta.student_id = %s
               AND ta.status = 'Submitted'
@@ -911,8 +983,9 @@ def test_result(attempt_id):
                 t.total_marks,
 
                 sub.subject_name AS subject_name,
+                sub.assessment_type AS assessment_type,
 
-                NULL AS standard_name
+                st.standard_name AS standard_name
 
             FROM test_attempt ta
 
@@ -921,6 +994,9 @@ def test_result(attempt_id):
 
             JOIN subject sub
                 ON sub.subject_id = t.subject_id
+
+            LEFT JOIN standard st
+                ON st.standard_id = sub.standard_id
 
             WHERE ta.attempt_id = %s
               AND ta.student_id = %s
@@ -966,10 +1042,26 @@ def test_result(attempt_id):
 
         # ---------------------------------
         # GET ANSWER REVIEW
+        #
+        # Traditional:
+        #     question -> chapter
+        #
+        # OBE:
+        #     question -> course outcome
+        #
+        # Also retrieve all option text so
+        # the result can display:
+        #
+        # B. Noun
+        # A. Pronoun
         # ---------------------------------
         cursor.execute("""
             SELECT
+                sa.answer_id,
+
+                q.question_id,
                 q.question_text,
+
                 q.option_a,
                 q.option_b,
                 q.option_c,
@@ -979,6 +1071,11 @@ def test_result(attempt_id):
 
                 q.chapter_id,
                 c.chapter_name,
+
+                q.co_id,
+
+                co.co_code AS co_name,
+                co.co_description,
 
                 sa.selected_answer,
                 sa.is_correct,
@@ -992,6 +1089,9 @@ def test_result(attempt_id):
             LEFT JOIN chapter c
                 ON c.chapter_id = q.chapter_id
 
+            LEFT JOIN course_outcome co
+                ON co.co_id = q.co_id
+
             WHERE sa.attempt_id = %s
 
             ORDER BY sa.answer_id ASC
@@ -1002,33 +1102,127 @@ def test_result(attempt_id):
         answers = cursor.fetchall()
 
         # ---------------------------------
-        # FIND WEAK TOPICS
-        #
-        # Only answered questions that were
-        # marked incorrect are counted.
+        # CONVERT OPTION LETTERS
+        # TO ACTUAL ANSWER TEXT
         # ---------------------------------
-        weak_topic_data = {}
+        option_map = {
+            "A": "option_a",
+            "B": "option_b",
+            "C": "option_c",
+            "D": "option_d"
+        }
 
         for answer in answers:
 
-            if (
-                answer["selected_answer"]
-                and not answer["is_correct"]
-                and answer["chapter_name"]
-            ):
+            # -----------------------------
+            # STUDENT'S SELECTED ANSWER
+            # -----------------------------
+            selected = answer["selected_answer"]
 
-                chapter_name = answer["chapter_name"]
+            if selected:
 
-                if chapter_name not in weak_topic_data:
+                selected = str(selected).strip().upper()
 
-                    weak_topic_data[chapter_name] = {
-                        "chapter_name": chapter_name,
-                        "incorrect_count": 0
-                    }
+                answer["selected_option"] = selected
 
-                weak_topic_data[
-                    chapter_name
-                ]["incorrect_count"] += 1
+                selected_column = option_map.get(selected)
+
+                if selected_column:
+
+                    answer["selected_answer_text"] = (
+                        answer[selected_column]
+                    )
+
+                else:
+
+                    answer["selected_answer_text"] = selected
+
+            else:
+
+                answer["selected_option"] = None
+
+                answer["selected_answer_text"] = None
+
+            # -----------------------------
+            # CORRECT ANSWER
+            # -----------------------------
+            correct = answer["correct_option"]
+
+            if correct:
+
+                correct = str(correct).strip().upper()
+
+                answer["correct_option"] = correct
+
+                correct_column = option_map.get(correct)
+
+                if correct_column:
+
+                    answer["correct_answer_text"] = (
+                        answer[correct_column]
+                    )
+
+                else:
+
+                    answer["correct_answer_text"] = correct
+
+            else:
+
+                answer["correct_answer_text"] = "-"
+
+        # ---------------------------------
+        # FIND WEAK AREAS
+        #
+        # Traditional -> Chapters
+        # OBE         -> Course Outcomes
+        # ---------------------------------
+        weak_topic_data = {}
+
+        if result["assessment_type"] == "OBE":
+
+            for answer in answers:
+
+                if (
+                    answer["selected_answer"]
+                    and not answer["is_correct"]
+                    and answer["co_name"]
+                ):
+
+                    co_name = answer["co_name"]
+
+                    if co_name not in weak_topic_data:
+
+                        weak_topic_data[co_name] = {
+                            "co_name": co_name,
+                            "incorrect_count": 0
+                        }
+
+                    weak_topic_data[
+                        co_name
+                    ]["incorrect_count"] += 1
+
+        else:
+
+            for answer in answers:
+
+                if (
+                    answer["selected_answer"]
+                    and not answer["is_correct"]
+                    and answer["chapter_name"]
+                ):
+
+                    chapter_name = answer["chapter_name"]
+
+                    if chapter_name not in weak_topic_data:
+
+                        weak_topic_data[chapter_name] = {
+                            "chapter_name": chapter_name,
+                            "incorrect_count": 0
+                        }
+
+                    weak_topic_data[
+                        chapter_name
+                    ]["incorrect_count"] += 1
 
         # ---------------------------------
         # CONVERT TO LIST
@@ -1038,19 +1232,97 @@ def test_result(attempt_id):
         )
 
         # ---------------------------------
-        # SHOW MOST AFFECTED CHAPTERS FIRST
+        # MOST AFFECTED AREAS FIRST
         # ---------------------------------
         weak_topics.sort(
             key=lambda x: x["incorrect_count"],
             reverse=True
         )
 
+        # ---------------------------------
+        # CALCULATE OBE CO PERFORMANCE
+        # ---------------------------------
+        co_performance = {}
+
+        if result["assessment_type"] == "OBE":
+
+            for answer in answers:
+
+                if not answer["co_id"]:
+                    continue
+
+                co_id = answer["co_id"]
+
+                if co_id not in co_performance:
+
+                    co_performance[co_id] = {
+                        "co_id": co_id,
+                        "co_name": answer["co_name"],
+                        "co_description": answer["co_description"],
+                        "total_questions": 0,
+                        "correct_questions": 0,
+                        "incorrect_questions": 0
+                    }
+
+                co_performance[co_id][
+                    "total_questions"
+                ] += 1
+
+                if answer["selected_answer"]:
+
+                    if answer["is_correct"]:
+
+                        co_performance[co_id][
+                            "correct_questions"
+                        ] += 1
+
+                    else:
+
+                        co_performance[co_id][
+                            "incorrect_questions"
+                        ] += 1
+
+            # ---------------------------------
+            # CALCULATE CO ATTAINMENT
+            # ---------------------------------
+            for co in co_performance.values():
+
+                total_questions = co["total_questions"]
+
+                if total_questions > 0:
+
+                    co["attainment_percentage"] = round(
+                        (
+                            co["correct_questions"]
+                            /
+                            total_questions
+                        ) * 100,
+                        2
+                    )
+
+                else:
+
+                    co["attainment_percentage"] = 0
+
+        co_performance = list(
+            co_performance.values()
+        )
+
+        # ---------------------------------
+        # RENDER RESULT
+        # ---------------------------------
         return render_template(
             "student/test_result.html",
+
             result=result,
+
             percentage=percentage,
+
             answers=answers,
-            weak_topics=weak_topics
+
+            weak_topics=weak_topics,
+
+            co_performance=co_performance
         )
 
     except Exception as e:

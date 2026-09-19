@@ -61,6 +61,7 @@
 {% for subject in subjects %}
 
 <option value="{{ subject.subject_id }}"
+        data-assessment-type="{{ subject.assessment_type }}"
     {% if request.form.get('subject_id') == subject.subject_id|string %}
         selected
     {% endif %}>
@@ -82,7 +83,8 @@
 
 <!-- CHAPTER -->
 
-<div class="form-group">
+<div class="form-group"
+     id="chapterGroup">
 
 <label for="chapter_id">
     Chapter
@@ -119,11 +121,10 @@
 
 
 <!-- COURSE OUTCOME -->
-<!-- ONLY DISPLAYED FOR OBE -->
 
-{% if institution_type == 'OBE' %}
-
-<div class="form-group">
+<div class="form-group"
+     id="coGroup"
+     style="display: none;">
 
 <label for="co_id">
     Course Outcome
@@ -153,8 +154,6 @@
 </select>
 
 </div>
-
-{% endif %}
 
 
 <!-- QUESTION -->
@@ -654,22 +653,23 @@ button,
 <script>
 
 /* ---------------------------------
-   SUBJECT → CHAPTER FILTER
+   SUBJECT → CHAPTER / CO FILTER
 --------------------------------- */
 
 const subjectSelect =
     document.getElementById("subject_id");
 
+const chapterGroup =
+    document.getElementById("chapterGroup");
+
 const chapterSelect =
     document.getElementById("chapter_id");
 
-
-{% if institution_type == 'OBE' %}
+const coGroup =
+    document.getElementById("coGroup");
 
 const coSelect =
     document.getElementById("co_id");
-
-{% endif %}
 
 
 function filterDependentFields() {
@@ -677,57 +677,99 @@ function filterDependentFields() {
     const selectedSubject =
         subjectSelect.value;
 
+    const selectedOption =
+        subjectSelect.options[
+            subjectSelect.selectedIndex
+        ];
 
-    /* CHAPTERS */
-
-    Array.from(
-        chapterSelect.options
-    ).forEach(option => {
-
-        if (!option.value) {
-            option.style.display = "";
-            return;
-        }
-
-        if (
-            option.dataset.subject ===
-            selectedSubject
-        ) {
-            option.style.display = "";
-        }
-        else {
-            option.style.display = "none";
-        }
-
-    });
+    const assessmentType =
+        selectedOption
+            ? selectedOption.dataset.assessmentType
+            : "";
 
 
-    /* COURSE OUTCOMES */
+    /* ---------------------------------
+       TRADITIONAL
+    --------------------------------- */
 
-    {% if institution_type == 'OBE' %}
+    if (assessmentType === "Traditional") {
 
-    Array.from(
-        coSelect.options
-    ).forEach(option => {
+        chapterGroup.style.display = "";
 
-        if (!option.value) {
-            option.style.display = "";
-            return;
-        }
+        coGroup.style.display = "none";
 
-        if (
-            option.dataset.subject ===
-            selectedSubject
-        ) {
-            option.style.display = "";
-        }
-        else {
-            option.style.display = "none";
-        }
+        coSelect.value = "";
 
-    });
+        Array.from(
+            chapterSelect.options
+        ).forEach(option => {
 
-    {% endif %}
+            if (!option.value) {
+
+                option.style.display = "";
+
+                return;
+            }
+
+            option.style.display =
+                option.dataset.subject ===
+                selectedSubject
+                    ? ""
+                    : "none";
+
+        });
+
+    }
+
+
+    /* ---------------------------------
+       OBE
+    --------------------------------- */
+
+    else if (assessmentType === "OBE") {
+
+        chapterGroup.style.display = "none";
+
+        coGroup.style.display = "";
+
+        chapterSelect.value = "";
+
+        Array.from(
+            coSelect.options
+        ).forEach(option => {
+
+            if (!option.value) {
+
+                option.style.display = "";
+
+                return;
+            }
+
+            option.style.display =
+                option.dataset.subject ===
+                selectedSubject
+                    ? ""
+                    : "none";
+
+        });
+
+    }
+
+
+    /* ---------------------------------
+       NO SUBJECT SELECTED
+    --------------------------------- */
+
+    else {
+
+        chapterGroup.style.display = "none";
+
+        coGroup.style.display = "none";
+
+        chapterSelect.value = "";
+        coSelect.value = "";
+
+    }
 
 }
 
@@ -867,22 +909,23 @@ uploadBox.addEventListener(
 );
 
 
-/* Initial Filtering */
+/* ---------------------------------
+   INITIAL FILTERING
+--------------------------------- */
 
 filterDependentFields();
 
 
-/* Subject Changed */
+/* ---------------------------------
+   SUBJECT CHANGED
+--------------------------------- */
 
 subjectSelect.addEventListener(
     "change",
     function() {
 
         chapterSelect.value = "";
-
-        {% if institution_type == 'OBE' %}
         coSelect.value = "";
-        {% endif %}
 
         filterDependentFields();
 

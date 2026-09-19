@@ -8,497 +8,497 @@
 
 <div class="container">
 
-<h2>Edit Question</h2>
+    <h2>Edit Question</h2>
 
+    <!-- ===================================================== -->
+    <!-- ERROR MESSAGE -->
+    <!-- ===================================================== -->
 
-<!-- ===================================================== -->
-<!-- ERROR MESSAGE -->
-<!-- ===================================================== -->
+    {% if error %}
 
-{% if error %}
-
-    <div class="error">
-        {{ error }}
-    </div>
-
-{% endif %}
-
-
-<form
-    method="POST"
-    enctype="multipart/form-data"
->
-
-    <!-- ================================================= -->
-    <!-- SUBJECT -->
-    <!-- ================================================= -->
-
-    <div class="form-group">
-
-        <label for="subject_id">
-            Subject
-        </label>
-
-        <select
-            name="subject_id"
-            id="subject_id"
-            required
-        >
-
-            <option value="">
-                Select Subject
-            </option>
-
-            {% for subject in subjects %}
-
-                <option
-                    value="{{ subject.subject_id }}"
-                    {% if question.subject_id == subject.subject_id %}
-                    selected
-                    {% endif %}
-                >
-
-                    {{ subject.subject_name }}
-
-                    {% if subject.standard_name %}
-                        - {{ subject.standard_name }}
-                    {% endif %}
-
-                </option>
-
-            {% endfor %}
-
-        </select>
-
-    </div>
-
-
-    <!-- ================================================= -->
-    <!-- CHAPTER -->
-    <!-- ================================================= -->
-
-    <div class="form-group">
-
-        <label for="chapter_id">
-            Chapter
-        </label>
-
-        <select
-            name="chapter_id"
-            id="chapter_id"
-            required
-        >
-
-            <option value="">
-                Select Chapter
-            </option>
-
-            {% for chapter in chapters %}
-
-                <option
-                    value="{{ chapter.chapter_id }}"
-                    data-subject="{{ chapter.subject_id }}"
-                    {% if question.chapter_id == chapter.chapter_id %}
-                    selected
-                    {% endif %}
-                >
-
-                    {% if chapter.chapter_number %}
-                        Ch. {{ chapter.chapter_number }} -
-                    {% endif %}
-
-                    {{ chapter.chapter_name }}
-
-                </option>
-
-            {% endfor %}
-
-        </select>
-
-    </div>
-
-
-    <!-- ================================================= -->
-    <!-- COURSE OUTCOME - OBE ONLY -->
-    <!-- ================================================= -->
-
-    {% if institution_type == "OBE" %}
-
-    <div class="form-group">
-
-        <label for="co_id">
-            Course Outcome
-        </label>
-
-        <select
-            name="co_id"
-            id="co_id"
-        >
-
-            <option value="">
-                Select Course Outcome
-            </option>
-
-            {% for co in course_outcomes %}
-
-                <option
-                    value="{{ co.co_id }}"
-                    data-subject="{{ co.subject_id }}"
-                    {% if question.co_id == co.co_id %}
-                    selected
-                    {% endif %}
-                >
-
-                    {{ co.co_code }}
-
-                    {% if co.co_description %}
-                        - {{ co.co_description }}
-                    {% endif %}
-
-                </option>
-
-            {% endfor %}
-
-        </select>
-
-    </div>
+        <div class="error">
+            {{ error }}
+        </div>
 
     {% endif %}
 
 
-    <!-- ================================================= -->
-    <!-- QUESTION -->
-    <!-- ================================================= -->
+    <form
+        method="POST"
+        enctype="multipart/form-data"
+    >
 
-    <div class="form-group">
+        <!-- ================================================= -->
+        <!-- SUBJECT -->
+        <!-- ================================================= -->
 
-        <label for="question_text">
-            Question
-        </label>
+        <div class="form-group">
 
-        <textarea
-            id="question_text"
-            name="question_text"
-            required
-        >{{ question.question_text or '' }}</textarea>
+            <label for="subject_id">
+                Subject
+            </label>
 
-    </div>
+            <select
+                name="subject_id"
+                id="subject_id"
+                required
+            >
+
+                <option value="">
+                    Select Subject
+                </option>
+
+                {% for subject in subjects %}
+
+                    <option
+                        value="{{ subject.subject_id }}"
+                        data-assessment-type="{{ subject.assessment_type or institution_type }}"
+                        {% if question.subject_id == subject.subject_id %}
+                        selected
+                        {% endif %}
+                    >
+
+                        {{ subject.subject_name }}
+
+                        {% if subject.standard_name %}
+                            - {{ subject.standard_name }}
+                        {% endif %}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
 
 
-    <!-- ================================================= -->
-    <!-- EXISTING IMAGE -->
-    <!-- ================================================= -->
+        <!-- ================================================= -->
+        <!-- CHAPTER - TRADITIONAL ONLY -->
+        <!-- ================================================= -->
 
-    {% if question.question_image %}
+        <div
+            class="form-group"
+            id="chapter-group"
+        >
 
-    <div class="form-group">
+            <label for="chapter_id">
+                Chapter
+            </label>
 
-        <label>
-            Current Question Image
-        </label>
+            <select
+                name="chapter_id"
+                id="chapter_id"
+            >
 
-        <div class="current-image">
+                <option value="">
+                    Select Chapter
+                </option>
 
-            <img
-                src="{{ url_for(
-                    'static',
-                    filename='uploads/questions/' ~ question.question_image
-                ) }}"
-                alt="Current question image"
+                {% for chapter in chapters %}
+
+                    <option
+                        value="{{ chapter.chapter_id }}"
+                        data-subject="{{ chapter.subject_id }}"
+                        {% if question.chapter_id == chapter.chapter_id %}
+                        selected
+                        {% endif %}
+                    >
+
+                        {% if chapter.chapter_number %}
+                            Ch. {{ chapter.chapter_number }} -
+                        {% endif %}
+
+                        {{ chapter.chapter_name }}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- COURSE OUTCOME - OBE ONLY -->
+        <!-- ================================================= -->
+
+        <div
+            class="form-group"
+            id="co-group"
+        >
+
+            <label for="co_id">
+                Course Outcome
+            </label>
+
+            <select
+                name="co_id"
+                id="co_id"
+            >
+
+                <option value="">
+                    Select Course Outcome
+                </option>
+
+                {% for co in course_outcomes %}
+
+                    <option
+                        value="{{ co.co_id }}"
+                        data-subject="{{ co.subject_id }}"
+                        {% if question.co_id == co.co_id %}
+                        selected
+                        {% endif %}
+                    >
+
+                        {{ co.co_code }}
+
+                        {% if co.co_description %}
+                            - {{ co.co_description }}
+                        {% endif %}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- QUESTION -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="question_text">
+                Question
+            </label>
+
+            <textarea
+                id="question_text"
+                name="question_text"
+                required
+            >{{ question.question_text or '' }}</textarea>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- EXISTING IMAGE -->
+        <!-- ================================================= -->
+
+        {% if question.question_image %}
+
+        <div class="form-group">
+
+            <label>
+                Current Question Image
+            </label>
+
+            <div class="current-image">
+
+                <img
+                    src="{{ url_for(
+                        'static',
+                        filename='uploads/questions/' ~ question.question_image
+                    ) }}"
+                    alt="Current question image"
+                >
+
+            </div>
+
+            <label class="remove-image">
+
+                <input
+                    type="checkbox"
+                    name="remove_image"
+                    value="1"
+                >
+
+                Remove current image
+
+            </label>
+
+        </div>
+
+        {% endif %}
+
+
+        <!-- ================================================= -->
+        <!-- NEW IMAGE -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="question_image">
+                Replace / Add Question Image
+            </label>
+
+            <input
+                type="file"
+                id="question_image"
+                name="question_image"
+                accept=".png,.jpg,.jpeg,.gif,.webp"
+            >
+
+            <small>
+                Leave empty to keep the current image.
+            </small>
+
+            <div id="image-preview"></div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- OPTIONS -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="option_a">
+                Option A
+            </label>
+
+            <input
+                type="text"
+                id="option_a"
+                name="option_a"
+                value="{{ question.option_a or '' }}"
+                required
             >
 
         </div>
 
-        <label class="remove-image">
+
+        <div class="form-group">
+
+            <label for="option_b">
+                Option B
+            </label>
 
             <input
-                type="checkbox"
-                name="remove_image"
-                value="1"
+                type="text"
+                id="option_b"
+                name="option_b"
+                value="{{ question.option_b or '' }}"
+                required
             >
 
-            Remove current image
-
-        </label>
-
-    </div>
-
-    {% endif %}
+        </div>
 
 
-    <!-- ================================================= -->
-    <!-- NEW IMAGE -->
-    <!-- ================================================= -->
+        <div class="form-group">
 
-    <div class="form-group">
-
-        <label for="question_image">
-            Replace / Add Question Image
-        </label>
-
-        <input
-            type="file"
-            id="question_image"
-            name="question_image"
-            accept=".png,.jpg,.jpeg,.gif,.webp"
-        >
-
-        <small>
-            Leave empty to keep the current image.
-        </small>
-
-        <div id="image-preview"></div>
-
-    </div>
-
-
-    <!-- ================================================= -->
-    <!-- OPTIONS -->
-    <!-- ================================================= -->
-
-    <div class="form-group">
-
-        <label for="option_a">
-            Option A
-        </label>
-
-        <input
-            type="text"
-            id="option_a"
-            name="option_a"
-            value="{{ question.option_a or '' }}"
-            required
-        >
-
-    </div>
-
-
-    <div class="form-group">
-
-        <label for="option_b">
-            Option B
-        </label>
-
-        <input
-            type="text"
-            id="option_b"
-            name="option_b"
-            value="{{ question.option_b or '' }}"
-            required
-        >
-
-    </div>
-
-
-    <div class="form-group">
-
-        <label for="option_c">
-            Option C
-        </label>
-
-        <input
-            type="text"
-            id="option_c"
-            name="option_c"
-            value="{{ question.option_c or '' }}"
-            required
-        >
-
-    </div>
-
-
-    <div class="form-group">
-
-        <label for="option_d">
-            Option D
-        </label>
-
-        <input
-            type="text"
-            id="option_d"
-            name="option_d"
-            value="{{ question.option_d or '' }}"
-            required
-        >
-
-    </div>
-
-
-    <!-- ================================================= -->
-    <!-- CORRECT ANSWER -->
-    <!-- ================================================= -->
-
-    <div class="form-group">
-
-        <label for="correct_answer">
-            Correct Answer
-        </label>
-
-        <select
-            id="correct_answer"
-            name="correct_answer"
-            required
-        >
-
-            <option value="A"
-                {% if question.correct_answer == "A" %}
-                selected
-                {% endif %}
-            >
-                A
-            </option>
-
-            <option value="B"
-                {% if question.correct_answer == "B" %}
-                selected
-                {% endif %}
-            >
-                B
-            </option>
-
-            <option value="C"
-                {% if question.correct_answer == "C" %}
-                selected
-                {% endif %}
-            >
-                C
-            </option>
-
-            <option value="D"
-                {% if question.correct_answer == "D" %}
-                selected
-                {% endif %}
-            >
-                D
-            </option>
-
-        </select>
-
-    </div>
-
-
-    <!-- ================================================= -->
-    <!-- DIFFICULTY -->
-    <!-- ================================================= -->
-
-    <div class="form-group">
-
-        <label for="difficulty">
-            Difficulty
-        </label>
-
-        <select
-            id="difficulty"
-            name="difficulty"
-            required
-        >
-
-            <option value="Easy"
-                {% if question.difficulty == "Easy" %}
-                selected
-                {% endif %}
-            >
-                Easy
-            </option>
-
-            <option value="Medium"
-                {% if question.difficulty == "Medium" %}
-                selected
-                {% endif %}
-            >
-                Medium
-            </option>
-
-            <option value="Hard"
-                {% if question.difficulty == "Hard" %}
-                selected
-                {% endif %}
-            >
-                Hard
-            </option>
-
-        </select>
-
-    </div>
-
-
-    <!-- ================================================= -->
-    <!-- MARKS -->
-    <!-- ================================================= -->
-
-    <div class="form-group">
-
-        <label for="marks">
-            Marks
-        </label>
-
-        <input
-            type="number"
-            id="marks"
-            name="marks"
-            min="0.5"
-            step="0.5"
-            value="{{ question.marks }}"
-            required
-        >
-
-    </div>
-
-
-    <!-- ================================================= -->
-    <!-- PYQ -->
-    <!-- ================================================= -->
-
-    <div class="checkbox-group">
-
-        <label>
+            <label for="option_c">
+                Option C
+            </label>
 
             <input
-                type="checkbox"
-                name="is_pyq"
-                value="1"
-                {% if question.is_pyq %}
-                checked
-                {% endif %}
+                type="text"
+                id="option_c"
+                name="option_c"
+                value="{{ question.option_c or '' }}"
+                required
             >
 
-            Previous Year Question (PYQ)
-
-        </label>
-
-    </div>
+        </div>
 
 
-    <!-- ================================================= -->
-    <!-- BUTTONS -->
-    <!-- ================================================= -->
+        <div class="form-group">
 
-    <div class="button-row">
+            <label for="option_d">
+                Option D
+            </label>
 
-        <button
-            type="submit"
-            class="btn-primary"
-        >
-            Update Question
-        </button>
+            <input
+                type="text"
+                id="option_d"
+                name="option_d"
+                value="{{ question.option_d or '' }}"
+                required
+            >
 
-        <a
-            href="{{ url_for('teacher.view_questions') }}"
-            class="btn-secondary"
-        >
-            Cancel
-        </a>
+        </div>
 
-    </div>
 
-</form>
+        <!-- ================================================= -->
+        <!-- CORRECT ANSWER -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="correct_answer">
+                Correct Answer
+            </label>
+
+            <select
+                id="correct_answer"
+                name="correct_answer"
+                required
+            >
+
+                <option value="A"
+                    {% if question.correct_answer == "A" %}
+                    selected
+                    {% endif %}
+                >
+                    A
+                </option>
+
+                <option value="B"
+                    {% if question.correct_answer == "B" %}
+                    selected
+                    {% endif %}
+                >
+                    B
+                </option>
+
+                <option value="C"
+                    {% if question.correct_answer == "C" %}
+                    selected
+                    {% endif %}
+                >
+                    C
+                </option>
+
+                <option value="D"
+                    {% if question.correct_answer == "D" %}
+                    selected
+                    {% endif %}
+                >
+                    D
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- DIFFICULTY -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="difficulty">
+                Difficulty
+            </label>
+
+            <select
+                id="difficulty"
+                name="difficulty"
+                required
+            >
+
+                <option value="Easy"
+                    {% if question.difficulty == "Easy" %}
+                    selected
+                    {% endif %}
+                >
+                    Easy
+                </option>
+
+                <option value="Medium"
+                    {% if question.difficulty == "Medium" %}
+                    selected
+                    {% endif %}
+                >
+                    Medium
+                </option>
+
+                <option value="Hard"
+                    {% if question.difficulty == "Hard" %}
+                    selected
+                    {% endif %}
+                >
+                    Hard
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- MARKS -->
+        <!-- ================================================= -->
+
+        <div class="form-group">
+
+            <label for="marks">
+                Marks
+            </label>
+
+            <input
+                type="number"
+                id="marks"
+                name="marks"
+                min="0.5"
+                step="0.5"
+                value="{{ question.marks }}"
+                required
+            >
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- PYQ -->
+        <!-- ================================================= -->
+
+        <div class="checkbox-group">
+
+            <label>
+
+                <input
+                    type="checkbox"
+                    name="is_pyq"
+                    value="1"
+                    {% if question.is_pyq %}
+                    checked
+                    {% endif %}
+                >
+
+                Previous Year Question (PYQ)
+
+            </label>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- BUTTONS -->
+        <!-- ================================================= -->
+
+        <div class="button-row">
+
+            <button
+                type="submit"
+                class="btn-primary"
+            >
+                Update Question
+            </button>
+
+            <a
+                href="{{ url_for('teacher.view_questions') }}"
+                class="btn-secondary"
+            >
+                Cancel
+            </a>
+
+        </div>
+
+    </form>
 
 </div>
 
+
 <!-- ========================================================= -->
-
 <!-- CSS -->
-
 <!-- ========================================================= -->
 
 <style>
@@ -628,10 +628,9 @@ button,
 
 </style>
 
+
 <!-- ========================================================= -->
-
 <!-- JAVASCRIPT -->
-
 <!-- ========================================================= -->
 
 <script>
@@ -640,6 +639,13 @@ const subjectSelect = document.getElementById("subject_id");
 const chapterSelect = document.getElementById("chapter_id");
 const coSelect = document.getElementById("co_id");
 
+const chapterGroup = document.getElementById("chapter-group");
+const coGroup = document.getElementById("co-group");
+
+
+/* ========================================================= */
+/* FILTER CHAPTERS */
+/* ========================================================= */
 
 function filterChapters() {
 
@@ -671,6 +677,10 @@ function filterChapters() {
 }
 
 
+/* ========================================================= */
+/* FILTER COURSE OUTCOMES */
+/* ========================================================= */
+
 function filterCOs() {
 
     if (!coSelect) {
@@ -691,8 +701,88 @@ function filterCOs() {
 
     });
 
+
+    const selectedOption =
+        coSelect.options[coSelect.selectedIndex];
+
+    if (
+        selectedOption &&
+        selectedOption.hidden
+    ) {
+        coSelect.value = "";
+    }
+
 }
 
+
+/* ========================================================= */
+/* SWITCH BETWEEN TRADITIONAL AND OBE */
+/* ========================================================= */
+
+function updateAssessmentFields() {
+
+    const selectedOption =
+        subjectSelect.options[subjectSelect.selectedIndex];
+
+    if (!selectedOption || !selectedOption.value) {
+
+        chapterGroup.style.display = "block";
+        chapterSelect.required = true;
+
+        if (coGroup) {
+            coGroup.style.display = "none";
+            coSelect.required = false;
+        }
+
+        return;
+    }
+
+
+    const assessmentType =
+        selectedOption.dataset.assessmentType;
+
+
+    /* --------------------------------------------- */
+    /* OBE */
+    /* --------------------------------------------- */
+
+    if (assessmentType === "OBE") {
+
+        chapterGroup.style.display = "none";
+        chapterSelect.required = false;
+        chapterSelect.value = "";
+
+        if (coGroup) {
+            coGroup.style.display = "block";
+            coSelect.required = true;
+        }
+
+    }
+
+
+    /* --------------------------------------------- */
+    /* TRADITIONAL */
+    /* --------------------------------------------- */
+
+    else {
+
+        chapterGroup.style.display = "block";
+        chapterSelect.required = true;
+
+        if (coGroup) {
+            coGroup.style.display = "none";
+            coSelect.required = false;
+            coSelect.value = "";
+        }
+
+    }
+
+}
+
+
+/* ========================================================= */
+/* SUBJECT CHANGE */
+/* ========================================================= */
 
 subjectSelect.addEventListener(
     "change",
@@ -700,12 +790,15 @@ subjectSelect.addEventListener(
 
         filterChapters();
         filterCOs();
+        updateAssessmentFields();
 
     }
 );
 
 
+/* ========================================================= */
 /* IMAGE PREVIEW */
+/* ========================================================= */
 
 const imageInput =
     document.getElementById("question_image");
@@ -738,10 +831,13 @@ imageInput.addEventListener(
 );
 
 
-/* INITIAL FILTER */
+/* ========================================================= */
+/* INITIAL LOAD */
+/* ========================================================= */
 
 filterChapters();
 filterCOs();
+updateAssessmentFields();
 
 </script>
 

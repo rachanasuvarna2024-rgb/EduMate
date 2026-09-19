@@ -1,19 +1,8 @@
-from flask import (
-    Blueprint,
-    render_template,
-    session,
-    redirect,
-    url_for,
-    flash
-)
-
+from flask import Blueprint, render_template, session, redirect, url_for, flash
 from db import get_db_connection
 from session_utils import role_required
 
 
-# ---------------------------------
-# PARENT BLUEPRINT
-# ---------------------------------
 parent_bp = Blueprint(
     "parent",
     __name__,
@@ -21,71 +10,86 @@ parent_bp = Blueprint(
 )
 
 
-# ---------------------------------
+# ============================================================
 # PARENT HOME
-# ---------------------------------
+# ============================================================
+
 @parent_bp.route("/")
 @role_required("Parent")
 def parent_home():
 
     parent_id = session.get("user_id")
 
-    if not parent_id:
-
-        flash(
-            "Parent session information not found.",
-            "error"
-        )
-
-        return redirect(
-            url_for("auth.login_page")
-        )
-
     conn = None
     cursor = None
 
     try:
-
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # ---------------------------------
-        # GET PARENT INFORMATION
-        # ---------------------------------
+        # Get parent's child
         cursor.execute("""
             SELECT
-                parent_id,
-                parent_name,
+                student_id,
+                student_name,
                 email,
-                phone
-            FROM parent
+                standard_id,
+                institution_id
+            FROM student
             WHERE parent_id = %s
-        """, (
-            parent_id,
-        ))
+              AND status = 'Active'
+            ORDER BY student_name
+            LIMIT 1
+        """, (parent_id,))
 
-        parent = cursor.fetchone()
+        child = cursor.fetchone()
 
-        if not parent:
-
-            flash(
-                "Parent information not found.",
-                "error"
+        if not child:
+            return render_template(
+                "parent/parent_home.html",
+                child=None
             )
 
-            return redirect(
-                url_for("auth.login_page")
-            )
+        # Count submitted tests
+        cursor.execute("""
+            SELECT COUNT(*) AS test_count
+            FROM test_attempt
+            WHERE student_id = %s
+              AND status = 'Submitted'
+        """, (child["student_id"],))
 
+        test_count = cursor.fetchone()["test_count"] or 0
 
-        # ---------------------------------
-        # WELCOME PARENT
-        # ---------------------------------
-        return render_template(
-            "parent/parent_home.html",
-            parent=parent
+        # Average score
+        cursor.execute("""
+            SELECT
+                AVG(
+                    CASE
+                        WHEN t.total_marks > 0
+                        THEN (ta.score / t.total_marks) * 100
+                        ELSE 0
+                    END
+                ) AS average_percentage
+            FROM test_attempt ta
+            JOIN test t
+                ON t.test_id = ta.test_id
+            WHERE ta.student_id = %s
+              AND ta.status = 'Submitted'
+        """, (child["student_id"],))
+
+        average_result = cursor.fetchone()
+
+        average_percentage = round(
+            float(average_result["average_percentage"] or 0),
+            2
         )
 
+        return render_template(
+            "parent/parent_home.html",
+            child=child,
+            test_count=test_count,
+            average_percentage=average_percentage
+        )
 
     except Exception as e:
 
@@ -93,14 +97,9 @@ def parent_home():
         print(e)
         print("=======================================\n")
 
-        flash(
-            "Unable to load parent portal.",
-            "error"
-        )
+        flash("Unable to load parent dashboard.", "error")
 
-        return redirect(
-            url_for("auth.login_page")
-        )
+        return redirect(url_for("auth.login_page"))
 
     finally:
 
@@ -111,196 +110,54 @@ def parent_home():
             conn.close()
 
 
-# ---------------------------------
-# CHILD TEST RESULTS
-# ---------------------------------
+# ============================================================
+# CHILD TEST RESULTS - LIST
+# ============================================================
+
 @parent_bp.route("/child_test_results")
 @role_required("Parent")
 def child_test_results():
 
     parent_id = session.get("user_id")
 
-    if not parent_id:
-
-        flash(
-            "Parent session information not found.",
-            "error"
-        )
-
-        return redirect(
-            url_for("auth.login_page")
-        )
-
-
     conn = None
     cursor = None
 
     try:
-
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-
-        # ---------------------------------
-        # GET CHILD INFORMATION
-        # ---------------------------------
+        # Get parent's child
         cursor.execute("""
             SELECT
                 student_id,
                 student_name,
                 email,
-                phone
+                standard_id,
+                institution_id
             FROM student
             WHERE parent_id = %s
               AND status = 'Active'
+            ORDER BY student_name
             LIMIT 1
-        """, (
-            parent_id,
-        ))
+        """, (parent_id,))
 
         child = cursor.fetchone()
 
+        if not child:
 
-        # ---------------------------------
-        # GET CHILD'S SUBMITTED TEST RESULTS
-        # ---------------------------------
-        cursor.execute("""
-            SELECT
-                ta.attempt_id,
-                ta.test_id,
+            return render_template(
+                "parent/child_test_results.html",
+                results=[],
+                child=None,
+                detailed_result=None,
+                answers=[],
+                weak_topics=[],
+                co_performance=[],
+                percentage=None
+            )
 
-                t.test_name,
-                t.total_marks,
-
-                sub.subject_name AS subject_name,
-
-                NULL AS standard_name,
-
-                ta.score,
-                ta.started_at,
-                ta.submitted_at,
-                ta.status
-
-            FROM test_attempt ta
-
-            JOIN student s
-                ON s.student_id = ta.student_id
-
-            JOIN test t
-                ON t.test_id = ta.test_id
-
-            JOIN subject sub
-                ON sub.subject_id = t.subject_id
-
-            WHERE s.parent_id = %s
-              AND s.status = 'Active'
-              AND ta.status = 'Submitted'
-
-            ORDER BY ta.submitted_at DESC
-        """, (
-            parent_id,
-        ))
-
-        results = cursor.fetchall()
-
-
-        # ---------------------------------
-        # CALCULATE PERCENTAGE
-        # ---------------------------------
-        for result in results:
-
-            total_marks = result["total_marks"] or 0
-            score = result["score"] or 0
-
-            if float(total_marks) > 0:
-
-                result["percentage"] = round(
-                    (
-                        float(score)
-                        /
-                        float(total_marks)
-                    ) * 100,
-                    2
-                )
-
-            else:
-
-                result["percentage"] = 0
-
-
-        return render_template(
-            "parent/child_test_results.html",
-            results=results,
-            child=child,
-            detailed_result=None,
-            answers=[],
-            weak_topics=[],
-            percentage=None
-        )
-
-
-    except Exception as e:
-
-        print("\n========== CHILD TEST RESULTS ERROR ==========")
-        print(e)
-        print("==============================================\n")
-
-        flash(
-            "Unable to load child test results.",
-            "error"
-        )
-
-        return redirect(
-            url_for("parent.parent_home")
-        )
-
-
-    finally:
-
-        if cursor:
-            cursor.close()
-
-        if conn:
-            conn.close()
-
-
-# ---------------------------------
-# CHILD TEST RESULT DETAIL
-# ---------------------------------
-@parent_bp.route("/child_test_result/<int:attempt_id>")
-@role_required("Parent")
-def child_test_result(attempt_id):
-
-    parent_id = session.get("user_id")
-
-    if not parent_id:
-
-        flash(
-            "Parent session information not found.",
-            "error"
-        )
-
-        return redirect(
-            url_for("auth.login_page")
-        )
-
-
-    conn = None
-    cursor = None
-
-    try:
-
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-
-
-        # ---------------------------------
-        # GET CHILD + TEST RESULT
-        #
-        # The parent_id condition is important.
-        # It ensures a parent can only view
-        # their own child's result.
-        # ---------------------------------
+        # Get submitted test attempts of the child
         cursor.execute("""
             SELECT
                 ta.attempt_id,
@@ -310,17 +167,122 @@ def child_test_result(attempt_id):
                 ta.started_at,
                 ta.submitted_at,
 
-                s.student_id,
+                t.test_name,
+                t.total_marks,
+
+                sub.subject_name,
+                sub.assessment_type,
+
+                st.standard_name
+
+            FROM test_attempt ta
+
+            JOIN test t
+                ON t.test_id = ta.test_id
+
+            JOIN subject sub
+                ON sub.subject_id = t.subject_id
+
+            LEFT JOIN standard st
+                ON st.standard_id = sub.standard_id
+
+            WHERE ta.student_id = %s
+              AND ta.status = 'Submitted'
+
+            ORDER BY ta.submitted_at DESC
+        """, (child["student_id"],))
+
+        results = cursor.fetchall()
+
+        # Calculate percentage for every result
+        for result in results:
+
+            total_marks = result["total_marks"] or 0
+            score = result["score"] or 0
+
+            if float(total_marks) > 0:
+
+                result["percentage"] = round(
+                    (float(score) / float(total_marks)) * 100,
+                    2
+                )
+
+            else:
+
+                result["percentage"] = 0
+
+        return render_template(
+            "parent/child_test_results.html",
+            results=results,
+            child=child,
+            detailed_result=None,
+            answers=[],
+            weak_topics=[],
+            co_performance=[],
+            percentage=None
+        )
+
+    except Exception as e:
+
+        print("\n========== PARENT TEST RESULTS ERROR ==========")
+        print(e)
+        print("===============================================\n")
+
+        flash("Unable to load test results.", "error")
+
+        return redirect(url_for("parent.parent_home"))
+
+    finally:
+
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
+
+# ============================================================
+# CHILD TEST RESULT - DETAILED
+# ============================================================
+
+@parent_bp.route("/child_test_result/<int:attempt_id>")
+@role_required("Parent")
+def child_test_result(attempt_id):
+
+    parent_id = session.get("user_id")
+
+    conn = None
+    cursor = None
+
+    try:
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # ----------------------------------------------------
+        # Get test result
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                ta.attempt_id,
+                ta.test_id,
+                ta.student_id,
+                ta.score,
+                ta.status,
+                ta.started_at,
+                ta.submitted_at,
+
                 s.student_name,
                 s.email,
-                s.phone,
 
                 t.test_name,
                 t.total_marks,
 
-                sub.subject_name AS subject_name,
+                sub.subject_name,
+                sub.assessment_type,
 
-                NULL AS standard_name
+                st.standard_name
 
             FROM test_attempt ta
 
@@ -333,44 +295,39 @@ def child_test_result(attempt_id):
             JOIN subject sub
                 ON sub.subject_id = t.subject_id
 
+            LEFT JOIN standard st
+                ON st.standard_id = sub.standard_id
+
             WHERE ta.attempt_id = %s
+              AND ta.status = 'Submitted'
               AND s.parent_id = %s
               AND s.status = 'Active'
-              AND ta.status = 'Submitted'
         """, (
             attempt_id,
             parent_id
         ))
 
-        result = cursor.fetchone()
+        detailed_result = cursor.fetchone()
 
+        if not detailed_result:
 
-        if not result:
-
-            flash(
-                "Result not found.",
-                "error"
-            )
+            flash("Test result not found.", "error")
 
             return redirect(
                 url_for("parent.child_test_results")
             )
 
+        # ----------------------------------------------------
+        # Calculate percentage
+        # ----------------------------------------------------
 
-        # ---------------------------------
-        # CALCULATE PERCENTAGE
-        # ---------------------------------
-        total_marks = result["total_marks"] or 0
-        score = result["score"] or 0
+        total_marks = detailed_result["total_marks"] or 0
+        score = detailed_result["score"] or 0
 
         if float(total_marks) > 0:
 
             percentage = round(
-                (
-                    float(score)
-                    /
-                    float(total_marks)
-                ) * 100,
+                (float(score) / float(total_marks)) * 100,
                 2
             )
 
@@ -378,13 +335,42 @@ def child_test_result(attempt_id):
 
             percentage = 0
 
+        detailed_result["percentage"] = percentage
 
-        # ---------------------------------
-        # GET ANSWER REVIEW
-        # ---------------------------------
+        # ----------------------------------------------------
+        # Get child information
+        # ----------------------------------------------------
+
         cursor.execute("""
             SELECT
+                student_id,
+                student_name,
+                email,
+                phone,
+                standard_id,
+                institution_id
+            FROM student
+            WHERE student_id = %s
+              AND parent_id = %s
+              AND status = 'Active'
+        """, (
+            detailed_result["student_id"],
+            parent_id
+        ))
+
+        child = cursor.fetchone()
+
+        # ----------------------------------------------------
+        # Get answers
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                sa.answer_id,
+
+                q.question_id,
                 q.question_text,
+
                 q.option_a,
                 q.option_b,
                 q.option_c,
@@ -394,6 +380,11 @@ def child_test_result(attempt_id):
 
                 q.chapter_id,
                 c.chapter_name,
+
+                q.co_id,
+
+                co.co_code AS co_name,
+                co.co_description,
 
                 sa.selected_answer,
                 sa.is_correct,
@@ -407,94 +398,247 @@ def child_test_result(attempt_id):
             LEFT JOIN chapter c
                 ON c.chapter_id = q.chapter_id
 
+            LEFT JOIN course_outcome co
+                ON co.co_id = q.co_id
+
             WHERE sa.attempt_id = %s
 
             ORDER BY sa.answer_id ASC
-        """, (
-            attempt_id,
-        ))
+        """, (attempt_id,))
 
         answers = cursor.fetchall()
 
+        # ----------------------------------------------------
+        # Convert option letters into option text
+        # ----------------------------------------------------
 
-        # ---------------------------------
-        # FIND WEAK TOPICS
-        #
-        # Only answered questions that were
-        # marked incorrect are counted.
-        # ---------------------------------
-        weak_topic_data = {}
+        option_map = {
+            "A": "option_a",
+            "B": "option_b",
+            "C": "option_c",
+            "D": "option_d"
+        }
 
         for answer in answers:
 
-            if (
-                answer["selected_answer"]
-                and not answer["is_correct"]
-                and answer["chapter_name"]
-            ):
+            selected = answer["selected_answer"]
 
-                chapter_name = answer["chapter_name"]
+            if selected:
 
-                if chapter_name not in weak_topic_data:
+                selected = str(selected).strip().upper()
 
-                    weak_topic_data[chapter_name] = {
-                        "chapter_name": chapter_name,
-                        "incorrect_count": 0
-                    }
+                answer["selected_option"] = selected
 
-                weak_topic_data[
-                    chapter_name
-                ]["incorrect_count"] += 1
+                selected_column = option_map.get(selected)
 
+                if selected_column:
 
-        # ---------------------------------
-        # CONVERT TO LIST
-        # ---------------------------------
+                    answer["selected_answer_text"] = answer[
+                        selected_column
+                    ]
+
+                else:
+
+                    answer["selected_answer_text"] = selected
+
+            else:
+
+                answer["selected_option"] = None
+                answer["selected_answer_text"] = None
+
+            correct = answer["correct_option"]
+
+            if correct:
+
+                correct = str(correct).strip().upper()
+
+                answer["correct_option"] = correct
+
+                correct_column = option_map.get(correct)
+
+                if correct_column:
+
+                    answer["correct_answer_text"] = answer[
+                        correct_column
+                    ]
+
+                else:
+
+                    answer["correct_answer_text"] = correct
+
+            else:
+
+                answer["correct_answer_text"] = "-"
+
+        # ----------------------------------------------------
+        # Areas to Improve
+        #
+        # OBE       -> Course Outcomes
+        # Traditional -> Chapters
+        # ----------------------------------------------------
+
+        weak_topic_data = {}
+
+        if detailed_result["assessment_type"] == "OBE":
+
+            for answer in answers:
+
+                if (
+                    answer["selected_answer"]
+                    and not answer["is_correct"]
+                    and answer["co_name"]
+                ):
+
+                    co_name = answer["co_name"]
+
+                    if co_name not in weak_topic_data:
+
+                        weak_topic_data[co_name] = {
+                            "co_name": co_name,
+                            "incorrect_count": 0
+                        }
+
+                    weak_topic_data[co_name][
+                        "incorrect_count"
+                    ] += 1
+
+        else:
+
+            for answer in answers:
+
+                if (
+                    answer["selected_answer"]
+                    and not answer["is_correct"]
+                    and answer["chapter_name"]
+                ):
+
+                    chapter_name = answer["chapter_name"]
+
+                    if chapter_name not in weak_topic_data:
+
+                        weak_topic_data[chapter_name] = {
+                            "chapter_name": chapter_name,
+                            "incorrect_count": 0
+                        }
+
+                    weak_topic_data[chapter_name][
+                        "incorrect_count"
+                    ] += 1
+
         weak_topics = list(
             weak_topic_data.values()
         )
 
-
-        # ---------------------------------
-        # SHOW MOST AFFECTED CHAPTERS FIRST
-        # ---------------------------------
         weak_topics.sort(
             key=lambda x: x["incorrect_count"],
             reverse=True
         )
 
+        # ----------------------------------------------------
+        # OBE Course Outcome Performance
+        # ----------------------------------------------------
+
+        co_performance = {}
+
+        if detailed_result["assessment_type"] == "OBE":
+
+            for answer in answers:
+
+                if not answer["co_id"]:
+                    continue
+
+                co_id = answer["co_id"]
+
+                if co_id not in co_performance:
+
+                    co_performance[co_id] = {
+                        "co_id": co_id,
+                        "co_name": answer["co_name"],
+                        "co_description": answer[
+                            "co_description"
+                        ],
+                        "total_questions": 0,
+                        "correct_questions": 0,
+                        "incorrect_questions": 0
+                    }
+
+                co_performance[co_id][
+                    "total_questions"
+                ] += 1
+
+                if answer["selected_answer"]:
+
+                    if answer["is_correct"]:
+
+                        co_performance[co_id][
+                            "correct_questions"
+                        ] += 1
+
+                    else:
+
+                        co_performance[co_id][
+                            "incorrect_questions"
+                        ] += 1
+
+        # ----------------------------------------------------
+        # Calculate CO attainment percentage
+        # ----------------------------------------------------
+
+        for co in co_performance.values():
+
+            total_questions = co["total_questions"]
+
+            if total_questions > 0:
+
+                co["attainment_percentage"] = round(
+                    (
+                        co["correct_questions"]
+                        / total_questions
+                    ) * 100,
+                    2
+                )
+
+            else:
+
+                co["attainment_percentage"] = 0
+
+        co_performance = list(
+            co_performance.values()
+        )
+
+        # ----------------------------------------------------
+        # Render same detailed result structure as Student
+        # ----------------------------------------------------
 
         return render_template(
             "parent/child_test_results.html",
+
             results=[],
-            child={
-                "student_id": result["student_id"],
-                "student_name": result["student_name"],
-                "email": result["email"],
-                "phone": result["phone"]
-            },
-            detailed_result=result,
+
+            child=child,
+
+            detailed_result=detailed_result,
+
             answers=answers,
+
             weak_topics=weak_topics,
+
+            co_performance=co_performance,
+
             percentage=percentage
         )
 
-
     except Exception as e:
 
-        print("\n========== CHILD TEST RESULT ERROR ==========")
+        print("\n========== PARENT TEST RESULT ERROR ==========")
         print(e)
-        print("=============================================\n")
+        print("==============================================\n")
 
-        flash(
-            "Unable to load child test result.",
-            "error"
-        )
+        flash("Unable to load test result.", "error")
 
         return redirect(
             url_for("parent.child_test_results")
         )
-
 
     finally:
 

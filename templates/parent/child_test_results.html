@@ -26,7 +26,9 @@
 
     <div>
 
-        <h1>Test Result</h1>
+        <h1>
+            Test Result
+        </h1>
 
         <p>
             {{ detailed_result.test_name }}
@@ -49,7 +51,9 @@
 
     <div class="section-heading">
 
-        <h2>Child Information</h2>
+        <h2>
+            Child Information
+        </h2>
 
     </div>
 
@@ -140,6 +144,19 @@
     <div class="summary-item">
 
         <span class="label">
+            Assessment Type
+        </span>
+
+        <strong>
+            {{ detailed_result.assessment_type }}
+        </strong>
+
+    </div>
+
+
+    <div class="summary-item score-card">
+
+        <span class="label">
             Score
         </span>
 
@@ -152,7 +169,7 @@
     </div>
 
 
-    <div class="summary-item">
+    <div class="summary-item percentage-card">
 
         <span class="label">
             Percentage
@@ -179,7 +196,9 @@
 
     <div>
 
-        <h2>Test Submitted</h2>
+        <h2>
+            Test Submitted
+        </h2>
 
         <p>
             This test was completed by
@@ -192,17 +211,162 @@
 
 
 <!-- =====================================================
-     WEAK TOPICS
+     OBE CO PERFORMANCE
+====================================================== -->
+
+{% if detailed_result.assessment_type == "OBE" %}
+
+<div class="co-performance-section">
+
+    <div class="section-heading">
+
+        <h2>
+            Course Outcome Performance
+        </h2>
+
+        <p class="section-description">
+            The student's performance is shown for each
+            Course Outcome assessed in this test.
+        </p>
+
+    </div>
+
+
+    {% if co_performance %}
+
+    <div class="co-performance-list">
+
+        {% for co in co_performance %}
+
+        <div class="co-card">
+
+            <div class="co-card-header">
+
+                <div>
+
+                    <div class="co-label">
+                        Course Outcome
+                    </div>
+
+                    <h3>
+                        {{ co.co_name }}
+                    </h3>
+
+                    {% if co.co_description %}
+
+                    <p class="co-description">
+                        {{ co.co_description }}
+                    </p>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="co-percentage">
+                    {{ co.attainment_percentage }}%
+                </div>
+
+            </div>
+
+
+            <div class="co-stats">
+
+                <div class="co-stat">
+
+                    <span>
+                        Questions
+                    </span>
+
+                    <strong>
+                        {{ co.total_questions }}
+                    </strong>
+
+                </div>
+
+
+                <div class="co-stat">
+
+                    <span>
+                        Correct
+                    </span>
+
+                    <strong>
+                        {{ co.correct_questions }}
+                    </strong>
+
+                </div>
+
+
+                <div class="co-stat">
+
+                    <span>
+                        Incorrect
+                    </span>
+
+                    <strong>
+                        {{ co.incorrect_questions }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+
+    {% else %}
+
+    <div class="no-weak-topics">
+
+        <strong>
+            No Course Outcome information available
+        </strong>
+
+        <p>
+            No Course Outcomes were mapped to the questions
+            in this test.
+        </p>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endif %}
+
+
+<!-- =====================================================
+     AREAS TO IMPROVE
 ====================================================== -->
 
 <div class="weak-topics-section">
 
     <div class="section-heading">
 
-        <h2>Areas to Improve</h2>
+        <h2>
+            Areas to Improve
+        </h2>
 
         <p class="section-description">
-            Chapters where the student had incorrect answers.
+
+            {% if detailed_result.assessment_type == "OBE" %}
+
+                These Course Outcomes had incorrectly
+                answered questions in this test.
+
+            {% else %}
+
+                These chapters had incorrectly answered
+                questions in this test.
+
+            {% endif %}
+
         </p>
 
     </div>
@@ -210,66 +374,90 @@
 
     {% if weak_topics %}
 
-        <div class="weak-topics-list">
+    <div class="weak-topics-list">
 
-            {% for topic in weak_topics %}
+        {% for topic in weak_topics %}
 
-            <div class="weak-topic-card">
+        <div class="weak-topic-card">
 
-                <div class="topic-left">
+            <div class="topic-left">
 
-                    <div class="topic-icon">
-                        !
-                    </div>
-
-                    <div class="weak-topic-name">
-                        {{ topic.chapter_name }}
-                    </div>
-
+                <div class="topic-icon">
+                    !
                 </div>
 
 
-                <div class="weak-topic-count">
+                <div class="weak-topic-name">
 
-                    {{ topic.incorrect_count }}
+                    {% if detailed_result.assessment_type == "OBE" %}
 
-                    {% if topic.incorrect_count == 1 %}
-                        incorrect answer
+                        {{ topic.co_name }}
+
                     {% else %}
-                        incorrect answers
+
+                        {{ topic.chapter_name }}
+
                     {% endif %}
 
                 </div>
 
             </div>
 
-            {% endfor %}
+
+            <div class="weak-topic-count">
+
+                {{ topic.incorrect_count }}
+
+                {% if topic.incorrect_count == 1 %}
+                    incorrect answer
+                {% else %}
+                    incorrect answers
+                {% endif %}
+
+            </div>
 
         </div>
+
+        {% endfor %}
+
+    </div>
+
 
     {% else %}
 
-        <div class="no-weak-topics">
+    <div class="no-weak-topics">
 
-            <div class="success-icon">
-                ✓
-            </div>
+        <div class="success-icon">
+            ✓
+        </div>
 
-            <div>
+        <div>
 
-                <strong>
-                    No specific weak areas identified
-                </strong>
+            <strong>
+                No specific weak areas identified
+            </strong>
 
-                <p>
+            <p>
+
+                {% if detailed_result.assessment_type == "OBE" %}
+
+                    The student did not have any incorrectly
+                    answered questions linked to a Course
+                    Outcome in this test.
+
+                {% else %}
+
                     The student did not have any incorrectly
                     answered questions linked to a chapter
                     in this test.
-                </p>
 
-            </div>
+                {% endif %}
+
+            </p>
 
         </div>
+
+    </div>
 
     {% endif %}
 
@@ -284,11 +472,13 @@
 
     <div class="section-heading">
 
-        <h2>Answer Review</h2>
+        <h2>
+            Answer Review
+        </h2>
 
         <p class="section-description">
-            Review the student's answers and see which
-            questions were correct.
+            Review the student's answers and see the correct
+            answer for each question.
         </p>
 
     </div>
@@ -297,7 +487,9 @@
     {% for answer in answers %}
 
     <div class="answer-card
-        {% if answer.is_correct %}
+        {% if not answer.selected_answer %}
+            answer-unanswered
+        {% elif answer.is_correct %}
             answer-correct
         {% else %}
             answer-incorrect
@@ -314,7 +506,13 @@
             </span>
 
 
-            {% if answer.is_correct %}
+            {% if not answer.selected_answer %}
+
+                <span class="answer-status unanswered-status">
+                    — Not Answered
+                </span>
+
+            {% elif answer.is_correct %}
 
                 <span class="answer-status correct-status">
                     ✓ Correct
@@ -338,16 +536,69 @@
         </div>
 
 
+        <!-- OBE CO -->
+
+        {% if detailed_result.assessment_type == "OBE"
+              and answer.co_name %}
+
+        <div class="question-mapping">
+
+            <span class="mapping-label">
+                Course Outcome
+            </span>
+
+            <span class="mapping-value">
+
+                {{ answer.co_name }}
+
+                {% if answer.co_description %}
+
+                    — {{ answer.co_description }}
+
+                {% endif %}
+
+            </span>
+
+        </div>
+
+        {% endif %}
+
+
+        <!-- TRADITIONAL CHAPTER -->
+
+        {% if detailed_result.assessment_type != "OBE"
+              and answer.chapter_name %}
+
+        <div class="question-mapping">
+
+            <span class="mapping-label">
+                Chapter
+            </span>
+
+            <span class="mapping-value">
+                {{ answer.chapter_name }}
+            </span>
+
+        </div>
+
+        {% endif %}
+
+
         <!-- ANSWER DETAILS -->
 
         <div class="answer-details">
 
+
+            <!-- STUDENT'S ANSWER -->
 
             <div class="answer-row">
 
                 <span class="answer-label">
                     Student's Answer
                 </span>
+
+
+                {% if answer.selected_answer %}
 
                 <span class="answer-value
                     {% if answer.is_correct %}
@@ -357,20 +608,23 @@
                     {% endif %}
                 ">
 
-                    {% if answer.selected_answer %}
-
-                        {{ answer.selected_answer }}
-
-                    {% else %}
-
-                        Not Answered
-
-                    {% endif %}
+                    {{ answer.selected_option }}.
+                    {{ answer.selected_answer_text }}
 
                 </span>
 
+                {% else %}
+
+                <span class="answer-value unanswered-text">
+                    Not Answered
+                </span>
+
+                {% endif %}
+
             </div>
 
+
+            <!-- CORRECT ANSWER -->
 
             <div class="answer-row">
 
@@ -380,12 +634,15 @@
 
                 <span class="answer-value correct-answer-text">
 
-                    {{ answer.correct_option }}
+                    {{ answer.correct_option }}.
+                    {{ answer.correct_answer_text }}
 
                 </span>
 
             </div>
 
+
+            <!-- MARKS -->
 
             <div class="answer-row">
 
@@ -394,16 +651,13 @@
                 </span>
 
                 <span class="answer-value marks-value">
-
                     {{ answer.marks_obtained }}
-
                 </span>
 
             </div>
 
 
         </div>
-
 
     </div>
 
@@ -437,7 +691,10 @@
 
 <div class="page-header">
 
-    <h1>Child's Test Results</h1>
+    <h1>
+        Child's Test Results
+    </h1>
+
 
     {% if child %}
 
@@ -467,7 +724,9 @@
 
     <div class="section-heading">
 
-        <h2>Child Information</h2>
+        <h2>
+            Child Information
+        </h2>
 
     </div>
 
@@ -525,85 +784,85 @@
 
 {% if results %}
 
-    <div class="results-list">
+<div class="results-list">
 
-        {% for result in results %}
+    {% for result in results %}
 
-        <div class="result-card">
+    <div class="result-card">
 
 
-            <div class="result-main">
+        <div class="result-main">
 
-                <h2>
-                    {{ result.test_name }}
-                </h2>
+            <h2>
+                {{ result.test_name }}
+            </h2>
 
-                <p class="subject">
-                    {{ result.subject_name }}
+            <p class="subject">
+                {{ result.subject_name }}
+            </p>
+
+
+            {% if result.standard_name %}
+
+                <p class="standard">
+                    Standard {{ result.standard_name }}
                 </p>
 
-
-                {% if result.standard_name %}
-
-                    <p class="standard">
-                        Standard {{ result.standard_name }}
-                    </p>
-
-                {% endif %}
-
-            </div>
-
-
-            <div class="result-score">
-
-                <span class="score-label">
-                    Score
-                </span>
-
-                <strong>
-                    {{ result.score }}
-                    /
-                    {{ result.total_marks }}
-                </strong>
-
-                <span class="percentage">
-                    {{ result.percentage }}%
-                </span>
-
-            </div>
-
-
-            <div class="result-details">
-
-                <span>
-                    Submitted:
-                    {{ result.submitted_at }}
-                </span>
-
-
-                <span class="submitted-label">
-                    Attempted
-                </span>
-
-
-                <a
-                    href="{{ url_for(
-                        'parent.child_test_result',
-                        attempt_id=result.attempt_id
-                    ) }}"
-                    class="view-result-btn"
-                >
-                    View Detailed Result
-                </a>
-
-            </div>
-
+            {% endif %}
 
         </div>
 
-        {% endfor %}
+
+        <div class="result-score">
+
+            <span class="score-label">
+                Score
+            </span>
+
+            <strong>
+                {{ result.score }}
+                /
+                {{ result.total_marks }}
+            </strong>
+
+            <span class="percentage">
+                {{ result.percentage }}%
+            </span>
+
+        </div>
+
+
+        <div class="result-details">
+
+            <span>
+                Submitted:
+                {{ result.submitted_at }}
+            </span>
+
+
+            <span class="submitted-label">
+                Attempted
+            </span>
+
+
+            <a
+                href="{{ url_for(
+                    'parent.child_test_result',
+                    attempt_id=result.attempt_id
+                ) }}"
+                class="view-result-btn"
+            >
+                View Detailed Result
+            </a>
+
+        </div>
+
 
     </div>
+
+    {% endfor %}
+
+</div>
 
 
 {% else %}
@@ -615,7 +874,9 @@
 
 <div class="empty-state">
 
-    <h3>No Test Results</h3>
+    <h3>
+        No Test Results
+    </h3>
 
 
     {% if child %}
@@ -681,11 +942,13 @@
 
 }
 
+
 .page-header h1 {
 
     margin-bottom: 8px;
 
 }
+
 
 .page-header p {
 
@@ -693,10 +956,6 @@
 
 }
 
-
-/* =========================================
-   RESULT HEADER
-========================================= */
 
 .result-header {
 
@@ -848,7 +1107,7 @@
     display: grid;
 
     grid-template-columns:
-        repeat(4, 1fr);
+        repeat(5, 1fr);
 
     gap: 15px;
 
@@ -978,173 +1237,153 @@
 
 
 /* =========================================
-   RESULTS LIST
+   OBE CO PERFORMANCE
 ========================================= */
 
-.result-card {
+.co-performance-section {
+
+    margin-bottom: 32px;
+
+}
+
+
+.co-performance-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+}
+
+
+.co-card {
 
     background: white;
 
-    border: 1px solid #ddd;
+    border: 1px solid #e0e0e0;
 
-    border-radius: 10px;
+    border-radius: 12px;
 
-    padding: 22px;
+    padding: 18px;
 
-    margin-bottom: 16px;
+    box-shadow:
+        0 2px 7px rgba(0, 0, 0, 0.035);
+
+}
+
+
+.co-card-header {
 
     display: flex;
 
     align-items: center;
 
-    gap: 25px;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 15px;
 
 }
 
 
-.result-main {
+.co-label {
 
-    flex: 1;
+    color: #777;
 
-}
-
-
-.result-main h2 {
-
-    margin: 0 0 7px;
-
-    font-size: 19px;
-
-}
-
-
-.subject {
-
-    margin: 0 0 5px;
+    font-size: 11px;
 
     font-weight: 600;
 
-}
+    text-transform: uppercase;
 
-
-.standard {
-
-    margin: 0;
-
-    color: #777;
-
-}
-
-
-.result-score {
-
-    text-align: center;
-
-    min-width: 130px;
-
-}
-
-
-.score-label {
-
-    display: block;
-
-    font-size: 13px;
-
-    color: #777;
+    letter-spacing: 0.4px;
 
     margin-bottom: 4px;
 
 }
 
 
-.result-score strong {
+.co-card h3 {
 
-    display: block;
+    margin: 0;
 
-    font-size: 18px;
-
-}
-
-
-.percentage {
-
-    display: block;
-
-    margin-top: 4px;
-
-    font-weight: 600;
+    font-size: 16px;
 
 }
 
 
-.result-details {
+.co-description {
 
-    min-width: 200px;
+    margin: 5px 0 0;
 
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 9px;
-
-    align-items: flex-start;
-
-}
-
-
-.result-details span {
+    color: #666;
 
     font-size: 13px;
 
+    line-height: 1.45;
+
+}
+
+
+.co-percentage {
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+}
+
+
+.co-stats {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 10px;
+
+}
+
+
+.co-stat {
+
+    background: #fafafa;
+
+    border-radius: 8px;
+
+    padding: 10px;
+
+    text-align: center;
+
+}
+
+
+.co-stat span {
+
+    display: block;
+
     color: #777;
 
-}
+    font-size: 11px;
 
-
-.submitted-label {
-
-    font-weight: 600;
+    margin-bottom: 4px;
 
 }
 
 
-/* =========================================
-   BUTTONS
-========================================= */
+.co-stat strong {
 
-.view-result-btn,
-.back-btn {
-
-    display: inline-block;
-
-    padding: 9px 16px;
-
-    background: #333;
-
-    color: white;
-
-    text-decoration: none;
-
-    border-radius: 6px;
-
-    font-size: 14px;
-
-    font-weight: 600;
-
-}
-
-
-.view-result-btn:hover,
-.back-btn:hover {
-
-    opacity: 0.85;
+    font-size: 15px;
 
 }
 
 
 /* =========================================
-   WEAK TOPICS
+   WEAK TOPICS / AREAS TO IMPROVE
 ========================================= */
 
 .weak-topics-section {
@@ -1343,6 +1582,19 @@
 }
 
 
+.answer-unanswered {
+
+    border-left: 4px solid #999;
+
+    background: #fcfcfc;
+
+}
+
+
+/* =========================================
+   QUESTION HEADER
+========================================= */
+
 .question-header {
 
     display: flex;
@@ -1404,6 +1656,19 @@
 }
 
 
+.unanswered-status {
+
+    color: #666;
+
+    background: #f1f1f1;
+
+}
+
+
+/* =========================================
+   QUESTION
+========================================= */
+
 .question-text {
 
     font-weight: 600;
@@ -1416,6 +1681,59 @@
 
 }
 
+
+/* =========================================
+   QUESTION MAPPING
+========================================= */
+
+.question-mapping {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    background: #f7f7f7;
+
+    border: 1px solid #e3e3e3;
+
+    border-radius: 8px;
+
+    padding: 9px 12px;
+
+    margin-bottom: 15px;
+
+}
+
+
+.mapping-label {
+
+    color: #777;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+
+}
+
+
+.mapping-value {
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    line-height: 1.45;
+
+}
+
+
+/* =========================================
+   ANSWER DETAILS
+========================================= */
 
 .answer-details {
 
@@ -1440,7 +1758,7 @@
 
     justify-content: space-between;
 
-    align-items: center;
+    align-items: flex-start;
 
     gap: 20px;
 
@@ -1455,6 +1773,8 @@
 
     font-weight: 500;
 
+    white-space: nowrap;
+
 }
 
 
@@ -1465,6 +1785,8 @@
     font-weight: 600;
 
     text-align: right;
+
+    line-height: 1.45;
 
 }
 
@@ -1483,9 +1805,182 @@
 }
 
 
+.unanswered-text {
+
+    color: #777;
+
+}
+
+
 .marks-value {
 
     color: #444;
+
+}
+
+
+/* =========================================
+   RESULTS LIST
+========================================= */
+
+.result-card {
+
+    background: white;
+
+    border: 1px solid #ddd;
+
+    border-radius: 10px;
+
+    padding: 22px;
+
+    margin-bottom: 16px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 25px;
+
+}
+
+
+.result-main {
+
+    flex: 1;
+
+}
+
+
+.result-main h2 {
+
+    margin: 0 0 7px;
+
+    font-size: 19px;
+
+}
+
+
+.subject {
+
+    margin: 0 0 5px;
+
+    font-weight: 600;
+
+}
+
+
+.standard {
+
+    margin: 0;
+
+    color: #777;
+
+}
+
+
+.result-score {
+
+    text-align: center;
+
+    min-width: 130px;
+
+}
+
+
+.score-label {
+
+    display: block;
+
+    font-size: 13px;
+
+    color: #777;
+
+    margin-bottom: 4px;
+
+}
+
+
+.result-score strong {
+
+    display: block;
+
+    font-size: 18px;
+
+}
+
+
+.result-score .percentage {
+
+    display: block;
+
+    margin-top: 4px;
+
+    font-weight: 600;
+
+}
+
+
+.result-details {
+
+    min-width: 200px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+
+    align-items: flex-start;
+
+}
+
+
+.result-details span {
+
+    font-size: 13px;
+
+    color: #777;
+
+}
+
+
+.submitted-label {
+
+    font-weight: 600;
+
+}
+
+
+/* =========================================
+   BUTTONS
+========================================= */
+
+.view-result-btn,
+.back-btn {
+
+    display: inline-block;
+
+    padding: 9px 16px;
+
+    background: #333;
+
+    color: white;
+
+    text-decoration: none;
+
+    border-radius: 6px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+}
+
+
+.view-result-btn:hover,
+.back-btn:hover {
+
+    opacity: 0.85;
 
 }
 
@@ -1547,6 +2042,18 @@
 /* =========================================
    RESPONSIVE
 ========================================= */
+
+@media (max-width: 950px) {
+
+    .result-summary {
+
+        grid-template-columns:
+            repeat(3, 1fr);
+
+    }
+
+}
+
 
 @media (max-width: 800px) {
 
@@ -1618,6 +2125,23 @@
 
 
     .weak-topic-card {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+    }
+
+
+    .co-stats {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .co-card-header {
 
         align-items: flex-start;
 

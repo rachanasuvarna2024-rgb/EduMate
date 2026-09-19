@@ -8,451 +8,913 @@
 
 <div class="container">
 
-    <div class="page-header">
-        <h2>Student Results</h2>
-        <p>View submitted results for a selected test.</p>
-    </div>
+<!-- =========================================
+     PAGE HEADER
+========================================== -->
 
+<div class="page-header">
 
-    <!-- TEST SELECTION -->
-    <div class="selection-card">
+    <h2>Student Results</h2>
 
-        <h3>Select Test</h3>
-
-        <form method="GET" action="{{ url_for('teacher.student_results') }}">
-
-            <select name="test_id" class="test-select" required>
-
-                <option value="">-- Select a Test --</option>
-
-                {% for test in tests %}
-
-                <option value="{{ test.test_id }}"
-                    {% if selected_test_id == test.test_id %}selected{% endif %}>
-
-                    {{ test.test_name }} — {{ test.subject_name }}
-
-                </option>
-
-                {% endfor %}
-
-            </select>
-
-            <button type="submit" class="view-btn">
-                View Results
-            </button>
-
-        </form>
-
-    </div>
-
-
-    {% if selected_test %}
-
-    <!-- SELECTED TEST INFORMATION -->
-    <div class="test-info">
-
-        <div>
-            <h2>{{ selected_test.test_name }}</h2>
-            <p>{{ selected_test.subject_name }}</p>
-        </div>
-
-        <div class="total-marks">
-            <span>Total Marks</span>
-            <strong>{{ selected_test.total_marks }}</strong>
-        </div>
-
-    </div>
-
-
-    <!-- RESULTS -->
-    {% if results %}
-
-    <div class="results-card">
-
-        <div class="card-header">
-
-            <div>
-                <h3>Student Results</h3>
-                <p>Submitted attempts for this test</p>
-            </div>
-
-            <div class="student-count">
-                {{ results|length }} Submission{% if results|length != 1 %}s{% endif %}
-            </div>
-
-        </div>
-
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>#</th>
-                        <th>Student</th>
-                        <th>Email</th>
-                        <th>Score</th>
-                        <th>Percentage</th>
-                        <th>Submitted At</th>
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    {% for result in results %}
-
-                    <tr>
-
-                        <td>{{ loop.index }}</td>
-
-                        <td>
-                            <strong>{{ result.student_name }}</strong>
-                        </td>
-
-                        <td>
-                            {{ result.email }}
-                        </td>
-
-                        <td>
-                            {{ result.score }} / {{ selected_test.total_marks }}
-                        </td>
-
-                        <td>
-
-                            {% if result.percentage is not none %}
-
-                                <span class="percentage">
-                                    {{ result.percentage }}%
-                                </span>
-
-                            {% else %}
-
-                                <span class="percentage">
-                                    —
-                                </span>
-
-                            {% endif %}
-
-                        </td>
-
-                        <td>
-                            {% if result.submitted_at %}
-                                {{ result.submitted_at }}
-                            {% else %}
-                                —
-                            {% endif %}
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    </div>
-
-
-    {% else %}
-
-    <!-- NO RESULTS -->
-    <div class="empty-card">
-
-        <div class="empty-icon">📊</div>
-
-        <h3>No Submitted Results</h3>
-
-        <p>
-            No students have submitted this test yet.
-        </p>
-
-    </div>
-
-    {% endif %}
-
-
-    {% else %}
-
-    <!-- INITIAL STATE -->
-    <div class="empty-card">
-
-        <div class="empty-icon">📋</div>
-
-        <h3>Select a Test</h3>
-
-        <p>
-            Choose a test from the dropdown above to view student results.
-        </p>
-
-    </div>
-
-    {% endif %}
+    <p>
+        View submitted results for a selected test.
+    </p>
 
 </div>
 
 
+<!-- =========================================
+     TEST SELECTION
+========================================== -->
+
+<div class="selection-card">
+
+    <h3>Select Test</h3>
+
+    <form
+        method="GET"
+        action="{{ url_for('teacher.student_results') }}"
+    >
+
+        <select
+            name="test_id"
+            class="test-select"
+            required
+        >
+
+            <option value="">
+                -- Select a Test --
+            </option>
+
+            {% for test in tests %}
+
+            <option
+                value="{{ test.test_id }}"
+                {% if selected_test_id == test.test_id %}
+                    selected
+                {% endif %}
+            >
+
+                {{ test.test_name }}
+                — {{ test.subject_name }}
+
+                {% if test.assessment_type == "OBE" %}
+                    — OBE
+                {% endif %}
+
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+
+        <button
+            type="submit"
+            class="view-btn"
+        >
+            View Results
+        </button>
+
+    </form>
+
+</div>
+
+
+{% if selected_test %}
+
+
+<!-- =========================================
+     SELECTED TEST INFORMATION
+========================================== -->
+
+<div class="test-info">
+
+    <div>
+
+        <h2>
+            {{ selected_test.test_name }}
+        </h2>
+
+        <p>
+            {{ selected_test.subject_name }}
+        </p>
+
+        {% if selected_test.standard_name %}
+
+        <p class="standard-text">
+            {{ selected_test.standard_name }}
+        </p>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="test-info-right">
+
+        <div class="assessment-type">
+
+            <span>
+                Assessment Type
+            </span>
+
+            <strong
+                class="{% if selected_test.assessment_type == 'OBE' %}obe-type{% endif %}"
+            >
+                {{ selected_test.assessment_type }}
+            </strong>
+
+        </div>
+
+
+        <div class="total-marks">
+
+            <span>
+                Total Marks
+            </span>
+
+            <strong>
+                {{ selected_test.total_marks }}
+            </strong>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================
+     STUDENT RESULTS
+========================================== -->
+
+{% if results %}
+
+<div class="results-card">
+
+    <div class="card-header">
+
+        <div>
+
+            <h3>
+                Student Results
+            </h3>
+
+            <p>
+                Submitted attempts for this test.
+                Select View Result to see the complete
+                individual answer review.
+            </p>
+
+        </div>
+
+
+        <div class="student-count">
+
+            {{ results|length }}
+
+            Submission{% if results|length != 1 %}s{% endif %}
+
+        </div>
+
+    </div>
+
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>#</th>
+
+                    <th>Student</th>
+
+                    <th>Email</th>
+
+                    <th>Score</th>
+
+                    <th>Percentage</th>
+
+                    <th>Submitted At</th>
+
+                    <th>Action</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for result in results %}
+
+                <tr>
+
+                    <td>
+                        {{ loop.index }}
+                    </td>
+
+
+                    <td>
+
+                        <strong>
+                            {{ result.student_name }}
+                        </strong>
+
+                    </td>
+
+
+                    <td>
+                        {{ result.email }}
+                    </td>
+
+
+                    <td>
+
+                        {{ result.score }}
+                        /
+                        {{ selected_test.total_marks }}
+
+                    </td>
+
+
+                    <td>
+
+                        {% if result.percentage is not none %}
+
+                            <span class="percentage">
+                                {{ result.percentage }}%
+                            </span>
+
+                        {% else %}
+
+                            <span class="percentage">
+                                —
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        {% if result.submitted_at %}
+
+                            {{ result.submitted_at }}
+
+                        {% else %}
+
+                            —
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        <a
+                            href="{{ url_for(
+                                'teacher.view_student_result',
+                                attempt_id=result.attempt_id
+                            ) }}"
+                            class="result-btn"
+                        >
+                            View Result
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+{% else %}
+
+
+<!-- =========================================
+     NO RESULTS
+========================================== -->
+
+<div class="empty-card">
+
+    <div class="empty-icon">
+        📊
+    </div>
+
+    <h3>
+        No Submitted Results
+    </h3>
+
+    <p>
+        No students have submitted this test yet.
+    </p>
+
+</div>
+
+{% endif %}
+
+
+{% else %}
+
+
+<!-- =========================================
+     INITIAL STATE
+========================================== -->
+
+<div class="empty-card">
+
+    <div class="empty-icon">
+        📋
+    </div>
+
+    <h3>
+        Select a Test
+    </h3>
+
+    <p>
+        Choose a test from the dropdown above to view student results.
+    </p>
+
+</div>
+
+{% endif %}
+
+</div>
+
 <style>
 
+/* =========================================
+   CONTAINER
+========================================= */
+
 .container {
-    max-width: 1100px;
+
+    max-width: 1150px;
+
     margin: 0 auto;
+
     padding: 25px;
+
 }
+
+
+/* =========================================
+   PAGE HEADER
+========================================= */
 
 .page-header {
+
     margin-bottom: 25px;
+
 }
+
 
 .page-header h2 {
+
     margin-bottom: 6px;
+
     font-size: 28px;
+
 }
+
 
 .page-header p {
+
     margin: 0;
+
     color: #666;
+
 }
 
 
-/* -----------------------------
+/* =========================================
    TEST SELECTION
------------------------------ */
+========================================= */
 
 .selection-card {
+
     background: white;
+
     border: 1px solid #e5e5e5;
+
     border-radius: 12px;
+
     padding: 22px;
+
     margin-bottom: 25px;
+
 }
+
 
 .selection-card h3 {
+
     margin-top: 0;
+
     margin-bottom: 15px;
+
 }
+
 
 .selection-card form {
+
     display: flex;
+
     gap: 12px;
+
     align-items: center;
+
 }
+
 
 .test-select {
+
     flex: 1;
+
     padding: 11px 13px;
+
     border: 1px solid #ccc;
+
     border-radius: 7px;
+
     background: white;
+
     font-size: 14px;
+
     cursor: pointer;
+
 }
+
 
 .test-select:focus {
+
     outline: none;
+
     border-color: #777;
+
 }
+
 
 .view-btn {
+
     padding: 11px 20px;
+
     border: none;
+
     border-radius: 7px;
+
     background: #333;
+
     color: white;
+
     font-size: 14px;
+
     cursor: pointer;
+
 }
+
 
 .view-btn:hover {
+
     background: #222;
+
 }
 
 
-/* -----------------------------
+/* =========================================
    SELECTED TEST
------------------------------ */
+========================================= */
 
 .test-info {
+
     display: flex;
+
     justify-content: space-between;
+
     align-items: center;
+
+    gap: 25px;
+
     background: white;
+
     border: 1px solid #e5e5e5;
+
     border-radius: 12px;
+
     padding: 22px;
+
     margin-bottom: 25px;
+
 }
+
 
 .test-info h2 {
+
     margin: 0 0 6px 0;
+
     font-size: 22px;
+
 }
+
 
 .test-info p {
-    margin: 0;
+
+    margin: 0 0 4px;
+
     color: #666;
+
 }
+
+
+.standard-text {
+
+    font-size: 13px;
+
+}
+
+
+.test-info-right {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 30px;
+
+}
+
+
+.assessment-type {
+
+    text-align: right;
+
+}
+
+
+.assessment-type span {
+
+    display: block;
+
+    color: #777;
+
+    font-size: 13px;
+
+    margin-bottom: 4px;
+
+}
+
+
+.assessment-type strong {
+
+    font-size: 14px;
+
+}
+
+
+.obe-type {
+
+    padding: 5px 9px;
+
+    border-radius: 6px;
+
+    background: #f1f1f1;
+
+}
+
 
 .total-marks {
+
     text-align: right;
+
 }
+
 
 .total-marks span {
+
     display: block;
+
     color: #777;
+
     font-size: 13px;
+
     margin-bottom: 4px;
+
 }
+
 
 .total-marks strong {
+
     font-size: 22px;
+
 }
 
 
-/* -----------------------------
+/* =========================================
    RESULTS CARD
------------------------------ */
+========================================= */
 
 .results-card {
+
     background: white;
+
     border: 1px solid #e5e5e5;
+
     border-radius: 12px;
+
     overflow: hidden;
+
 }
+
 
 .card-header {
+
     display: flex;
+
     justify-content: space-between;
+
     align-items: center;
+
     padding: 22px;
+
     border-bottom: 1px solid #eee;
+
 }
+
 
 .card-header h3 {
+
     margin: 0 0 5px 0;
+
     font-size: 19px;
+
 }
+
 
 .card-header p {
+
     margin: 0;
+
     color: #777;
+
     font-size: 13px;
+
 }
+
 
 .student-count {
+
     background: #f2f2f2;
+
     padding: 8px 12px;
+
     border-radius: 20px;
+
     font-size: 13px;
+
+    white-space: nowrap;
+
 }
 
 
-/* -----------------------------
+/* =========================================
    TABLE
------------------------------ */
+========================================= */
 
 .table-wrapper {
+
     width: 100%;
+
     overflow-x: auto;
+
 }
+
 
 table {
+
     width: 100%;
+
     border-collapse: collapse;
+
 }
+
 
 th {
+
     background: #f7f7f7;
+
     padding: 13px 15px;
+
     text-align: left;
+
     font-size: 13px;
+
     color: #555;
+
     white-space: nowrap;
+
 }
+
 
 td {
+
     padding: 15px;
+
     border-top: 1px solid #eee;
+
     font-size: 14px;
+
     color: #444;
+
+    white-space: nowrap;
+
 }
+
 
 tbody tr:hover {
+
     background: #fafafa;
+
 }
+
 
 .percentage {
+
     font-weight: 600;
+
 }
 
 
-/* -----------------------------
+/* =========================================
+   VIEW RESULT BUTTON
+========================================= */
+
+.result-btn {
+
+    display: inline-block;
+
+    padding: 7px 12px;
+
+    border-radius: 6px;
+
+    background: #333;
+
+    color: white;
+
+    text-decoration: none;
+
+    font-size: 12px;
+
+    font-weight: 500;
+
+    transition: 0.2s ease;
+
+}
+
+
+.result-btn:hover {
+
+    background: #222;
+
+}
+
+
+/* =========================================
    EMPTY STATE
------------------------------ */
+========================================= */
 
 .empty-card {
+
     background: white;
+
     border: 1px solid #e5e5e5;
+
     border-radius: 12px;
+
     padding: 55px 25px;
+
     text-align: center;
+
 }
+
 
 .empty-icon {
+
     font-size: 38px;
+
     margin-bottom: 12px;
+
 }
+
 
 .empty-card h3 {
+
     margin: 0 0 8px 0;
+
 }
+
 
 .empty-card p {
+
     margin: 0;
+
     color: #777;
+
 }
 
 
-/* -----------------------------
+/* =========================================
    RESPONSIVE
------------------------------ */
+========================================= */
+
+@media (max-width: 800px) {
+
+    .test-info {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+    }
+
+
+    .test-info-right {
+
+        width: 100%;
+
+        justify-content: space-between;
+
+    }
+
+
+    .assessment-type,
+    .total-marks {
+
+        text-align: left;
+
+    }
+
+}
+
 
 @media (max-width: 700px) {
 
     .container {
+
         padding: 15px;
+
     }
 
+
     .selection-card form {
+
         flex-direction: column;
+
         align-items: stretch;
+
     }
+
 
     .test-select,
     .view-btn {
+
         width: 100%;
+
     }
 
-    .test-info {
-        flex-direction: column;
+
+    .test-info-right {
+
         align-items: flex-start;
+
+        flex-direction: column;
+
         gap: 15px;
+
     }
 
-    .total-marks {
-        text-align: left;
-    }
 
     .card-header {
+
         flex-direction: column;
+
         align-items: flex-start;
+
         gap: 12px;
+
     }
 
 }

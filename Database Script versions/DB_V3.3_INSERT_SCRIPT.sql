@@ -1541,6 +1541,22 @@ JOIN parent p
 WHERE i.institution_code = 'BFC001';
 
 
+UPDATE student
+SET standard_id = 13
+WHERE student_id = 2;
+
+SELECT
+    s.student_id,
+    s.student_name,
+    s.email,
+    s.institution_id,
+    s.standard_id,
+    st.standard_name
+FROM student s
+JOIN standard st
+    ON st.standard_id = s.standard_id
+WHERE s.student_id = 2;
+
 -- ============================================================
 -- 19. TEACHER - SUBJECT MAPPING
 -- ============================================================
@@ -2372,3 +2388,29 @@ ORDER BY
 -- ============================================================
 -- INSERT DATA COMPLETE
 -- ============================================================
+
+ROLLBACK;
+
+USE edumate_db3_3;
+
+DELETE FROM teacher_subject
+WHERE teacher_id = 3;
+
+INSERT INTO teacher_subject (teacher_id, subject_id)
+VALUES (3, 41);
+
+SELECT
+    ts.teacher_subject_id,
+    ts.teacher_id,
+    ts.subject_id,
+    s.subject_name,
+    st.standard_name,
+    s.assessment_type
+FROM teacher_subject ts
+JOIN subject s
+    ON s.subject_id = ts.subject_id
+JOIN standard st
+    ON st.standard_id = s.standard_id
+WHERE ts.teacher_id = 3;
+
+COMMIT;
