@@ -4530,13 +4530,3 @@ def class_analytics():
     finally:
         cursor.close()
         conn.close()
-
-# ============================================================
-# PROFILE
-# ============================================================
-
-@teacher_bp.route("/teacher_profile")
-@role_required("Teacher")
-def teacher_profile():
-
-    return "Teacher Profile Page"

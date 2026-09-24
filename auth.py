@@ -4,10 +4,12 @@ from flask import (
     request,
     redirect,
     url_for,
-    session
+    session,
+    flash
 )
 
-from db import conn, cursor
+from db import conn, cursor, get_db_connection
+from session_utils import role_required
 
 
 # ---------------------------------
@@ -193,6 +195,190 @@ def logout():
         url_for("auth.login_page")
     )
 
+# ---------------------------------
+# COMMON PROFILE
+# ---------------------------------
+@auth_bp.route("/profile")
+def profile():
+
+    role = session.get("role")
+    user_id = session.get("user_id")
+
+    if not role or not user_id:
+        return redirect(url_for("auth.login_page"))
+
+    conn_local = None
+    cursor_local = None
+    user = None
+
+    try:
+
+        conn_local = get_db_connection()
+        cursor_local = conn_local.cursor(dictionary=True)
+
+        # ---------------------------------
+        # ADMIN
+        # ---------------------------------
+        if role == "Admin":
+
+            cursor_local.execute("""
+                SELECT
+                    admin_id AS user_id,
+                    admin_name AS name,
+                    email,
+                    NULL AS phone,
+                    NULL AS institution_name,
+                    NULL AS department_name,
+                    NULL AS designation_name,
+                    NULL AS standard_name,
+                    status
+                FROM admin
+                WHERE admin_id = %s
+            """, (user_id,))
+
+            user = cursor_local.fetchone()
+
+
+        # ---------------------------------
+        # TEACHER
+        # ---------------------------------
+        elif role == "Teacher":
+
+            cursor_local.execute("""
+                SELECT
+                    t.teacher_id AS user_id,
+                    t.teacher_name AS name,
+                    t.email,
+                    t.phone,
+                    i.institution_name,
+                    d.department_name,
+                    dg.designation_name,
+                    NULL AS standard_name,
+                    t.status
+                FROM teacher t
+
+                LEFT JOIN institution i
+                    ON i.institution_id = t.institution_id
+
+                LEFT JOIN department_master d
+                    ON d.department_id = t.department_id
+
+                LEFT JOIN designation_master dg
+                    ON dg.designation_id = t.designation_id
+
+                WHERE t.teacher_id = %s
+            """, (user_id,))
+
+            user = cursor_local.fetchone()
+
+
+        # ---------------------------------
+        # STUDENT
+        # ---------------------------------
+        elif role == "Student":
+
+            cursor_local.execute("""
+                SELECT
+                    s.student_id AS user_id,
+                    s.student_name AS name,
+                    s.email,
+                    s.phone,
+                    i.institution_name,
+                    NULL AS department_name,
+                    NULL AS designation_name,
+                    st.standard_name,
+                    s.status
+                FROM student s
+
+                LEFT JOIN institution i
+                    ON i.institution_id = s.institution_id
+
+                LEFT JOIN standard st
+                    ON st.standard_id = s.standard_id
+
+                WHERE s.student_id = %s
+            """, (user_id,))
+
+            user = cursor_local.fetchone()
+
+
+        # ---------------------------------
+        # PARENT
+        # ---------------------------------
+        elif role == "Parent":
+
+            cursor_local.execute("""
+                SELECT
+                    p.parent_id AS user_id,
+                    p.parent_name AS name,
+                    p.email,
+                    p.phone,
+                    i.institution_name,
+                    NULL AS department_name,
+                    NULL AS designation_name,
+                    NULL AS standard_name,
+                    p.status
+                FROM parent p
+
+                LEFT JOIN institution i
+                    ON i.institution_id = p.institution_id
+
+                WHERE p.parent_id = %s
+            """, (user_id,))
+
+            user = cursor_local.fetchone()
+
+
+        if not user:
+
+            flash(
+                "Unable to load profile.",
+                "error"
+            )
+
+            return redirect(
+                url_for("auth.login_page")
+            )
+
+        return render_template(
+            "profile.html",
+            user=user,
+            role=role
+        )
+
+    except Exception as e:
+
+        print("\n========== PROFILE ERROR ==========")
+        print(e)
+        print("===================================\n")
+
+        flash(
+            "Unable to load profile.",
+            "error"
+        )
+
+        # Redirect back to the appropriate dashboard
+        if role == "Admin":
+            return redirect(url_for("admin.admin_home"))
+
+        elif role == "Teacher":
+            return redirect(url_for("teacher.teacher_home"))
+
+        elif role == "Student":
+            return redirect(url_for("student.student_home"))
+
+        elif role == "Parent":
+            return redirect(url_for("parent.parent_home"))
+
+        return redirect(url_for("auth.login_page"))
+
+    finally:
+
+        if cursor_local:
+            cursor_local.close()
+
+        if conn_local:
+            conn_local.close()
 
 # ---------------------------------
 # CACHE PROTECTION

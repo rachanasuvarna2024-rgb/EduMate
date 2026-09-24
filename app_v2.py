@@ -17,5 +17,12 @@ app.register_blueprint(teacher_bp)
 app.register_blueprint(student_bp)
 app.register_blueprint(parent_bp)
 
+print("\n========== REGISTERED ROUTES ==========")
+
+for rule in app.url_map.iter_rules():
+    print(rule)
+
+print("=======================================\n")
+
 if __name__ == "__main__":
     app.run(debug=True)
