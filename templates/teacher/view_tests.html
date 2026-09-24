@@ -1,3 +1,4 @@
+
 {% extends "teacher/teacher_base.html" %}
 
 {% block title %}EduMate - Manage Tests{% endblock %}
@@ -208,29 +209,72 @@
                                     </a>
 
 
+                                    <a
+                                        href="{{ url_for(
+                                            'teacher.preview_test',
+                                            test_id=test.test_id
+                                        ) }}"
+                                        class="btn-preview"
+                                    >
+                                        Preview Test
+                                    </a>
+
+
                                     <form
-    method="POST"
-    action="{{ url_for(
-        'teacher.publish_test',
-        test_id=test.test_id
-    ) }}"
-    style="display:inline;"
-    onsubmit="return confirm('Publish this test?');"
->
-    <button
-        type="submit"
-        class="btn-publish"
-    >
-        Publish
-    </button>
-</form>
+                                        method="POST"
+                                        action="{{ url_for(
+                                            'teacher.publish_test',
+                                            test_id=test.test_id
+                                        ) }}"
+                                        style="display:inline;"
+                                        onsubmit="return confirm('Publish this test?');"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="btn-publish"
+                                        >
+                                            Publish
+                                        </button>
+
+                                    </form>
 
 
                                 {% elif test.status == 'Published' %}
 
-                                    <span class="action-disabled">
-                                        Published
-                                    </span>
+                                    <!-- PREVIEW PUBLISHED TEST -->
+
+                                    <a
+                                        href="{{ url_for(
+                                            'teacher.preview_test',
+                                            test_id=test.test_id
+                                        ) }}"
+                                        class="btn-preview"
+                                    >
+                                        Preview Test
+                                    </a>
+
+
+                                    <!-- COPY PUBLISHED TEST -->
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for(
+                                            'teacher.copy_test',
+                                            test_id=test.test_id
+                                        ) }}"
+                                        style="display:inline;"
+                                        onsubmit="return confirm('Create an editable draft copy of this published test?');"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="btn-copy"
+                                        >
+                                            Copy as Draft
+                                        </button>
+
+                                    </form>
 
 
                                 {% else %}
@@ -362,7 +406,10 @@ td {
 
 .btn-edit,
 .btn-action,
-.btn-publish {
+.btn-publish,
+.btn-copy,
+
+.btn-preview {
     background: #e8f5e9;
     color: #2e7d32;
     display: inline-block;
@@ -371,6 +418,8 @@ td {
     border-radius: 5px;
     text-decoration: none;
     font-size: 12px;
+    border: none;
+    cursor: pointer;
 }
 
 .btn-edit {
@@ -386,6 +435,28 @@ td {
 .btn-publish {
     background: #e8f5e9;
     color: #2e7d32;
+}
+
+.btn-copy {
+    background: #ede7f6;
+    color: #6a1b9a;
+}
+
+.btn-preview {
+    background: #e3f2fd;
+    color: #1565c0;
+    display: inline-block;
+    padding: 7px 10px;
+    margin: 2px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 12px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-preview:hover {
+    background: #bbdefb;
 }
 
 .action-disabled {
@@ -426,3 +497,5 @@ td {
 </style>
 
 {% endblock %}
+
+

@@ -1,0 +1,821 @@
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Preview - {{ test.test_name }}{% endblock %}
+
+{% block portal_title %}Test Preview{% endblock %}
+
+{% block content %}
+
+<div class="test-page">
+
+
+<!-- =========================================
+     PREVIEW BANNER
+========================================== -->
+
+<div class="preview-banner">
+
+    <strong>Teacher Preview</strong>
+
+    <span>
+        This is how the test will appear to students.
+    </span>
+
+</div>
+
+
+<!-- =========================================
+     TEST HEADER
+========================================== -->
+
+<div class="test-header">
+
+    <div>
+
+        <h1>{{ test.test_name }}</h1>
+
+        <p class="subject">
+            {{ test.subject_name }} | Standard {{ test.standard_name }}
+        </p>
+
+        {% if test.description %}
+
+        <p class="description">
+            {{ test.description }}
+        </p>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="test-info">
+
+        <div>
+
+            <span class="label">
+                Total Marks
+            </span>
+
+            <strong>
+                {{ test.total_marks }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span class="label">
+                Duration
+            </span>
+
+            <strong>
+                {{ test.duration_minutes }} min
+            </strong>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================
+     INSTRUCTIONS
+========================================== -->
+
+<div class="instructions">
+
+    <h3>
+        Instructions
+    </h3>
+
+    <ul>
+
+        <li>
+            Read each question carefully.
+        </li>
+
+        <li>
+            Select one option for each question.
+        </li>
+
+        <li>
+            Your answers are saved automatically.
+        </li>
+
+        <li>
+            You can continue the test later and your saved answers will remain selected.
+        </li>
+
+        <li>
+            Submit the test after completing all questions.
+        </li>
+
+    </ul>
+
+</div>
+
+
+<!-- =========================================
+     QUESTIONS
+========================================== -->
+
+{% if questions %}
+
+<div class="questions-list">
+
+    {% for question in questions %}
+
+    <div class="question-card">
+
+
+        <div class="question-number">
+
+            Question {{ loop.index }}
+
+            <span class="question-marks">
+                {{ question.marks }}
+                Mark{% if question.marks != 1 %}s{% endif %}
+            </span>
+
+        </div>
+
+
+        <div class="question-text">
+
+            {{ question.question_text }}
+
+        </div>
+
+
+        {% if question.question_image %}
+
+        <div class="question-image">
+
+            <img
+                src="{{ url_for(
+                    'static',
+                    filename='uploads/questions/' ~ question.question_image
+                ) }}"
+                alt="Question Image"
+            >
+
+        </div>
+
+        {% endif %}
+
+
+        {% if question.question_type == 'MCQ' %}
+
+        <div class="options">
+
+
+            <!-- OPTION A -->
+
+            <label>
+
+                <input
+                    type="radio"
+                    name="preview_question_{{ question.question_id }}"
+                >
+
+                <span>
+                    {{ question.option_a }}
+                </span>
+
+            </label>
+
+
+            <!-- OPTION B -->
+
+            <label>
+
+                <input
+                    type="radio"
+                    name="preview_question_{{ question.question_id }}"
+                >
+
+                <span>
+                    {{ question.option_b }}
+                </span>
+
+            </label>
+
+
+            <!-- OPTION C -->
+
+            <label>
+
+                <input
+                    type="radio"
+                    name="preview_question_{{ question.question_id }}"
+                >
+
+                <span>
+                    {{ question.option_c }}
+                </span>
+
+            </label>
+
+
+            <!-- OPTION D -->
+
+            <label>
+
+                <input
+                    type="radio"
+                    name="preview_question_{{ question.question_id }}"
+                >
+
+                <span>
+                    {{ question.option_d }}
+                </span>
+
+            </label>
+
+
+        </div>
+
+        {% endif %}
+
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+<div class="submit-container">
+
+    <button
+        type="button"
+        class="submit-button"
+        disabled
+    >
+        Submit Test
+    </button>
+
+</div>
+
+{% else %}
+
+
+<!-- =========================================
+     NO QUESTIONS
+========================================== -->
+
+<div class="empty-state">
+
+    <h3>
+        No Questions Added
+    </h3>
+
+    <p>
+        This test does not contain any questions yet.
+    </p>
+
+    <a
+        href="{{ url_for(
+            'teacher.manage_questions',
+            test_id=test.test_id
+        ) }}"
+        class="manage-btn"
+    >
+        Manage Questions
+    </a>
+
+</div>
+
+{% endif %}
+
+
+<!-- =========================================
+     BOTTOM ACTIONS
+========================================== -->
+
+<div class="bottom-actions">
+
+    <a
+        href="{{ url_for(
+            'teacher.manage_questions',
+            test_id=test.test_id
+        ) }}"
+        class="back-btn"
+    >
+        ← Back to Manage Questions
+    </a>
+
+</div>
+
+
+</div>
+
+
+<!-- =============================================
+     PAGE CSS
+============================================= -->
+
+<style>
+
+/* =========================================
+   TEST PAGE
+========================================= */
+
+.test-page {
+
+    max-width: 1000px;
+
+    margin: 0 auto;
+
+    padding: 30px;
+
+}
+
+
+/* =========================================
+   PREVIEW BANNER
+========================================= */
+
+.preview-banner {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    background: #f5f5f5;
+
+    border: 1px solid #ddd;
+
+    border-radius: 8px;
+
+    padding: 11px 15px;
+
+    margin-bottom: 15px;
+
+    font-size: 13px;
+
+}
+
+.preview-banner strong {
+
+    color: #333;
+
+}
+
+.preview-banner span {
+
+    color: #777;
+
+}
+
+
+/* =========================================
+   TEST HEADER
+========================================= */
+
+.test-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 30px;
+
+    background: white;
+
+    border: 1px solid #ddd;
+
+    border-radius: 10px;
+
+    padding: 25px;
+
+    margin-bottom: 20px;
+
+}
+
+
+.test-header h1 {
+
+    margin: 0 0 8px;
+
+    font-size: 27px;
+
+}
+
+
+.subject {
+
+    margin: 0 0 8px;
+
+    font-weight: 600;
+
+    color: #555;
+
+}
+
+
+.description {
+
+    margin: 0;
+
+    color: #777;
+
+}
+
+
+/* =========================================
+   TEST INFORMATION
+========================================= */
+
+.test-info {
+
+    display: flex;
+
+    gap: 25px;
+
+}
+
+
+.test-info div {
+
+    text-align: center;
+
+}
+
+
+.label {
+
+    display: block;
+
+    color: #777;
+
+    font-size: 12px;
+
+    margin-bottom: 5px;
+
+}
+
+
+.test-info strong {
+
+    font-size: 17px;
+
+}
+
+
+/* =========================================
+   INSTRUCTIONS
+========================================= */
+
+.instructions {
+
+    background: #f8f9fa;
+
+    border: 1px solid #eee;
+
+    border-radius: 10px;
+
+    padding: 20px;
+
+    margin-bottom: 20px;
+
+}
+
+
+.instructions h3 {
+
+    margin-top: 0;
+
+}
+
+
+.instructions ul {
+
+    margin-bottom: 0;
+
+}
+
+
+.instructions li {
+
+    margin-bottom: 6px;
+
+}
+
+
+/* =========================================
+   QUESTIONS
+========================================= */
+
+.questions-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+.question-card {
+
+    background: white;
+
+    border: 1px solid #ddd;
+
+    border-radius: 10px;
+
+    padding: 22px;
+
+    margin-bottom: 18px;
+
+}
+
+
+.question-number {
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    color: #777;
+
+    margin-bottom: 10px;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+
+.question-marks {
+
+    font-size: 12px;
+
+    color: #777;
+
+    font-weight: 500;
+
+}
+
+
+.question-text {
+
+    font-size: 17px;
+
+    font-weight: 600;
+
+    margin-bottom: 18px;
+
+    line-height: 1.5;
+
+}
+
+
+/* =========================================
+   QUESTION IMAGE
+========================================= */
+
+.question-image {
+
+    margin-bottom: 18px;
+
+}
+
+
+.question-image img {
+
+    max-width: 500px;
+
+    max-height: 300px;
+
+    border-radius: 7px;
+
+    border: 1px solid #ddd;
+
+    object-fit: contain;
+
+}
+
+
+/* =========================================
+   OPTIONS
+========================================= */
+
+.options {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+
+}
+
+
+.options label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 13px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 7px;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+
+}
+
+
+.options label:hover {
+
+    background: #f8f9fa;
+
+}
+
+
+.options input {
+
+    width: 16px;
+
+    height: 16px;
+
+    flex-shrink: 0;
+
+}
+
+
+/* =========================================
+   EMPTY STATE
+========================================= */
+
+.empty-state {
+
+    background: white;
+
+    border: 1px dashed #ddd;
+
+    border-radius: 10px;
+
+    padding: 45px 20px;
+
+    text-align: center;
+
+}
+
+
+.empty-state h3 {
+
+    margin-bottom: 8px;
+
+}
+
+
+.empty-state p {
+
+    color: #777;
+
+    margin-bottom: 20px;
+
+}
+
+
+.manage-btn {
+
+    display: inline-block;
+
+    padding: 10px 16px;
+
+    background: #333;
+
+    color: white;
+
+    text-decoration: none;
+
+    border-radius: 6px;
+
+    font-size: 14px;
+
+}
+
+
+/* =========================================
+   BOTTOM ACTIONS
+========================================= */
+
+.bottom-actions {
+
+    text-align: center;
+
+    margin: 30px 0;
+
+}
+
+
+.back-btn {
+
+    display: inline-block;
+
+    padding: 10px 16px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 6px;
+
+    text-decoration: none;
+
+    color: #444;
+
+    background: white;
+
+    font-size: 14px;
+
+}
+
+
+.back-btn:hover {
+
+    background: #f7f7f7;
+
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 850px) {
+
+    .test-header {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+
+    .test-info {
+
+        width: 100%;
+
+        justify-content: flex-start;
+
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .test-page {
+
+        padding: 15px;
+
+    }
+
+
+    .test-header {
+
+        padding: 18px;
+
+    }
+
+
+    .question-card {
+
+        padding: 18px;
+
+    }
+
+
+    .preview-banner {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        gap: 3px;
+
+    }
+
+}
+
+</style>
+
+{% endblock %}

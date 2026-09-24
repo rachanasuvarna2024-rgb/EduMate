@@ -2027,6 +2027,345 @@ def view_tests():
         tests=tests
     )
 
+# ============================================================
+# COPY PUBLISHED TEST AS DRAFT
+# ============================================================
+
+@teacher_bp.route("/copy_test/<int:test_id>", methods=["POST"])
+@role_required("Teacher")
+def copy_test(test_id):
+
+    teacher_id = session.get("user_id")
+
+    if not teacher_id:
+        flash(
+            "Teacher session not found.",
+            "error"
+        )
+
+        return redirect(
+            url_for("auth.login")
+        )
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        # ----------------------------------------------------
+        # GET ORIGINAL PUBLISHED TEST
+        #
+        # The test must:
+        # 1. Exist
+        # 2. Belong to the logged-in teacher
+        # 3. Be Published
+        # 4. Use a subject currently assigned to the teacher
+        # ----------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT
+                t.test_id,
+                t.teacher_id,
+                t.subject_id,
+                t.test_name,
+                t.description,
+                t.total_marks,
+                t.duration_minutes,
+                t.status
+
+            FROM test t
+
+            JOIN teacher_subject ts
+                ON ts.teacher_id = t.teacher_id
+               AND ts.subject_id = t.subject_id
+
+            WHERE t.test_id = %s
+              AND t.teacher_id = %s
+              AND t.status = 'Published'
+            """,
+            (
+                test_id,
+                teacher_id
+            )
+        )
+
+        original_test = cursor.fetchone()
+
+
+        if not original_test:
+
+            flash(
+                "Published test not found or you are not authorized to copy it.",
+                "error"
+            )
+
+            cursor.close()
+            conn.close()
+
+            return redirect(
+                url_for("teacher.view_tests")
+            )
+
+
+        # ----------------------------------------------------
+        # CREATE NEW TEST AS DRAFT
+        #
+        # Start/end dates are intentionally NULL because
+        # this is a new independent draft for future use.
+        # ----------------------------------------------------
+
+        copied_test_name = (
+            f"Copy of {original_test['test_name']}"
+        )[:200]
+
+
+        cursor.execute(
+            """
+            INSERT INTO test
+            (
+                teacher_id,
+                subject_id,
+                test_name,
+                description,
+                total_marks,
+                duration_minutes,
+                start_datetime,
+                end_datetime,
+                status
+            )
+            VALUES
+            (
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                NULL,
+                NULL,
+                'Draft'
+            )
+            """,
+            (
+                teacher_id,
+                original_test["subject_id"],
+                copied_test_name,
+                original_test["description"],
+                original_test["total_marks"],
+                original_test["duration_minutes"]
+            )
+        )
+
+
+        new_test_id = cursor.lastrowid
+
+
+        # ----------------------------------------------------
+        # GET ALL QUESTIONS FROM ORIGINAL TEST
+        #
+        # We copy the question RECORDS themselves rather than
+        # reusing their question_id.
+        #
+        # This makes the copied questions independent from
+        # the original published test.
+        # ----------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT
+                tq.question_order,
+
+                q.subject_id,
+                q.chapter_id,
+                q.co_id,
+                q.question_text,
+                q.question_image,
+                q.option_a,
+                q.option_b,
+                q.option_c,
+                q.option_d,
+                q.correct_answer,
+                q.difficulty,
+                q.marks,
+                q.question_type,
+                q.is_pyq,
+                q.status
+
+            FROM test_question tq
+
+            JOIN question q
+                ON q.question_id = tq.question_id
+
+            WHERE tq.test_id = %s
+
+            ORDER BY tq.question_order
+            """,
+            (
+                test_id,
+            )
+        )
+
+        original_questions = cursor.fetchall()
+
+
+        # ----------------------------------------------------
+        # COPY EACH QUESTION AS A NEW QUESTION RECORD
+        # ----------------------------------------------------
+
+        for question in original_questions:
+
+            cursor.execute(
+                """
+                INSERT INTO question
+                (
+                    subject_id,
+                    chapter_id,
+                    co_id,
+                    question_text,
+                    question_image,
+                    option_a,
+                    option_b,
+                    option_c,
+                    option_d,
+                    correct_answer,
+                    difficulty,
+                    marks,
+                    question_type,
+                    is_pyq,
+                    status
+                )
+                VALUES
+                (
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s
+                )
+                """,
+                (
+                    question["subject_id"],
+                    question["chapter_id"],
+                    question["co_id"],
+                    question["question_text"],
+                    question["question_image"],
+                    question["option_a"],
+                    question["option_b"],
+                    question["option_c"],
+                    question["option_d"],
+                    question["correct_answer"],
+                    question["difficulty"],
+                    question["marks"],
+                    question["question_type"],
+                    question["is_pyq"],
+                    question["status"]
+                )
+            )
+
+            new_question_id = cursor.lastrowid
+
+
+            # ------------------------------------------------
+            # CONNECT NEW QUESTION TO NEW TEST
+            #
+            # Original question_order is preserved.
+            # ------------------------------------------------
+
+            cursor.execute(
+                """
+                INSERT INTO test_question
+                (
+                    test_id,
+                    question_id,
+                    question_order
+                )
+                VALUES
+                (
+                    %s,
+                    %s,
+                    %s
+                )
+                """,
+                (
+                    new_test_id,
+                    new_question_id,
+                    question["question_order"]
+                )
+            )
+
+
+        # ----------------------------------------------------
+        # COMMIT ONLY AFTER THE ENTIRE COPY IS SUCCESSFUL
+        # ----------------------------------------------------
+
+        conn.commit()
+
+
+        flash(
+            f"Test copied successfully as '{copied_test_name}'. You can now edit the draft.",
+            "success"
+        )
+
+
+        cursor.close()
+        conn.close()
+
+
+        return redirect(
+            url_for(
+                "teacher.edit_test",
+                test_id=new_test_id
+            )
+        )
+
+
+    except Exception as e:
+
+        # ----------------------------------------------------
+        # IF ANY PART OF THE COPY FAILS,
+        # ROLLBACK THE ENTIRE OPERATION
+        # ----------------------------------------------------
+
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+
+        try:
+            cursor.close()
+        except Exception:
+            pass
+
+
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+        flash(
+            f"Unable to copy the test. Database error: {str(e)}",
+            "error"
+        )
+
+
+        return redirect(
+            url_for(
+                "teacher.view_tests"
+            )
+        )
 
 # ============================================================
 # EDIT TEST
@@ -2431,10 +2770,9 @@ def edit_test(test_id):
             url_for("teacher.view_tests")
         )
 
-
-# ============================================================
-# MANAGE QUESTIONS IN TEST
-# ============================================================
+# ---------------------------------------------------------
+# MANAGE QUESTIONS
+# ---------------------------------------------------------
 
 @teacher_bp.route("/manage_questions/<int:test_id>", methods=["GET", "POST"])
 @role_required("Teacher")
@@ -2479,27 +2817,88 @@ def manage_questions(test_id):
         test = cursor.fetchone()
 
         if not test:
+
             flash(
                 "Test not found or you are not authorized to manage it.",
                 "error"
             )
+
             cursor.close()
             conn.close()
-            return redirect(url_for("teacher.view_tests"))
 
+            return redirect(
+                url_for("teacher.view_tests")
+            )
 
         # -------------------------------------------------
-        # ADD SELECTED QUESTIONS TO TEST
+        # ADD / REMOVE QUESTIONS
         # -------------------------------------------------
 
         if request.method == "POST":
 
             question_ids = request.form.getlist("question_ids")
 
-            if not question_ids:
-                flash("Please select at least one question.", "error")
+            # Convert submitted IDs to integers safely
+            submitted_ids = set()
+
+            for question_id in question_ids:
+
+                try:
+                    submitted_ids.add(int(question_id))
+                except (ValueError, TypeError):
+                    continue
+
+            # -------------------------------------------------
+            # GET ALL VALID QUESTIONS SELECTED BY TEACHER
+            # -------------------------------------------------
+
+            selected_questions = []
+
+            if submitted_ids:
+
+                placeholders = ",".join(["%s"] * len(submitted_ids))
+
+                cursor.execute(
+                    f"""
+                    SELECT
+                        q.question_id,
+                        q.marks
+                    FROM question q
+                    JOIN subject s
+                        ON s.subject_id = q.subject_id
+                    WHERE q.question_id IN ({placeholders})
+                      AND q.subject_id = %s
+                      AND s.standard_id = %s
+                      AND q.status = 'Active'
+                    """,
+                    tuple(submitted_ids)
+                    + (
+                        test["subject_id"],
+                        test["standard_id"]
+                    )
+                )
+
+                selected_questions = cursor.fetchall()
+
+            valid_selected_ids = {
+                row["question_id"]
+                for row in selected_questions
+            }
+
+            # -------------------------------------------------
+            # CHECK THAT ALL SUBMITTED QUESTIONS ARE VALID
+            # -------------------------------------------------
+
+            if len(valid_selected_ids) != len(submitted_ids):
+
+                flash(
+                    "One or more selected questions are invalid.",
+                    "error"
+                )
+
                 cursor.close()
                 conn.close()
+
                 return redirect(
                     url_for(
                         "teacher.manage_questions",
@@ -2507,8 +2906,78 @@ def manage_questions(test_id):
                     )
                 )
 
+            # -------------------------------------------------
+            # CALCULATE FINAL TOTAL MARKS
+            # -------------------------------------------------
 
-            # Get current last question order
+            final_marks = sum(
+                row["marks"] or 0
+                for row in selected_questions
+            )
+
+            # -------------------------------------------------
+            # PREVENT TOTAL MARKS FROM EXCEEDING TEST MARKS
+            # -------------------------------------------------
+
+            if final_marks > test["total_marks"]:
+
+                flash(
+                    f"Selected questions total {final_marks} marks, "
+                    f"but this test is only {test['total_marks']} marks.",
+                    "error"
+                )
+
+                cursor.close()
+                conn.close()
+
+                return redirect(
+                    url_for(
+                        "teacher.manage_questions",
+                        test_id=test_id
+                    )
+                )
+
+            # -------------------------------------------------
+            # GET CURRENT QUESTIONS IN TEST
+            # -------------------------------------------------
+
+            cursor.execute("""
+                SELECT
+                    test_question_id,
+                    question_id,
+                    question_order
+                FROM test_question
+                WHERE test_id = %s
+                ORDER BY question_order
+            """, (test_id,))
+
+            current_questions = cursor.fetchall()
+
+            current_ids = {
+                row["question_id"]
+                for row in current_questions
+            }
+
+            # -------------------------------------------------
+            # REMOVE QUESTIONS THAT WERE DESELECTED
+            # -------------------------------------------------
+
+            removed_ids = current_ids - valid_selected_ids
+
+            for question_id in removed_ids:
+
+                cursor.execute("""
+                    DELETE FROM test_question
+                    WHERE test_id = %s
+                      AND question_id = %s
+                """, (
+                    test_id,
+                    question_id
+                ))
+
+            # -------------------------------------------------
+            # FIND NEXT QUESTION ORDER
+            # -------------------------------------------------
 
             cursor.execute("""
                 SELECT COALESCE(MAX(question_order), 0) AS max_order
@@ -2518,58 +2987,13 @@ def manage_questions(test_id):
 
             max_order = cursor.fetchone()["max_order"]
 
+            # -------------------------------------------------
+            # ADD NEWLY SELECTED QUESTIONS
+            # -------------------------------------------------
 
-            for question_id in question_ids:
+            added_count = 0
 
-                # -------------------------------------------------
-                # VERIFY QUESTION MATCHES TEST STANDARD + SUBJECT
-                # -------------------------------------------------
-
-                cursor.execute("""
-                    SELECT
-                        q.question_id
-                    FROM question q
-                    JOIN subject s
-                        ON s.subject_id = q.subject_id
-                    WHERE q.question_id = %s
-                      AND q.subject_id = %s
-                      AND s.standard_id = %s
-                      AND q.status = 'Active'
-                """, (
-                    question_id,
-                    test["subject_id"],
-                    test["standard_id"]
-                ))
-
-                valid_question = cursor.fetchone()
-
-                if not valid_question:
-                    continue
-
-
-                # -------------------------------------------------
-                # CHECK IF ALREADY ADDED
-                # -------------------------------------------------
-
-                cursor.execute("""
-                    SELECT test_question_id
-                    FROM test_question
-                    WHERE test_id = %s
-                      AND question_id = %s
-                """, (
-                    test_id,
-                    question_id
-                ))
-
-                already_added = cursor.fetchone()
-
-                if already_added:
-                    continue
-
-
-                # -------------------------------------------------
-                # ADD QUESTION
-                # -------------------------------------------------
+            for question_id in valid_selected_ids - current_ids:
 
                 max_order += 1
 
@@ -2587,15 +3011,45 @@ def manage_questions(test_id):
                     max_order
                 ))
 
+                added_count += 1
+
+            # -------------------------------------------------
+            # COMMIT
+            # -------------------------------------------------
 
             conn.commit()
 
+            # -------------------------------------------------
+            # SUCCESS MESSAGE
+            # -------------------------------------------------
 
-            flash(
-                "Selected questions added to the test successfully.",
-                "success"
-            )
+            if removed_ids and added_count:
 
+                flash(
+                    "Questions added and deselected questions removed successfully.",
+                    "success"
+                )
+
+            elif removed_ids:
+
+                flash(
+                    "Deselected questions removed successfully.",
+                    "success"
+                )
+
+            elif added_count:
+
+                flash(
+                    "Selected questions added successfully.",
+                    "success"
+                )
+
+            else:
+
+                flash(
+                    "Test questions updated successfully.",
+                    "success"
+                )
 
             cursor.close()
             conn.close()
@@ -2607,39 +3061,8 @@ def manage_questions(test_id):
                 )
             )
 
-
         # -------------------------------------------------
-        # QUESTIONS ALREADY ADDED TO TEST
-        # -------------------------------------------------
-
-        cursor.execute("""
-            SELECT
-                tq.test_question_id,
-                tq.question_order,
-                q.question_id,
-                q.question_text,
-                q.question_image,
-                q.option_a,
-                q.option_b,
-                q.option_c,
-                q.option_d,
-                q.correct_answer,
-                q.difficulty,
-                q.marks,
-                q.question_type,
-                q.is_pyq
-            FROM test_question tq
-            JOIN question q
-                ON q.question_id = tq.question_id
-            WHERE tq.test_id = %s
-            ORDER BY tq.question_order
-        """, (test_id,))
-
-        selected_questions = cursor.fetchall()
-
-
-        # -------------------------------------------------
-        # AVAILABLE QUESTIONS FROM QUESTION BANK
+        # GET ALL RELEVANT QUESTIONS
         # -------------------------------------------------
 
         cursor.execute("""
@@ -2655,49 +3078,104 @@ def manage_questions(test_id):
                 q.difficulty,
                 q.marks,
                 q.question_type,
-                q.is_pyq
+                q.is_pyq,
+
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM test_question tq
+                        WHERE tq.test_id = %s
+                          AND tq.question_id = q.question_id
+                    )
+                    THEN 1
+                    ELSE 0
+                END AS is_added
+
             FROM question q
+
             JOIN subject s
                 ON s.subject_id = q.subject_id
+
             JOIN standard st
                 ON st.standard_id = s.standard_id
-            WHERE q.status = 'Active'
-              AND q.subject_id = %s
+
+            WHERE q.subject_id = %s
               AND s.standard_id = %s
-              AND q.question_id NOT IN
-              (
-                  SELECT question_id
-                  FROM test_question
-                  WHERE test_id = %s
+              AND (
+                    q.status = 'Active'
+                    OR EXISTS (
+                        SELECT 1
+                        FROM test_question tq2
+                        WHERE tq2.test_id = %s
+                          AND tq2.question_id = q.question_id
+                    )
               )
+
             ORDER BY
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM test_question tq3
+                        WHERE tq3.test_id = %s
+                          AND tq3.question_id = q.question_id
+                    )
+                    THEN 0
+                    ELSE 1
+                END,
+
                 CASE q.difficulty
                     WHEN 'Easy' THEN 1
                     WHEN 'Medium' THEN 2
                     WHEN 'Hard' THEN 3
                     ELSE 4
                 END,
+
                 q.question_id
         """, (
+            test_id,
             test["subject_id"],
             test["standard_id"],
+            test_id,
             test_id
         ))
 
-        available_questions = cursor.fetchall()
+        questions = cursor.fetchall()
 
+        # -------------------------------------------------
+        # CURRENT QUESTION COUNT AND MARKS
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                COUNT(*) AS question_count,
+                COALESCE(SUM(q.marks), 0) AS current_marks
+            FROM test_question tq
+            JOIN question q
+                ON q.question_id = tq.question_id
+            WHERE tq.test_id = %s
+        """, (test_id,))
+
+        test_summary = cursor.fetchone()
+
+        current_question_count = test_summary["question_count"]
+        current_marks = test_summary["current_marks"]
+
+        remaining_marks = max(
+            test["total_marks"] - current_marks,
+            0
+        )
 
         cursor.close()
         conn.close()
 
-
         return render_template(
             "teacher/manage_questions.html",
             test=test,
-            selected_questions=selected_questions,
-            available_questions=available_questions
+            questions=questions,
+            current_question_count=current_question_count,
+            current_marks=current_marks,
+            remaining_marks=remaining_marks
         )
-
 
     except Exception as e:
 
@@ -2724,7 +3202,6 @@ def manage_questions(test_id):
         return redirect(
             url_for("teacher.view_tests")
         )
-
 
 # ============================================================
 # REMOVE QUESTION FROM TEST
@@ -2882,6 +3359,121 @@ def remove_question_from_test(test_id, test_question_id):
             )
         )
 
+# ---------------------------------------------------------
+# PREVIEW TEST
+# ---------------------------------------------------------
+
+@teacher_bp.route("/preview_test/<int:test_id>")
+@role_required("Teacher")
+def preview_test(test_id):
+
+    teacher_id = session.get("user_id")
+
+    if not teacher_id:
+        flash("Teacher session not found.", "error")
+        return redirect(url_for("auth.login"))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        # -------------------------------------------------
+        # GET TEST DETAILS
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                t.test_id,
+                t.test_name,
+                t.description,
+                t.total_marks,
+                t.duration_minutes,
+                t.start_datetime,
+                t.end_datetime,
+                t.status,
+                t.subject_id,
+                s.subject_name,
+                s.standard_id,
+                st.standard_name
+            FROM test t
+            JOIN subject s
+                ON s.subject_id = t.subject_id
+            LEFT JOIN standard st
+                ON st.standard_id = s.standard_id
+            WHERE t.test_id = %s
+              AND t.teacher_id = %s
+        """, (test_id, teacher_id))
+
+        test = cursor.fetchone()
+
+        if not test:
+            flash(
+                "Test not found or you are not authorized to preview it.",
+                "error"
+            )
+            return redirect(url_for("teacher.view_tests"))
+
+        # -------------------------------------------------
+        # GET QUESTIONS IN TEST
+        # -------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                tq.question_order,
+                q.question_id,
+                q.question_text,
+                q.question_image,
+                q.option_a,
+                q.option_b,
+                q.option_c,
+                q.option_d,
+                q.difficulty,
+                q.marks,
+                q.question_type,
+                q.is_pyq
+            FROM test_question tq
+            JOIN question q
+                ON q.question_id = tq.question_id
+            WHERE tq.test_id = %s
+            ORDER BY tq.question_order
+        """, (test_id,))
+
+        questions = cursor.fetchall()
+
+        return render_template(
+            "teacher/preview_test.html",
+            test=test,
+            questions=questions
+        )
+
+    except Exception as e:
+
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+        flash(
+            f"Database error: {str(e)}",
+            "error"
+        )
+
+        return redirect(
+            url_for("teacher.view_tests")
+        )
+
+    finally:
+
+        try:
+            cursor.close()
+        except Exception:
+            pass
+
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 # ============================================================
 # PUBLISH TEST
