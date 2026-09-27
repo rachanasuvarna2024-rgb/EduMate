@@ -1,0 +1,667 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}
+Learning Journey
+{% endblock %}
+
+{% block content %}
+
+<div class="journey-page">
+
+<h2>Learning Journey</h2>
+
+<p class="subtitle">
+    A timeline of the important milestones in your assessment journey.
+</p>
+
+
+{% if milestones %}
+
+<!-- ============================= -->
+<!-- SNAPSHOT -->
+<!-- ============================= -->
+
+<div class="snapshot-card">
+
+    <div class="snapshot-icon">
+        🧭
+    </div>
+
+    <div>
+
+        <strong>
+            Your journey so far
+        </strong>
+
+        <p>
+            {{ total_tests }} completed
+            {% if total_tests == 1 %}
+                assessment
+            {% else %}
+                assessments
+            {% endif %}
+            across {{ subject_count }}
+            {% if subject_count == 1 %}
+                subject
+            {% else %}
+                subjects
+            {% endif %}.
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- ============================= -->
+<!-- TIMELINE -->
+<!-- ============================= -->
+
+<div class="timeline">
+
+    {% for group in milestones %}
+
+    <div class="timeline-day">
+
+
+        <!-- ============================= -->
+        <!-- DATE -->
+        <!-- ============================= -->
+
+        <div class="timeline-date">
+
+            {{ group.date.strftime('%d %b %Y') }}
+
+        </div>
+
+
+        <!-- ============================= -->
+        <!-- DAY CONTENT -->
+        <!-- ============================= -->
+
+        <div class="timeline-day-content">
+
+
+            {% for milestone in group.milestones %}
+
+            <div class="timeline-item">
+
+
+                <!-- DOT -->
+
+                <div class="timeline-dot">
+
+                    {{ milestone.icon }}
+
+                </div>
+
+
+                <!-- MILESTONE -->
+
+                <div class="timeline-card">
+
+                    <h3>
+                        {{ milestone.title }}
+                    </h3>
+
+                    <p>
+                        {{ milestone.description }}
+                    </p>
+
+                </div>
+
+
+            </div>
+
+            {% endfor %}
+
+
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+
+<!-- ============================= -->
+<!-- CURRENT POSITION -->
+<!-- ============================= -->
+
+<div class="current-section">
+
+    <h3>
+        Where you are now
+    </h3>
+
+    <p class="section-description">
+        Based on the assessments recorded in EduMate.
+    </p>
+
+
+    <div class="current-grid">
+
+
+        <!-- STRONGEST -->
+
+        <div class="current-card strong-card">
+
+            <span class="current-icon">
+                🌟
+            </span>
+
+            <div>
+
+                <span class="current-label">
+                    Strongest subject
+                </span>
+
+                <strong>
+                    {{ strongest_subject }}
+                </strong>
+
+                <small>
+                    {{ strongest_percentage }}% average
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <!-- FOCUS -->
+
+        <div class="current-card focus-card">
+
+            <span class="current-icon">
+                🌱
+            </span>
+
+            <div>
+
+                <span class="current-label">
+                    Worth more attention
+                </span>
+
+                <strong>
+                    {{ weakest_subject }}
+                </strong>
+
+                <small>
+                    {{ weakest_percentage }}% average
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================= -->
+<!-- HONEST NOTE -->
+<!-- ============================= -->
+
+<div class="journey-note">
+
+    <span>💡</span>
+
+    <p>
+        This timeline is based on completed assessments in EduMate.
+        It shows your assessment journey, not everything you learn outside the system.
+    </p>
+
+</div>
+
+
+{% else %}
+
+<!-- ============================= -->
+<!-- EMPTY STATE -->
+<!-- ============================= -->
+
+<div class="empty-state">
+
+    <div class="empty-icon">
+        🧭
+    </div>
+
+    <h3>
+        Your journey starts here
+    </h3>
+
+    <p>
+        Complete your first assessment and your learning journey
+        will begin appearing here.
+    </p>
+
+</div>
+
+{% endif %}
+
+</div>
+
+<style>
+
+/* ============================= */
+/* PAGE */
+/* ============================= */
+
+.journey-page {
+    max-width: 900px;
+    margin: auto;
+}
+
+.subtitle {
+    color: #6b7280;
+    margin-bottom: 22px;
+}
+
+
+/* ============================= */
+/* SNAPSHOT */
+/* ============================= */
+
+.snapshot-card {
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+
+    background: white;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+
+    padding: 16px 18px;
+
+    margin-bottom: 32px;
+}
+
+.snapshot-icon {
+    font-size: 27px;
+}
+
+.snapshot-card strong {
+    font-size: 15px;
+}
+
+.snapshot-card p {
+    margin: 4px 0 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+
+/* ============================= */
+/* TIMELINE */
+/* ============================= */
+
+.timeline {
+    margin-bottom: 32px;
+}
+
+
+/* ============================= */
+/* DAY */
+/* ============================= */
+
+.timeline-day {
+    display: grid;
+
+    grid-template-columns: 100px 1fr;
+
+    position: relative;
+
+    margin-bottom: 30px;
+}
+
+.timeline-day:last-child {
+    margin-bottom: 0;
+}
+
+
+/* ============================= */
+/* DATE */
+/* ============================= */
+
+.timeline-date {
+    padding-top: 5px;
+
+    padding-right: 18px;
+
+    text-align: right;
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+
+/* ============================= */
+/* DAY CONTENT */
+/* ============================= */
+
+.timeline-day-content {
+    position: relative;
+
+    padding-left: 35px;
+}
+
+
+/* ============================= */
+/* VERTICAL LINE */
+/* ============================= */
+
+.timeline-day-content::before {
+    content: "";
+
+    position: absolute;
+
+    left: 15px;
+
+    top: 0;
+    bottom: 0;
+
+    width: 2px;
+
+    background: #e5e7eb;
+}
+
+
+/* ============================= */
+/* ITEM */
+/* ============================= */
+
+.timeline-item {
+    position: relative;
+
+    margin-bottom: 14px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+
+/* ============================= */
+/* DOT */
+/* ============================= */
+
+.timeline-dot {
+    position: absolute;
+
+    left: -35px;
+
+    top: 3px;
+
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    background: white;
+
+    border: 2px solid #e5e7eb;
+
+    border-radius: 50%;
+
+    font-size: 15px;
+
+    z-index: 2;
+}
+
+
+/* ============================= */
+/* MILESTONE CARD */
+/* ============================= */
+
+.timeline-card {
+    background: white;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 11px;
+
+    padding: 14px 17px;
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.timeline-card:hover {
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 4px 14px rgba(0,0,0,0.06);
+}
+
+.timeline-card h3 {
+    margin: 0 0 5px;
+
+    color: #111827;
+
+    font-size: 15px;
+}
+
+.timeline-card p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+
+/* ============================= */
+/* CURRENT SECTION */
+/* ============================= */
+
+.current-section {
+    margin-bottom: 20px;
+}
+
+.current-section h3 {
+    margin: 0;
+}
+
+.section-description {
+    margin: 4px 0 12px;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+
+/* ============================= */
+/* CURRENT CARDS */
+/* ============================= */
+
+.current-grid {
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 14px;
+}
+
+.current-card {
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+    padding: 16px;
+
+    border-radius: 11px;
+}
+
+.strong-card {
+    background: #f7fef9;
+
+    border: 1px solid #bbf7d0;
+}
+
+.focus-card {
+    background: #fffaf3;
+
+    border: 1px solid #f4d19a;
+}
+
+.current-icon {
+    font-size: 25px;
+
+    flex-shrink: 0;
+}
+
+.current-label {
+    display: block;
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+    margin-bottom: 3px;
+}
+
+.current-card strong {
+    display: block;
+
+    color: #111827;
+
+    font-size: 16px;
+}
+
+.current-card small {
+    display: block;
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+    margin-top: 3px;
+}
+
+
+/* ============================= */
+/* NOTE */
+/* ============================= */
+
+.journey-note {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    padding: 14px 16px;
+
+    background: #fafafa;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    color: #6b7280;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+.journey-note > span {
+    font-size: 19px;
+}
+
+.journey-note p {
+    margin: 0;
+}
+
+
+/* ============================= */
+/* EMPTY STATE */
+/* ============================= */
+
+.empty-state {
+    background: white;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 12px;
+
+    text-align: center;
+
+    padding: 45px 20px;
+}
+
+.empty-icon {
+    font-size: 36px;
+
+    margin-bottom: 10px;
+}
+
+.empty-state h3 {
+    margin: 0 0 6px;
+}
+
+.empty-state p {
+    color: #6b7280;
+
+    font-size: 14px;
+
+    margin: 0;
+}
+
+
+/* ============================= */
+/* RESPONSIVE */
+/* ============================= */
+
+@media (max-width: 700px) {
+
+    .timeline-day {
+        grid-template-columns: 1fr;
+    }
+
+    .timeline-date {
+        text-align: left;
+
+        padding: 0 0 8px 48px;
+    }
+
+    .timeline-day-content {
+        padding-left: 40px;
+    }
+
+    .timeline-day-content::before {
+        left: 15px;
+    }
+
+    .timeline-dot {
+        left: -40px;
+    }
+
+    .current-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+</style>
+
+{% endblock %}

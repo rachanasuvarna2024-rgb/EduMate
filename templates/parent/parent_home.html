@@ -3,38 +3,80 @@
 {% block title %}EduMate - Parent Dashboard{% endblock %}
 
 {% block portal_title %}
-
 Parent Dashboard
-
 {% endblock %}
-
 
 {% block content %}
 
-<div class="container">
+<div class="home-page">
 
-    <h2>Welcome Parent</h2>
+    <div class="welcome-section">
 
-    {% if parent %}
+        <h2>Welcome, {{ parent.parent_name if parent else user.name }}</h2>
 
-    <p>
-        Welcome,
-        <strong>{{ parent.parent_name }}</strong>,
-        to your EduMate Parent Portal.
-        You can view your child's test results and
-        track their academic progress.
-    </p>
+        <p>
+            Stay informed about your child's assessments,
+            results, and academic progress through EduMate.
+        </p>
 
-    {% else %}
+    </div>
 
-    <p>
-        Welcome to your EduMate Parent Portal.
-        You can view your child's test results and
-        track their academic progress.
-    </p>
+    <div class="welcome-card">
 
-    {% endif %}
+        <h3>Parent Portal</h3>
+
+        <p>
+            View assessment results and follow your child's
+            learning progress through a clear academic summary.
+        </p>
+
+    </div>
 
 </div>
+
+<style>
+
+.home-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.welcome-section {
+    margin-bottom: 22px;
+}
+
+.welcome-section h2 {
+    margin: 0 0 7px;
+    font-size: 25px;
+}
+
+.welcome-section p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.welcome-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.welcome-card h3 {
+    margin: 0 0 6px;
+    color: #111827;
+    font-size: 16px;
+}
+
+.welcome-card p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+</style>
 
 {% endblock %}

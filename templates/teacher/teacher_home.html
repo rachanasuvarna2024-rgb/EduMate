@@ -3,24 +3,80 @@
 {% block title %}EduMate - Teacher Dashboard{% endblock %}
 
 {% block portal_title %}
-
 Teacher Dashboard
-
 {% endblock %}
-
 
 {% block content %}
 
-<div class="container">
+<div class="home-page">
 
-    <h2>Welcome Teacher</h2>
+    <div class="welcome-section">
 
-    <p>
-        Welcome to the EduMate Teacher Portal.
-        Use the sidebar to manage the question bank,
-        create and manage assessments, and view student performance.
-    </p>
+        <h2>Welcome, {{ teacher.teacher_name }}</h2>
+
+        <p>
+            Manage assessments, support student learning,
+            and keep track of academic performance.
+        </p>
+
+    </div>
+
+    <div class="welcome-card">
+
+        <h3>Teacher Portal</h3>
+
+        <p>
+            Create meaningful assessments, manage your question bank,
+            and use student performance data to support learning.
+        </p>
+
+    </div>
 
 </div>
+
+<style>
+
+.home-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.welcome-section {
+    margin-bottom: 22px;
+}
+
+.welcome-section h2 {
+    margin: 0 0 7px;
+    font-size: 25px;
+}
+
+.welcome-section p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.welcome-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.welcome-card h3 {
+    margin: 0 0 6px;
+    color: #111827;
+    font-size: 16px;
+}
+
+.welcome-card p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+</style>
 
 {% endblock %}

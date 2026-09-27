@@ -8,8 +8,6 @@ parent_bp = Blueprint(
     __name__,
     url_prefix="/parent"
 )
-
-
 # ============================================================
 # PARENT HOME
 # ============================================================
@@ -26,6 +24,17 @@ def parent_home():
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
+
+        # Get parent's own details
+        cursor.execute("""
+            SELECT
+                parent_id,
+                parent_name
+            FROM parent
+            WHERE parent_id = %s
+        """, (parent_id,))
+
+        parent = cursor.fetchone()
 
         # Get parent's child
         cursor.execute("""
@@ -47,6 +56,7 @@ def parent_home():
         if not child:
             return render_template(
                 "parent/parent_home.html",
+                parent=parent,
                 child=None
             )
 
@@ -86,6 +96,7 @@ def parent_home():
 
         return render_template(
             "parent/parent_home.html",
+            parent=parent,
             child=child,
             test_count=test_count,
             average_percentage=average_percentage
@@ -108,7 +119,6 @@ def parent_home():
 
         if conn:
             conn.close()
-
 
 # ============================================================
 # CHILD TEST RESULTS - LIST
@@ -639,6 +649,233 @@ def child_test_result(attempt_id):
         return redirect(
             url_for("parent.child_test_results")
         )
+
+    finally:
+
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
+# ---------------------------------
+# CHILD PROGRESS SUMMARY
+# ---------------------------------
+@parent_bp.route("/progress_summary")
+@role_required("Parent")
+def progress_summary():
+
+    parent_id = session.get("user_id")
+
+    conn = None
+    cursor = None
+
+    try:
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # ---------------------------------
+        # GET CHILD
+        # ---------------------------------
+        cursor.execute("""
+            SELECT
+                student_id,
+                student_name
+            FROM student
+            WHERE parent_id = %s
+              AND status = 'Active'
+            LIMIT 1
+        """, (parent_id,))
+
+        child = cursor.fetchone()
+
+        if not child:
+            flash("No active student is linked to your account.", "error")
+            return redirect(url_for("parent.parent_home"))
+
+        student_id = child["student_id"]
+
+        # ---------------------------------
+        # OVERALL PERFORMANCE
+        # ---------------------------------
+        cursor.execute("""
+            SELECT
+                COUNT(*) AS completed_tests,
+                COALESCE(
+                    ROUND(
+                        AVG(
+                            CASE
+                                WHEN t.total_marks > 0
+                                THEN (ta.score / t.total_marks) * 100
+                                ELSE 0
+                            END
+                        ),
+                        2
+                    ),
+                    0
+                ) AS average_percentage,
+
+                COALESCE(
+                    ROUND(
+                        MAX(
+                            CASE
+                                WHEN t.total_marks > 0
+                                THEN (ta.score / t.total_marks) * 100
+                                ELSE 0
+                            END
+                        ),
+                        2
+                    ),
+                    0
+                ) AS highest_percentage
+
+            FROM test_attempt ta
+
+            JOIN test t
+                ON t.test_id = ta.test_id
+
+            WHERE ta.student_id = %s
+              AND ta.status = 'Submitted'
+        """, (student_id,))
+
+        stats = cursor.fetchone()
+
+        # ---------------------------------
+        # SUBJECT-WISE PERFORMANCE
+        # ---------------------------------
+        cursor.execute("""
+            SELECT
+                sub.subject_name,
+
+                COUNT(*) AS tests_completed,
+
+                ROUND(
+                    AVG(
+                        CASE
+                            WHEN t.total_marks > 0
+                            THEN (ta.score / t.total_marks) * 100
+                            ELSE 0
+                        END
+                    ),
+                    2
+                ) AS average_percentage
+
+            FROM test_attempt ta
+
+            JOIN test t
+                ON t.test_id = ta.test_id
+
+            JOIN subject sub
+                ON sub.subject_id = t.subject_id
+
+            WHERE ta.student_id = %s
+              AND ta.status = 'Submitted'
+
+            GROUP BY
+                sub.subject_id,
+                sub.subject_name
+
+            ORDER BY average_percentage DESC
+        """, (student_id,))
+
+        subject_performance = cursor.fetchall()
+
+        # ---------------------------------
+        # PERFORMANCE LABEL
+        # ---------------------------------
+        for subject in subject_performance:
+
+            percentage = float(
+                subject["average_percentage"] or 0
+            )
+
+            if percentage >= 75:
+                subject["performance"] = "Strong"
+
+            elif percentage >= 60:
+                subject["performance"] = "Good"
+
+            elif percentage >= 50:
+                subject["performance"] = "Average"
+
+            else:
+                subject["performance"] = "Keep Practising"
+
+        # ---------------------------------
+        # STRONGEST / AREA FOR IMPROVEMENT
+        # ---------------------------------
+        strongest_subject = None
+        weakest_subject = None
+
+        if subject_performance:
+
+            strongest_subject = subject_performance[0]
+
+            weakest_subject = min(
+                subject_performance,
+                key=lambda x: float(
+                    x["average_percentage"] or 0
+                )
+            )
+
+        # ---------------------------------
+        # RECENT RESULTS
+        # ---------------------------------
+        cursor.execute("""
+            SELECT
+                t.test_name,
+                sub.subject_name,
+                ta.score,
+                t.total_marks,
+                ta.submitted_at,
+
+                ROUND(
+                    CASE
+                        WHEN t.total_marks > 0
+                        THEN (ta.score / t.total_marks) * 100
+                        ELSE 0
+                    END,
+                    2
+                ) AS percentage
+
+            FROM test_attempt ta
+
+            JOIN test t
+                ON t.test_id = ta.test_id
+
+            JOIN subject sub
+                ON sub.subject_id = t.subject_id
+
+            WHERE ta.student_id = %s
+              AND ta.status = 'Submitted'
+
+            ORDER BY ta.submitted_at DESC
+
+            LIMIT 5
+        """, (student_id,))
+
+        recent_results = cursor.fetchall()
+
+        return render_template(
+            "parent/progress_summary.html",
+            child=child,
+            stats=stats,
+            subject_performance=subject_performance,
+            strongest_subject=strongest_subject,
+            weakest_subject=weakest_subject,
+            recent_results=recent_results
+        )
+
+    except Exception as e:
+
+        print("\n========== PROGRESS SUMMARY ERROR ==========")
+        print(e)
+        print("============================================\n")
+
+        flash("Unable to load progress summary.", "error")
+
+        return redirect(url_for("parent.parent_home"))
 
     finally:
 

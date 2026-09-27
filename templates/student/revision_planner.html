@@ -1,0 +1,498 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}
+Personalized Revision Planner
+{% endblock %}
+
+{% block content %}
+
+<div class="planner-page">
+
+
+<h2>Personalized Revision Planner</h2>
+
+<p class="subtitle">
+    A quick look at the topics that need your attention based on your test answers.
+</p>
+
+
+{% if revision_topics %}
+
+<!-- ============================= -->
+<!-- INTRO -->
+<!-- ============================= -->
+
+<div class="intro-card">
+
+    <span class="intro-icon">📚</span>
+
+    <div>
+        <strong>What should you revise?</strong>
+
+        <p>
+            Topics are ranked by the number of questions you got wrong.
+            Start from the top.
+        </p>
+    </div>
+
+</div>
+
+
+<!-- ============================= -->
+<!-- REVISION TOPICS -->
+<!-- ============================= -->
+
+<div class="topic-list">
+
+    {% for topic in revision_topics %}
+
+    <div class="topic-card
+        {% if topic.priority == 'High' %}
+            priority-high
+        {% elif topic.priority == 'Medium' %}
+            priority-medium
+        {% else %}
+            priority-light
+        {% endif %}
+    ">
+
+        <!-- NUMBER -->
+
+        <div class="topic-number">
+            {{ loop.index }}
+        </div>
+
+
+        <!-- DETAILS -->
+
+        <div class="topic-details">
+
+            <h3>
+                {{ topic.chapter_name }}
+            </h3>
+
+            <p>
+                {{ topic.subject_name }}
+            </p>
+
+            <span class="mistakes">
+
+                {% if topic.incorrect_count == 1 %}
+
+                    1 incorrect answer
+
+                {% else %}
+
+                    {{ topic.incorrect_count }} incorrect answers
+
+                {% endif %}
+
+            </span>
+
+        </div>
+
+
+        <!-- PRIORITY -->
+
+        <div class="priority-area">
+
+            {% if topic.priority == "High" %}
+
+                <span class="badge high">
+                    🔴 High Priority
+                </span>
+
+                <small>
+                    Revise this first
+                </small>
+
+            {% elif topic.priority == "Medium" %}
+
+                <span class="badge medium">
+                    🟠 Revise Soon
+                </span>
+
+                <small>
+                    Needs more practice
+                </small>
+
+            {% else %}
+
+                <span class="badge light">
+                    🟢 Quick Review
+                </span>
+
+                <small>
+                    Just refresh this topic
+                </small>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+
+<!-- ============================= -->
+<!-- REVISION TIP -->
+<!-- ============================= -->
+
+<div class="tip-card">
+
+    <span>💡</span>
+
+    <div>
+
+        <strong>How to use this list</strong>
+
+        <p>
+            Revise the 🔴 topics first, practise a few questions,
+            then move on to the 🟠 topics. Green topics only need a quick refresh.
+        </p>
+
+    </div>
+
+</div>
+
+
+{% else %}
+
+<!-- ============================= -->
+<!-- EMPTY STATE -->
+<!-- ============================= -->
+
+<div class="empty-state">
+
+    <div class="empty-icon">
+        🎉
+    </div>
+
+    <h3>
+        Nothing to revise yet!
+    </h3>
+
+    <p>
+        Complete some tests and your personalized revision areas
+        will appear here.
+    </p>
+
+</div>
+
+{% endif %}
+
+
+</div>
+
+<style>
+
+/* ============================= */
+/* PAGE */
+/* ============================= */
+
+.planner-page {
+    max-width: 900px;
+    margin: auto;
+}
+
+.subtitle {
+    color: #6b7280;
+    margin-bottom: 22px;
+}
+
+
+/* ============================= */
+/* INTRO */
+/* ============================= */
+
+.intro-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+
+    padding: 16px 18px;
+    margin-bottom: 18px;
+}
+
+.intro-icon {
+    font-size: 26px;
+}
+
+.intro-card strong {
+    font-size: 15px;
+}
+
+.intro-card p {
+    margin: 4px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+
+/* ============================= */
+/* TOPIC LIST */
+/* ============================= */
+
+.topic-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+
+/* ============================= */
+/* TOPIC CARD */
+/* ============================= */
+
+.topic-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    border-radius: 11px;
+
+    padding: 15px 16px;
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.topic-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+}
+
+
+/* ============================= */
+/* PRIORITY CARD COLORS */
+/* ============================= */
+
+.priority-high {
+    background: #fff7f7;
+    border: 1px solid #f3b4b4;
+    border-left: 5px solid #dc2626;
+}
+
+.priority-medium {
+    background: #fffaf3;
+    border: 1px solid #f4d19a;
+    border-left: 5px solid #f59e0b;
+}
+
+.priority-light {
+    background: #f7fcf8;
+    border: 1px solid #b9dfc2;
+    border-left: 5px solid #22c55e;
+}
+
+
+/* ============================= */
+/* NUMBER */
+/* ============================= */
+
+.topic-number {
+    width: 30px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,0.9);
+
+    color: #4b5563;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    flex-shrink: 0;
+}
+
+
+/* ============================= */
+/* DETAILS */
+/* ============================= */
+
+.topic-details {
+    flex: 1;
+}
+
+.topic-details h3 {
+    margin: 0 0 3px;
+
+    font-size: 15px;
+    color: #111827;
+}
+
+.topic-details p {
+    margin: 0 0 5px;
+
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.mistakes {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+
+/* ============================= */
+/* PRIORITY */
+/* ============================= */
+
+.priority-area {
+    min-width: 145px;
+    text-align: right;
+}
+
+.priority-area small {
+    display: block;
+
+    margin-top: 4px;
+
+    color: #6b7280;
+    font-size: 11px;
+}
+
+
+/* ============================= */
+/* BADGES */
+/* ============================= */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 6px 10px;
+
+    border-radius: 20px;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+.high {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.medium {
+    background: #ffedd5;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+.light {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+
+/* ============================= */
+/* TIP */
+/* ============================= */
+
+.tip-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+
+    margin-top: 18px;
+
+    padding: 14px 16px;
+
+    background: #fafafa;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.tip-card > span {
+    font-size: 20px;
+}
+
+.tip-card strong {
+    color: #374151;
+}
+
+.tip-card p {
+    margin: 4px 0 0;
+}
+
+
+/* ============================= */
+/* EMPTY STATE */
+/* ============================= */
+
+.empty-state {
+    background: white;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+
+    text-align: center;
+
+    padding: 45px 20px;
+}
+
+.empty-icon {
+    font-size: 35px;
+    margin-bottom: 10px;
+}
+
+.empty-state h3 {
+    margin: 0 0 6px;
+}
+
+.empty-state p {
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0;
+}
+
+
+/* ============================= */
+/* RESPONSIVE */
+/* ============================= */
+
+@media (max-width: 650px) {
+
+    .topic-card {
+        align-items: flex-start;
+    }
+
+    .priority-area {
+        min-width: auto;
+    }
+
+    .priority-area small {
+        display: none;
+    }
+
+    .badge {
+        font-size: 11px;
+    }
+
+}
+
+</style>
+
+{% endblock %}

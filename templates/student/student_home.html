@@ -3,24 +3,80 @@
 {% block title %}EduMate - Student Dashboard{% endblock %}
 
 {% block portal_title %}
-
 Student Dashboard
-
 {% endblock %}
-
 
 {% block content %}
 
-<div class="container">
+<div class="home-page">
 
-    <h2>Welcome Student</h2>
+    <div class="welcome-section">
 
-    <p>
-        Welcome to your EduMate Learning Portal.
-        Check available tests, review past attempt
-        results, and track your performance trends.
-    </p>
+        <h2>Welcome, {{ student.student_name }}</h2>
+
+        <p>
+            Stay on top of your assessments, understand your performance,
+            and keep building your learning progress.
+        </p>
+
+    </div>
+
+    <div class="welcome-card">
+
+        <h3>Your Learning Space</h3>
+
+        <p>
+            Complete assessments, review your results,
+            and use your progress insights to guide your preparation.
+        </p>
+
+    </div>
 
 </div>
+
+<style>
+
+.home-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.welcome-section {
+    margin-bottom: 22px;
+}
+
+.welcome-section h2 {
+    margin: 0 0 7px;
+    font-size: 25px;
+}
+
+.welcome-section p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.welcome-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.welcome-card h3 {
+    margin: 0 0 6px;
+    color: #111827;
+    font-size: 16px;
+}
+
+.welcome-card p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+</style>
 
 {% endblock %}

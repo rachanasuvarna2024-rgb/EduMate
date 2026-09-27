@@ -12,7 +12,6 @@ student_bp = Blueprint(
     url_prefix="/student"
 )
 
-
 # ---------------------------------
 # STUDENT DASHBOARD
 # ---------------------------------
@@ -20,10 +19,26 @@ student_bp = Blueprint(
 @role_required("Student")
 def student_home():
 
-    return render_template(
-        "student/student_home.html"
-    )
+    student_id = session.get("user_id")
 
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT student_name
+        FROM student
+        WHERE student_id = %s
+    """, (student_id,))
+
+    student = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        "student/student_home.html",
+        student=student
+    )
 
 # ---------------------------------
 # AVAILABLE TESTS
@@ -1562,6 +1577,525 @@ def my_progress():
 
         flash(
             "Unable to load learning progress.",
+            "error"
+        )
+
+        return redirect(
+            url_for("student.student_home")
+        )
+
+    finally:
+
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
+
+# ---------------------------------
+# PERSONALIZED REVISION PLANNER
+# ---------------------------------
+@student_bp.route("/revision_planner")
+@role_required("Student")
+def revision_planner():
+
+    student_id = session.get("user_id")
+
+    conn = None
+    cursor = None
+
+    try:
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # ---------------------------------
+        # FIND WEAK CHAPTERS
+        # ---------------------------------
+        cursor.execute("""
+            SELECT
+                c.chapter_id,
+                c.chapter_name,
+                sub.subject_name,
+
+                COUNT(sa.answer_id) AS incorrect_count
+
+            FROM student_answer sa
+
+            JOIN test_attempt ta
+                ON ta.attempt_id = sa.attempt_id
+
+            JOIN question q
+                ON q.question_id = sa.question_id
+
+            JOIN chapter c
+                ON c.chapter_id = q.chapter_id
+
+            JOIN test t
+                ON t.test_id = ta.test_id
+
+            JOIN subject sub
+                ON sub.subject_id = t.subject_id
+
+            WHERE ta.student_id = %s
+              AND ta.status = 'Submitted'
+              AND sa.is_correct = 0
+              AND q.chapter_id IS NOT NULL
+
+            GROUP BY
+                c.chapter_id,
+                c.chapter_name,
+                sub.subject_id,
+                sub.subject_name
+
+            ORDER BY
+                incorrect_count DESC
+
+            LIMIT 10
+        """, (
+            student_id,
+        ))
+
+        revision_topics = cursor.fetchall()
+
+        # ---------------------------------
+        # ADD REVISION PRIORITY
+        # ---------------------------------
+        for topic in revision_topics:
+
+            count = topic["incorrect_count"]
+
+            if count >= 5:
+
+                topic["priority"] = "High"
+
+            elif count >= 3:
+
+                topic["priority"] = "Medium"
+
+            else:
+
+                topic["priority"] = "Light"
+
+        return render_template(
+            "student/revision_planner.html",
+            revision_topics=revision_topics
+        )
+
+    except Exception as e:
+
+        print("\n========== REVISION PLANNER ERROR ==========")
+        print(e)
+        print("============================================\n")
+
+        flash(
+            "Unable to load revision planner.",
+            "error"
+        )
+
+        return redirect(
+            url_for("student.student_home")
+        )
+
+    finally:
+
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()     
+
+# ---------------------------------
+# LEARNING JOURNEY
+# ---------------------------------
+@student_bp.route("/learning_journey")
+@role_required("Student")
+def learning_journey():
+
+    student_id = session.get("user_id")
+
+    conn = None
+    cursor = None
+
+    try:
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # ---------------------------------
+        # GET COMPLETED ASSESSMENTS
+        # ---------------------------------
+        cursor.execute("""
+            SELECT
+
+                ta.attempt_id,
+
+                t.test_name,
+                t.total_marks,
+
+                sub.subject_name,
+
+                ta.score,
+                ta.submitted_at
+
+            FROM test_attempt ta
+
+            JOIN test t
+                ON t.test_id = ta.test_id
+
+            JOIN subject sub
+                ON sub.subject_id = t.subject_id
+
+            WHERE ta.student_id = %s
+              AND ta.status = 'Submitted'
+
+            ORDER BY ta.submitted_at ASC
+        """, (
+            student_id,
+        ))
+
+        assessments = cursor.fetchall()
+
+        # ---------------------------------
+        # EMPTY JOURNEY
+        # ---------------------------------
+        if not assessments:
+
+            return render_template(
+                "student/learning_journey.html",
+                journey=None
+            )
+
+        # ---------------------------------
+        # CALCULATE PERCENTAGES
+        # ---------------------------------
+        for assessment in assessments:
+
+            total_marks = assessment["total_marks"] or 0
+            score = assessment["score"] or 0
+
+            if float(total_marks) > 0:
+
+                assessment["percentage"] = round(
+                    (
+                        float(score)
+                        /
+                        float(total_marks)
+                    ) * 100,
+                    2
+                )
+
+            else:
+
+                assessment["percentage"] = 0
+
+        # ---------------------------------
+        # BASIC JOURNEY STATISTICS
+        # ---------------------------------
+        total_tests = len(assessments)
+
+        subjects = set()
+
+        for assessment in assessments:
+
+            if assessment["subject_name"]:
+
+                subjects.add(
+                    assessment["subject_name"]
+                )
+
+        subject_count = len(subjects)
+
+        # ---------------------------------
+        # HIGHEST SCORE
+        # ---------------------------------
+        highest_assessment = max(
+            assessments,
+            key=lambda x: x["percentage"]
+        )
+
+        # ---------------------------------
+        # FIRST ASSESSMENT
+        # ---------------------------------
+        first_assessment = assessments[0]
+
+        # ---------------------------------
+        # RECENT PROGRESS
+        #
+        # Compare earlier assessments with
+        # the student's more recent results.
+        # ---------------------------------
+        recent_count = min(3, total_tests)
+
+        recent_assessments = assessments[
+            -recent_count:
+        ]
+
+        earlier_assessments = assessments[
+            :-recent_count
+        ]
+
+        recent_average = round(
+            sum(
+                item["percentage"]
+                for item in recent_assessments
+            )
+            /
+            len(recent_assessments),
+            2
+        )
+
+        earlier_average = None
+
+        if earlier_assessments:
+
+            earlier_average = round(
+                sum(
+                    item["percentage"]
+                    for item in earlier_assessments
+                )
+                /
+                len(earlier_assessments),
+                2
+            )
+
+        # ---------------------------------
+        # SUBJECT PERFORMANCE
+        # ---------------------------------
+        subject_data = {}
+
+        for assessment in assessments:
+
+            subject = assessment["subject_name"]
+
+            if subject not in subject_data:
+
+                subject_data[subject] = []
+
+            subject_data[subject].append(
+                assessment["percentage"]
+            )
+
+        subject_averages = {}
+
+        for subject, scores in subject_data.items():
+
+            subject_averages[subject] = round(
+                sum(scores) / len(scores),
+                2
+            )
+
+        strongest_subject = max(
+            subject_averages,
+            key=subject_averages.get
+        )
+
+        weakest_subject = min(
+            subject_averages,
+            key=subject_averages.get
+        )
+
+        # ---------------------------------
+        # BUILD MILESTONES
+        # ---------------------------------
+        milestones = []
+
+        # First assessment
+        milestones.append({
+            "icon": "🚀",
+            "title": "Your assessment journey began",
+            "description": (
+                f"You completed your first assessment "
+                f"— {first_assessment['test_name']} "
+                f"({first_assessment['subject_name']})."
+            ),
+            "date": first_assessment["submitted_at"]
+        })
+
+        # Consistency milestone
+        if total_tests >= 5:
+
+            milestones.append({
+                "icon": "📚",
+                "title": "Building consistency",
+                "description": (
+                    f"You have now completed "
+                    f"{total_tests} assessments "
+                    f"across {subject_count} "
+                    f"{'subject' if subject_count == 1 else 'subjects'}."
+                ),
+                "date": assessments[4]["submitted_at"]
+            })
+
+        elif total_tests >= 3:
+
+            milestones.append({
+                "icon": "📚",
+                "title": "Building consistency",
+                "description": (
+                    f"You have completed "
+                    f"{total_tests} assessments so far."
+                ),
+                "date": assessments[2]["submitted_at"]
+            })
+
+        # Highest score
+        milestones.append({
+            "icon": "🏆",
+            "title": "Your highest score so far",
+            "description": (
+                f"{highest_assessment['percentage']}% "
+                f"in {highest_assessment['test_name']} "
+                f"({highest_assessment['subject_name']})."
+            ),
+            "date": highest_assessment["submitted_at"]
+        })
+
+        # Recent performance
+        if earlier_average is not None:
+
+            difference = round(
+                recent_average - earlier_average,
+                2
+            )
+
+            if difference > 0:
+
+                progress_text = (
+                    f"Your average across your latest "
+                    f"{recent_count} assessments is "
+                    f"{recent_average}%, compared with "
+                    f"{earlier_average}% across your earlier "
+                    f"assessments."
+                )
+
+                progress_icon = "📈"
+
+            elif difference < 0:
+
+                progress_text = (
+                    f"Your average across your latest "
+                    f"{recent_count} assessments is "
+                    f"{recent_average}%. Your earlier "
+                    f"average was {earlier_average}%."
+                )
+
+                progress_icon = "🔎"
+
+            else:
+
+                progress_text = (
+                    f"Your latest {recent_count} assessments "
+                    f"average {recent_average}%, the same as "
+                    f"your earlier average."
+                )
+
+                progress_icon = "📊"
+
+            milestones.append({
+                "icon": progress_icon,
+                "title": "A look at your recent progress",
+                "description": progress_text,
+                "date": recent_assessments[0]["submitted_at"]
+            })
+
+        else:
+
+            milestones.append({
+                "icon": "📊",
+                "title": "Your current snapshot",
+                "description": (
+                    f"Your completed assessments currently "
+                    f"average {recent_average}%."
+                ),
+                "date": recent_assessments[0]["submitted_at"]
+            })
+
+        # Current focus
+        if strongest_subject == weakest_subject:
+
+            focus_text = (
+                f"You currently have assessments in "
+                f"{strongest_subject}. Keep building "
+                f"your understanding through practice."
+            )
+
+        else:
+
+            focus_text = (
+                f"{weakest_subject} currently has your "
+                f"lowest subject average at "
+                f"{subject_averages[weakest_subject]}%. "
+                f"This is an area worth giving some "
+                f"extra attention to."
+            )
+
+        milestones.append({
+            "icon": "🌱",
+            "title": "Your current focus",
+            "description": focus_text,
+            "date": assessments[-1]["submitted_at"]
+        })
+
+        # ---------------------------------
+        # GROUP MILESTONES BY DATE
+        # ---------------------------------
+        grouped_milestones = {}
+
+        for milestone in milestones:
+
+            milestone_date = milestone["date"].date()
+
+            if milestone_date not in grouped_milestones:
+
+                grouped_milestones[milestone_date] = []
+
+            grouped_milestones[milestone_date].append(
+                milestone
+            )
+
+
+        # ---------------------------------
+        # CONVERT TO TEMPLATE-FRIENDLY LIST
+        # ---------------------------------
+        milestone_groups = []
+
+        for milestone_date, items in sorted(
+            grouped_milestones.items(),
+            reverse=True
+        ):
+
+            milestone_groups.append({
+                "date": items[0]["date"],
+                "milestones": list(reversed(items))
+            })
+
+
+        # ---------------------------------
+        # RENDER
+        # ---------------------------------
+
+        return render_template(
+            "student/learning_journey.html",
+            milestones=milestone_groups,
+            total_tests=total_tests,
+            subject_count=subject_count,
+            recent_average=recent_average,
+            strongest_subject=strongest_subject,
+            strongest_percentage=subject_averages[strongest_subject],
+            weakest_subject=weakest_subject,
+            weakest_percentage=subject_averages[weakest_subject]
+        )
+
+    except Exception as e:
+
+        print("\n========== LEARNING JOURNEY ERROR ==========")
+        print(e)
+        print("=============================================\n")
+
+        flash(
+            "Unable to load learning journey.",
             "error"
         )
 

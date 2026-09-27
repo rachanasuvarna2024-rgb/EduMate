@@ -83,10 +83,26 @@ def inject_teacher_institution_type():
 @role_required("Teacher")
 def teacher_home():
 
-    return render_template(
-        "teacher/teacher_home.html"
-    )
+    teacher_id = session.get("user_id")
 
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT teacher_name
+        FROM teacher
+        WHERE teacher_id = %s
+    """, (teacher_id,))
+
+    teacher = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        "teacher/teacher_home.html",
+        teacher=teacher
+    )
 
 # ============================================================
 # QUESTION BANK

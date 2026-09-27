@@ -10,15 +10,73 @@ Admin Dashboard
 
 {% block content %}
 
-<div class="container">
+<div class="home-page">
 
-    <h2>Welcome Administrator</h2>
+    <div class="welcome-section">
+        <h2>Welcome, Administrator</h2>
 
-    <p>
-        Welcome to the EduMate Administration Portal.
-        Select an option from the side menu to manage the system.
-    </p>
+        <p>
+            Manage your institution, users, academic setup, and
+            EduMate system data from one place.
+        </p>
+    </div>
+
+    <div class="welcome-card">
+
+        <h3>Administration Portal</h3>
+
+        <p>
+            Keep your institution's academic and user information
+            organised and up to date.
+        </p>
+
+    </div>
 
 </div>
+
+<style>
+
+.home-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.welcome-section {
+    margin-bottom: 22px;
+}
+
+.welcome-section h2 {
+    margin: 0 0 7px;
+    font-size: 25px;
+}
+
+.welcome-section p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.welcome-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.welcome-card h3 {
+    margin: 0 0 6px;
+    color: #111827;
+    font-size: 16px;
+}
+
+.welcome-card p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+</style>
 
 {% endblock %}
