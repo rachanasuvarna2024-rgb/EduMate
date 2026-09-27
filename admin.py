@@ -193,47 +193,86 @@ def get_institutions():
 
     return institutions
 
-
 def get_parents(institution_id=None):
 
-    if institution_id:
-        cursor.execute("""
-            SELECT parent_id, name
-            FROM parent
-            WHERE institution_id = %s
-            ORDER BY name ASC
-        """, (institution_id,))
-    else:
-        cursor.execute("""
-            SELECT parent_id, name
-            FROM parent
-            ORDER BY name ASC
-        """)
+    conn = get_db_connection()
 
-    return cursor.fetchall()
+    if not conn:
+        return []
+
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        if institution_id:
+            cursor.execute("""
+                SELECT
+                    parent_id,
+                    parent_name,
+                    email,
+                    phone,
+                    institution_id
+                FROM parent
+                WHERE institution_id = %s
+                ORDER BY parent_name ASC
+            """, (institution_id,))
+
+        else:
+            cursor.execute("""
+                SELECT
+                    parent_id,
+                    parent_name,
+                    email,
+                    phone,
+                    institution_id
+                FROM parent
+                ORDER BY parent_name ASC
+            """)
+
+        return cursor.fetchall()
+
+    finally:
+
+        cursor.close()
+        conn.close()
 
 
 def get_standards(institution_id=None):
 
-    if institution_id:
-        cursor.execute("""
-            SELECT
-                standard_id,
-                standard_name
-            FROM standard
-            WHERE institution_id = %s
-            ORDER BY standard_name ASC
-        """, (institution_id,))
-    else:
-        cursor.execute("""
-            SELECT
-                standard_id,
-                standard_name
-            FROM standard
-            ORDER BY standard_name ASC
-        """)
+    conn = get_db_connection()
 
-    return cursor.fetchall()
+    if not conn:
+        return []
+
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        if institution_id:
+            cursor.execute("""
+                SELECT
+                    standard_id,
+                    standard_name
+                FROM standard
+                WHERE institution_id = %s
+                ORDER BY standard_name ASC
+            """, (institution_id,))
+
+        else:
+            cursor.execute("""
+                SELECT
+                    standard_id,
+                    standard_name
+                FROM standard
+                ORDER BY standard_name ASC
+            """)
+
+        return cursor.fetchall()
+
+    finally:
+
+        cursor.close()
+        conn.close()
 
 
 def get_subjects(institution_id=None):
@@ -4743,6 +4782,9 @@ def add_teacher():
         subjects=subjects
     )
 
+#===========================================================
+# VIEW TEACHERS
+#==========================================================
 @admin_bp.route("/view_teachers")
 @role_required("Admin")
 def view_teachers():
@@ -4874,6 +4916,8 @@ def view_teachers():
     "/edit_teacher/<int:teacher_id>",
     methods=["GET", "POST"]
 )
+
+
 @role_required("Admin")
 def edit_teacher(teacher_id):
 
@@ -5468,7 +5512,6 @@ def delete_teacher(teacher_id):
 # ============================================================
 # ============================================================
 
-
 # ============================================================
 # ADD PARENT
 # ============================================================
@@ -5507,7 +5550,6 @@ def add_parent():
     ).strip()
 
     if not institution_id:
-
         return render_template(
             "admin/add_parent.html",
             institutions=institutions,
@@ -5515,7 +5557,6 @@ def add_parent():
         )
 
     if not name:
-
         return render_template(
             "admin/add_parent.html",
             institutions=institutions,
@@ -5523,7 +5564,6 @@ def add_parent():
         )
 
     if not email or not EMAIL_PATTERN.fullmatch(email):
-
         return render_template(
             "admin/add_parent.html",
             institutions=institutions,
@@ -5531,7 +5571,6 @@ def add_parent():
         )
 
     if not password:
-
         return render_template(
             "admin/add_parent.html",
             institutions=institutions,
@@ -5539,12 +5578,22 @@ def add_parent():
         )
 
     if mobile and not PHONE_PATTERN.fullmatch(mobile):
-
         return render_template(
             "admin/add_parent.html",
             institutions=institutions,
             message="Mobile number must contain exactly 10 digits."
         )
+
+    conn = get_db_connection()
+
+    if not conn:
+        return render_template(
+            "admin/add_parent.html",
+            institutions=institutions,
+            message="Unable to connect to database."
+        )
+
+    cursor = conn.cursor()
 
     try:
 
@@ -5566,10 +5615,10 @@ def add_parent():
             INSERT INTO parent
             (
                 institution_id,
-                name,
+                parent_name,
                 email,
                 password,
-                mobile
+                phone
             )
             VALUES (%s, %s, %s, %s, %s)
         """, (
@@ -5598,48 +5647,379 @@ def add_parent():
             message="Error adding parent: " + str(e)
         )
 
+    finally:
+        cursor.close()
+        conn.close()
 
-# ============================================================
+#===========================================================
 # VIEW PARENTS
-# ============================================================
-
+#===========================================================
 @admin_bp.route("/view_parents")
 @role_required("Admin")
 def view_parents():
 
-    cursor.execute("""
-        SELECT
-            p.parent_id,
-            p.name,
-            p.email,
-            p.mobile,
-            i.institution_name
-        FROM parent p
-        JOIN institution i
-            ON p.institution_id = i.institution_id
-        ORDER BY p.parent_id ASC
-    """)
+    conn = get_db_connection()
 
-    parents = cursor.fetchall()
+    if not conn:
 
-    return render_template(
-        "admin/view_parents.html",
-        parents=parents
-    )
+        return render_template(
+            "admin/view_parents.html",
+            parents=[],
+            err="Unable to connect to database."
+        )
+
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        cursor.execute("""
+            SELECT
+
+                p.parent_id,
+
+                p.parent_name,
+
+                p.email,
+
+                p.phone,
+
+                p.status,
+
+                i.institution_name,
+
+                GROUP_CONCAT(
+                    DISTINCT s.student_name
+                    ORDER BY s.student_name
+                    SEPARATOR ', '
+                ) AS linked_students
+
+            FROM parent p
+
+            INNER JOIN institution i
+                ON p.institution_id = i.institution_id
+
+            LEFT JOIN student s
+                ON p.parent_id = s.parent_id
+
+            GROUP BY
+
+                p.parent_id,
+                p.parent_name,
+                p.email,
+                p.phone,
+                p.status,
+                i.institution_name
+
+            ORDER BY
+                p.parent_id DESC
+        """)
+
+        parents = cursor.fetchall()
+
+        return render_template(
+            "admin/view_parents.html",
+            parents=parents,
+            msg=request.args.get("msg"),
+            err=request.args.get("err")
+        )
+
+    except Exception as e:
+
+        return render_template(
+            "admin/view_parents.html",
+            parents=[],
+            err="Unable to load parents: " + str(e)
+        )
+
+    finally:
+
+        cursor.close()
+        conn.close()
+
+# ============================================================
+# EDIT PARENT
+# ============================================================
+
+@admin_bp.route("/edit_parent/<int:parent_id>", methods=["GET", "POST"])
+@role_required("Admin")
+def edit_parent(parent_id):
+
+    conn = get_db_connection()
+
+    if not conn:
+        return render_template(
+            "admin/edit_parent.html",
+            parent=None,
+            institutions=[],
+            message="Unable to connect to database."
+        )
+
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        institutions = get_institutions()
+
+        # ----------------------------------------------------
+        # GET EXISTING PARENT
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                parent_id,
+                institution_id,
+                parent_name,
+                email,
+                phone,
+                status
+            FROM parent
+            WHERE parent_id = %s
+        """, (parent_id,))
+
+        parent = cursor.fetchone()
+
+        if not parent:
+
+            return redirect(
+                url_for(
+                    "admin.view_parents",
+                    err="Parent not found."
+                )
+            )
 
 
+        # ----------------------------------------------------
+        # GET
+        # ----------------------------------------------------
+
+        if request.method == "GET":
+
+            return render_template(
+                "admin/edit_parent.html",
+                parent=parent,
+                institutions=institutions
+            )
+
+
+        # ----------------------------------------------------
+        # POST
+        # ----------------------------------------------------
+
+        institution_id = request.form.get(
+            "institution_id", ""
+        ).strip()
+
+        name = request.form.get(
+            "name", ""
+        ).strip()
+
+        email = request.form.get(
+            "email", ""
+        ).strip().lower()
+
+        password = request.form.get(
+            "password", ""
+        )
+
+        mobile = request.form.get(
+            "mobile", ""
+        ).strip()
+
+        status = request.form.get(
+            "status", "Active"
+        )
+
+
+        if not institution_id:
+
+            return render_template(
+                "admin/edit_parent.html",
+                parent=parent,
+                institutions=institutions,
+                message="Please select an institution."
+            )
+
+
+        if not name:
+
+            return render_template(
+                "admin/edit_parent.html",
+                parent=parent,
+                institutions=institutions,
+                message="Name is required."
+            )
+
+
+        if not email or not EMAIL_PATTERN.fullmatch(email):
+
+            return render_template(
+                "admin/edit_parent.html",
+                parent=parent,
+                institutions=institutions,
+                message="Please enter a valid email address."
+            )
+
+
+        if mobile and not PHONE_PATTERN.fullmatch(mobile):
+
+            return render_template(
+                "admin/edit_parent.html",
+                parent=parent,
+                institutions=institutions,
+                message="Mobile number must contain exactly 10 digits."
+            )
+
+
+        # ----------------------------------------------------
+        # CHECK DUPLICATE EMAIL
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            SELECT parent_id
+            FROM parent
+            WHERE email = %s
+              AND parent_id != %s
+        """, (email, parent_id))
+
+        if cursor.fetchone():
+
+            return render_template(
+                "admin/edit_parent.html",
+                parent=parent,
+                institutions=institutions,
+                message="Parent email already exists."
+            )
+
+
+        # ----------------------------------------------------
+        # UPDATE
+        # ----------------------------------------------------
+
+        if password:
+
+            cursor.execute("""
+                UPDATE parent
+                SET
+                    institution_id = %s,
+                    parent_name = %s,
+                    email = %s,
+                    password = %s,
+                    phone = %s,
+                    status = %s
+                WHERE parent_id = %s
+            """, (
+                institution_id,
+                name,
+                email,
+                password,
+                mobile if mobile else None,
+                status,
+                parent_id
+            ))
+
+        else:
+
+            cursor.execute("""
+                UPDATE parent
+                SET
+                    institution_id = %s,
+                    parent_name = %s,
+                    email = %s,
+                    phone = %s,
+                    status = %s
+                WHERE parent_id = %s
+            """, (
+                institution_id,
+                name,
+                email,
+                mobile if mobile else None,
+                status,
+                parent_id
+            ))
+
+
+        conn.commit()
+
+        return redirect(
+            url_for(
+                "admin.view_parents",
+                msg="Parent updated successfully."
+            )
+        )
+
+
+    except Exception as e:
+
+        conn.rollback()
+
+        return render_template(
+            "admin/edit_parent.html",
+            parent=parent if "parent" in locals() else None,
+            institutions=institutions if "institutions" in locals() else [],
+            message="Error updating parent: " + str(e)
+        )
+
+    finally:
+
+        cursor.close()
+        conn.close()
 # ============================================================
 # DELETE PARENT
 # ============================================================
 
-@admin_bp.route(
-    "/delete_parent/<int:parent_id>",
-    methods=["POST"]
-)
+@admin_bp.route("/delete_parent/<int:parent_id>", methods=["POST"])
 @role_required("Admin")
 def delete_parent(parent_id):
 
+    conn = get_db_connection()
+
+    if not conn:
+
+        return redirect(
+            url_for(
+                "admin.view_parents",
+                err="Unable to connect to database."
+            )
+        )
+
+    cursor = conn.cursor()
+
     try:
+
+        cursor.execute("""
+            SELECT parent_id
+            FROM parent
+            WHERE parent_id = %s
+        """, (parent_id,))
+
+        if not cursor.fetchone():
+
+            return redirect(
+                url_for(
+                    "admin.view_parents",
+                    err="Parent not found."
+                )
+            )
+
+
+        # Check whether students are linked
+        cursor.execute("""
+            SELECT COUNT(*) AS total
+            FROM student
+            WHERE parent_id = %s
+        """, (parent_id,))
+
+        result = cursor.fetchone()
+
+        if result[0] > 0:
+
+            return redirect(
+                url_for(
+                    "admin.view_parents",
+                    err="Cannot delete this parent because students are linked to this parent."
+                )
+            )
+
 
         cursor.execute("""
             DELETE FROM parent
@@ -5648,23 +6028,35 @@ def delete_parent(parent_id):
 
         conn.commit()
 
+        return redirect(
+            url_for(
+                "admin.view_parents",
+                msg="Parent deleted successfully."
+            )
+        )
+
+
     except Exception as e:
 
         conn.rollback()
 
-        return "Error deleting parent: " + str(e)
+        return redirect(
+            url_for(
+                "admin.view_parents",
+                err="Error deleting parent: " + str(e)
+            )
+        )
 
-    return redirect(
-        url_for("admin.view_parents")
-    )
+    finally:
 
+        cursor.close()
+        conn.close()
 
 # ============================================================
 # ============================================================
 # STUDENT MANAGEMENT
 # ============================================================
 # ============================================================
-
 
 # ============================================================
 # ADD STUDENT
@@ -5676,156 +6068,307 @@ def add_student():
 
     institutions = get_institutions()
 
+    # --------------------------------------------------------
+    # GET
+    # --------------------------------------------------------
+
     if request.method == "GET":
+
+        selected_institution_id = request.args.get(
+            "institution_id",
+            ""
+        ).strip()
+
+        parents = (
+            get_parents(selected_institution_id)
+            if selected_institution_id
+            else []
+        )
+
+        standards = (
+            get_standards(selected_institution_id)
+            if selected_institution_id
+            else []
+        )
 
         return render_template(
             "admin/add_student.html",
             institutions=institutions,
-            parents=[],
-            standards=[]
+            parents=parents,
+            standards=standards,
+            selected_institution_id=selected_institution_id
         )
 
+    # --------------------------------------------------------
+    # POST
+    # --------------------------------------------------------
+
     institution_id = request.form.get(
-        "institution_id", ""
+        "institution_id",
+        ""
     ).strip()
 
     parent_id = request.form.get(
-        "parent_id", ""
+        "parent_id",
+        ""
     ).strip()
 
     standard_id = request.form.get(
-        "standard_id", ""
+        "standard_id",
+        ""
     ).strip()
 
-    admission_no = request.form.get(
-        "admission_no", ""
-    ).strip()
-
-    roll_no = request.form.get(
-        "roll_no", ""
-    ).strip()
-
-    division = request.form.get(
-        "division", ""
-    ).strip()
-
-    name = request.form.get(
-        "name", ""
+    student_name = request.form.get(
+        "student_name",
+        ""
     ).strip()
 
     email = request.form.get(
-        "email", ""
+        "email",
+        ""
     ).strip().lower()
 
     password = request.form.get(
-        "password", ""
+        "password",
+        ""
     )
 
-    mobile = request.form.get(
-        "mobile", ""
+    phone = request.form.get(
+        "phone",
+        ""
     ).strip()
 
-    parents = get_parents(institution_id) if institution_id else []
-    standards = get_standards(institution_id) if institution_id else []
+    # --------------------------------------------------------
+    # LOAD DEPENDENT DROPDOWNS
+    # --------------------------------------------------------
+
+    parents = (
+        get_parents(institution_id)
+        if institution_id
+        else []
+    )
+
+    standards = (
+        get_standards(institution_id)
+        if institution_id
+        else []
+    )
+
+    # --------------------------------------------------------
+    # VALIDATION
+    # --------------------------------------------------------
 
     if not institution_id:
 
-        message = "Please select an institution."
+        return render_template(
+            "admin/add_student.html",
+            institutions=institutions,
+            parents=parents,
+            standards=standards,
+            selected_institution_id=institution_id,
+            message="Please select an institution."
+        )
 
-    elif not parent_id:
+    if not student_name:
 
-        message = "Please select a parent."
+        return render_template(
+            "admin/add_student.html",
+            institutions=institutions,
+            parents=parents,
+            standards=standards,
+            selected_institution_id=institution_id,
+            message="Student name is required."
+        )
 
-    elif not standard_id:
+    if not email or not EMAIL_PATTERN.fullmatch(email):
 
-        message = "Please select a standard."
+        return render_template(
+            "admin/add_student.html",
+            institutions=institutions,
+            parents=parents,
+            standards=standards,
+            selected_institution_id=institution_id,
+            message="Please enter a valid email address."
+        )
 
-    elif not roll_no:
+    if not password:
 
-        message = "Roll number is required."
+        return render_template(
+            "admin/add_student.html",
+            institutions=institutions,
+            parents=parents,
+            standards=standards,
+            selected_institution_id=institution_id,
+            message="Password is required."
+        )
 
-    elif not name:
+    if len(password) < 8:
 
-        message = "Student name is required."
+        return render_template(
+            "admin/add_student.html",
+            institutions=institutions,
+            parents=parents,
+            standards=standards,
+            selected_institution_id=institution_id,
+            message="Password must contain at least 8 characters."
+        )
 
-    elif not email or not EMAIL_PATTERN.fullmatch(email):
+    if phone and not PHONE_PATTERN.fullmatch(phone):
 
-        message = "Please enter a valid email address."
+        return render_template(
+            "admin/add_student.html",
+            institutions=institutions,
+            parents=parents,
+            standards=standards,
+            selected_institution_id=institution_id,
+            message="Phone number must contain exactly 10 digits."
+        )
 
-    elif not password:
+    # --------------------------------------------------------
+    # CHECK SELECTED PARENT
+    # --------------------------------------------------------
 
-        message = "Password is required."
+    conn = get_db_connection()
 
-    elif mobile and not PHONE_PATTERN.fullmatch(mobile):
+    if not conn:
 
-        message = "Mobile number must contain exactly 10 digits."
+        return render_template(
+            "admin/add_student.html",
+            institutions=institutions,
+            parents=parents,
+            standards=standards,
+            selected_institution_id=institution_id,
+            message="Unable to connect to database."
+        )
 
-    else:
+    cursor = conn.cursor(dictionary=True)
 
-        try:
+    try:
+
+        if parent_id:
 
             cursor.execute("""
-                SELECT student_id
-                FROM student
-                WHERE email = %s
-            """, (email,))
+                SELECT parent_id
+                FROM parent
+                WHERE parent_id = %s
+                  AND institution_id = %s
+            """, (
+                parent_id,
+                institution_id
+            ))
 
-            if cursor.fetchone():
+            if not cursor.fetchone():
 
-                message = "Student email already exists."
+                return render_template(
+                    "admin/add_student.html",
+                    institutions=institutions,
+                    parents=parents,
+                    standards=standards,
+                    selected_institution_id=institution_id,
+                    message="Selected parent does not belong to this institution."
+                )
 
-            else:
+        # ----------------------------------------------------
+        # CHECK STANDARD
+        # ----------------------------------------------------
 
-                cursor.execute("""
-                    INSERT INTO student
-                    (
-                        institution_id,
-                        parent_id,
-                        standard_id,
-                        admission_no,
-                        roll_no,
-                        division,
-                        name,
-                        email,
-                        password,
-                        mobile
-                    )
-                    VALUES
-                    (
-                        %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s
-                    )
-                """, (
-                    institution_id,
-                    parent_id,
-                    standard_id,
-                    admission_no if admission_no else None,
-                    roll_no,
-                    division if division else None,
-                    name,
-                    email,
-                    password,
-                    mobile if mobile else None
-                ))
+        if standard_id:
 
-                conn.commit()
+            cursor.execute("""
+                SELECT standard_id
+                FROM standard
+                WHERE standard_id = %s
+            """, (standard_id,))
 
-                message = "Student added successfully!"
+            if not cursor.fetchone():
 
-        except Exception as e:
+                return render_template(
+                    "admin/add_student.html",
+                    institutions=institutions,
+                    parents=parents,
+                    standards=standards,
+                    selected_institution_id=institution_id,
+                    message="Selected standard is invalid."
+                )
 
-            conn.rollback()
+        # ----------------------------------------------------
+        # CHECK DUPLICATE EMAIL
+        # ----------------------------------------------------
 
-            message = "Error adding student: " + str(e)
+        cursor.execute("""
+            SELECT student_id
+            FROM student
+            WHERE email = %s
+        """, (email,))
 
-    return render_template(
-        "admin/add_student.html",
-        institutions=institutions,
-        parents=parents,
-        standards=standards,
-        message=message
-    )
+        if cursor.fetchone():
 
+            return render_template(
+                "admin/add_student.html",
+                institutions=institutions,
+                parents=parents,
+                standards=standards,
+                selected_institution_id=institution_id,
+                message="Student email already exists."
+            )
+
+        # ----------------------------------------------------
+        # INSERT STUDENT
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            INSERT INTO student
+            (
+                institution_id,
+                standard_id,
+                parent_id,
+                student_name,
+                email,
+                password,
+                phone,
+                status
+            )
+            VALUES
+            (
+                %s, %s, %s, %s,
+                %s, %s, %s, 'Active'
+            )
+        """, (
+            institution_id,
+            standard_id if standard_id else None,
+            parent_id if parent_id else None,
+            student_name,
+            email,
+            password,
+            phone if phone else None
+        ))
+
+        conn.commit()
+
+        return redirect(
+            url_for(
+                "admin.view_students",
+                msg="Student added successfully."
+            )
+        )
+
+    except Exception as e:
+
+        conn.rollback()
+
+        return render_template(
+            "admin/add_student.html",
+            institutions=institutions,
+            parents=parents,
+            standards=standards,
+            selected_institution_id=institution_id,
+            message="Error adding student: " + str(e)
+        )
+
+    finally:
+
+        cursor.close()
+        conn.close()
 
 # ============================================================
 # VIEW STUDENTS
@@ -5835,39 +6378,392 @@ def add_student():
 @role_required("Admin")
 def view_students():
 
-    cursor.execute("""
-        SELECT
-            s.student_id,
-            s.admission_no,
-            s.roll_no,
-            s.division,
-            s.name,
-            s.email,
-            s.mobile,
-            p.name AS parent_name,
-            st.standard_name,
-            i.institution_name
-        FROM student s
+    conn = get_db_connection()
 
-        JOIN parent p
-            ON s.parent_id = p.parent_id
+    if not conn:
 
-        JOIN standard st
-            ON s.standard_id = st.standard_id
+        return render_template(
+            "admin/view_students.html",
+            students=[],
+            err="Unable to connect to database."
+        )
 
-        JOIN institution i
-            ON s.institution_id = i.institution_id
 
-        ORDER BY s.student_id ASC
-    """)
+    cursor = conn.cursor(dictionary=True)
 
-    students = cursor.fetchall()
 
-    return render_template(
-        "admin/view_students.html",
-        students=students
-    )
+    try:
 
+        cursor.execute("""
+            SELECT
+
+                s.student_id,
+
+                s.student_name,
+
+                s.email,
+
+                s.phone,
+
+                s.status,
+
+                s.institution_id,
+
+                s.standard_id,
+
+                s.parent_id,
+
+                i.institution_name,
+
+                st.standard_name,
+
+                p.parent_name
+
+            FROM student s
+
+            INNER JOIN institution i
+                ON s.institution_id = i.institution_id
+
+            LEFT JOIN standard st
+                ON s.standard_id = st.standard_id
+
+            LEFT JOIN parent p
+                ON s.parent_id = p.parent_id
+
+            ORDER BY
+                s.student_id DESC
+        """)
+
+
+        students = cursor.fetchall()
+
+
+        return render_template(
+            "admin/view_students.html",
+            students=students,
+            msg=request.args.get("msg"),
+            err=request.args.get("err")
+        )
+
+
+    except Exception as e:
+
+        return render_template(
+            "admin/view_students.html",
+            students=[],
+            err="Unable to load students: " + str(e)
+        )
+
+
+    finally:
+
+        cursor.close()
+        conn.close()
+
+
+# ===========================================================
+# EDIT STUDENT
+# ===========================================================
+
+@admin_bp.route("/edit_student/<int:student_id>", methods=["GET", "POST"])
+@role_required("Admin")
+def edit_student(student_id):
+
+    conn = get_db_connection()
+
+    if not conn:
+        return render_template(
+            "admin/edit_student.html",
+            student=None,
+            institutions=[],
+            parents=[],
+            standards=[],
+            message="Unable to connect to database."
+        )
+
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        institutions = get_institutions()
+
+        # ---------------------------------------------------
+        # GET STUDENT
+        # ---------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                student_id,
+                institution_id,
+                parent_id,
+                standard_id,
+                student_name,
+                email,
+                phone,
+                password,
+                status
+            FROM student
+            WHERE student_id = %s
+        """, (student_id,))
+
+        student = cursor.fetchone()
+
+        if not student:
+            return redirect(
+                url_for(
+                    "admin.view_students",
+                    err="Student not found."
+                )
+            )
+
+        # ---------------------------------------------------
+        # POST DATA
+        # ---------------------------------------------------
+
+        if request.method == "POST":
+
+            institution_id = request.form.get(
+                "institution_id"
+            )
+
+            parent_id = request.form.get(
+                "parent_id"
+            ) or None
+
+            standard_id = request.form.get(
+                "standard_id"
+            ) or None
+
+            student_name = request.form.get(
+                "student_name",
+                ""
+            ).strip()
+
+            email = request.form.get(
+                "email",
+                ""
+            ).strip().lower()
+
+            password = request.form.get(
+                "password",
+                ""
+            )
+
+            phone = request.form.get(
+                "phone",
+                ""
+            ).strip() or None
+
+            status = request.form.get(
+                "status",
+                "Active"
+            )
+
+            # ------------------------------------------------
+            # LOAD DROPDOWNS FOR SELECTED INSTITUTION
+            # ------------------------------------------------
+
+            parents = get_parents(institution_id)
+            standards = get_standards(institution_id)
+
+            # ------------------------------------------------
+            # VALIDATION
+            # ------------------------------------------------
+
+            if not institution_id:
+
+                return render_template(
+                    "admin/edit_student.html",
+                    student=student,
+                    institutions=institutions,
+                    parents=parents,
+                    standards=standards,
+                    selected_institution_id="",
+                    message="Please select an institution."
+                )
+
+            if not student_name:
+
+                return render_template(
+                    "admin/edit_student.html",
+                    student=student,
+                    institutions=institutions,
+                    parents=parents,
+                    standards=standards,
+                    selected_institution_id=institution_id,
+                    message="Student name is required."
+                )
+
+            if not email or not EMAIL_PATTERN.fullmatch(email):
+
+                return render_template(
+                    "admin/edit_student.html",
+                    student=student,
+                    institutions=institutions,
+                    parents=parents,
+                    standards=standards,
+                    selected_institution_id=institution_id,
+                    message="Please enter a valid email address."
+                )
+
+            if password and len(password) < 8:
+
+                return render_template(
+                    "admin/edit_student.html",
+                    student=student,
+                    institutions=institutions,
+                    parents=parents,
+                    standards=standards,
+                    selected_institution_id=institution_id,
+                    message="New password must contain at least 8 characters."
+                )
+
+            if phone and not PHONE_PATTERN.fullmatch(phone):
+
+                return render_template(
+                    "admin/edit_student.html",
+                    student=student,
+                    institutions=institutions,
+                    parents=parents,
+                    standards=standards,
+                    selected_institution_id=institution_id,
+                    message="Phone number must contain exactly 10 digits."
+                )
+
+            if status not in ["Active", "Inactive"]:
+                status = "Active"
+
+            # ------------------------------------------------
+            # CHECK EMAIL
+            # ------------------------------------------------
+
+            cursor.execute("""
+                SELECT student_id
+                FROM student
+                WHERE email = %s
+                  AND student_id != %s
+            """, (
+                email,
+                student_id
+            ))
+
+            if cursor.fetchone():
+
+                return render_template(
+                    "admin/edit_student.html",
+                    student=student,
+                    institutions=institutions,
+                    parents=parents,
+                    standards=standards,
+                    selected_institution_id=institution_id,
+                    message="Student email already exists."
+                )
+
+            # ------------------------------------------------
+            # UPDATE WITH NEW PASSWORD
+            # ------------------------------------------------
+
+            if password:
+
+                cursor.execute("""
+                    UPDATE student
+                    SET
+                        institution_id = %s,
+                        parent_id = %s,
+                        standard_id = %s,
+                        student_name = %s,
+                        email = %s,
+                        phone = %s,
+                        password = %s,
+                        status = %s
+                    WHERE student_id = %s
+                """, (
+                    institution_id,
+                    parent_id,
+                    standard_id,
+                    student_name,
+                    email,
+                    phone,
+                    password,
+                    status,
+                    student_id
+                ))
+
+            # ------------------------------------------------
+            # UPDATE WITHOUT CHANGING PASSWORD
+            # ------------------------------------------------
+
+            else:
+
+                cursor.execute("""
+                    UPDATE student
+                    SET
+                        institution_id = %s,
+                        parent_id = %s,
+                        standard_id = %s,
+                        student_name = %s,
+                        email = %s,
+                        phone = %s,
+                        status = %s
+                    WHERE student_id = %s
+                """, (
+                    institution_id,
+                    parent_id,
+                    standard_id,
+                    student_name,
+                    email,
+                    phone,
+                    status,
+                    student_id
+                ))
+
+            conn.commit()
+
+            return redirect(
+                url_for(
+                    "admin.view_students",
+                    msg="Student updated successfully."
+                )
+            )
+
+        # ---------------------------------------------------
+        # GET
+        # ---------------------------------------------------
+
+        parents = get_parents(student["institution_id"])
+        standards = get_standards(student["institution_id"])
+
+        return render_template(
+            "admin/edit_student.html",
+            student=student,
+            institutions=institutions,
+            parents=parents,
+            standards=standards,
+            selected_institution_id=student["institution_id"]
+        )
+
+    except Exception as e:
+
+        conn.rollback()
+
+        return render_template(
+            "admin/edit_student.html",
+            student=student if "student" in locals() else None,
+            institutions=institutions if "institutions" in locals() else [],
+            parents=parents if "parents" in locals() else [],
+            standards=standards if "standards" in locals() else [],
+            selected_institution_id=(
+                student["institution_id"]
+                if "student" in locals() and student
+                else ""
+            ),
+            message="Error updating student: " + str(e)
+        )
+
+    finally:
+
+        cursor.close()
+        conn.close()
 
 # ============================================================
 # DELETE STUDENT
@@ -5880,25 +6776,81 @@ def view_students():
 @role_required("Admin")
 def delete_student(student_id):
 
+    conn = get_db_connection()
+
+    if not conn:
+
+        return redirect(
+            url_for(
+                "admin.view_students",
+                err="Unable to connect to database."
+            )
+        )
+
+
+    cursor = conn.cursor()
+
+
     try:
+
+        # ----------------------------------------------------
+        # CHECK STUDENT EXISTS
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            SELECT student_id
+            FROM student
+            WHERE student_id = %s
+        """, (student_id,))
+
+
+        if not cursor.fetchone():
+
+            return redirect(
+                url_for(
+                    "admin.view_students",
+                    err="Student not found."
+                )
+            )
+
+
+        # ----------------------------------------------------
+        # DELETE
+        # ----------------------------------------------------
 
         cursor.execute("""
             DELETE FROM student
             WHERE student_id = %s
         """, (student_id,))
 
+
         conn.commit()
+
+
+        return redirect(
+            url_for(
+                "admin.view_students",
+                msg="Student deleted successfully."
+            )
+        )
+
 
     except Exception as e:
 
         conn.rollback()
 
-        return "Error deleting student: " + str(e)
+        return redirect(
+            url_for(
+                "admin.view_students",
+                err="Error deleting student: " + str(e)
+            )
+        )
 
-    return redirect(
-        url_for("admin.view_students")
-    )
 
+    finally:
+
+        cursor.close()
+        conn.close()
 
 # ============================================================
 # ============================================================

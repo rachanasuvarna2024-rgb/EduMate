@@ -4,112 +4,281 @@
 
 <div class="container">
 
-<h2>Edit Parent</h2>
+    <h2>Edit Parent</h2>
 
-<p>Update the parent's details below.</p>
+    <p>Update the parent's details below.</p>
 
-{% if message %}
-    <div class="error">
+
+    {% if message %}
+
+    <div class="error-message">
         {{ message }}
     </div>
-{% endif %}
 
-<div class="card">
-
-    <form action="{{ url_for('admin.edit_parent', parent_id=parent.parent_id) }}"
-          method="POST"
-          id="editParentForm"
-          novalidate>
-
-        <!-- Parent Name -->
-        <label for="name">Parent Name:</label>
-
-        <input type="text"
-               id="name"
-               name="name"
-               value="{{ parent.name }}"
-               maxlength="50"
-               required>
-
-        <small id="nameError" class="error"></small>
+    {% endif %}
 
 
-        <!-- Email -->
-        <label for="email">Email:</label>
+    <div class="card">
 
-        <input type="email"
-               id="email"
-               name="email"
-               value="{{ parent.email }}"
-               maxlength="100"
-               required>
+        <form
+            action="{{ url_for('admin.edit_parent', parent_id=parent.parent_id) }}"
+            method="POST"
+            id="parentForm"
+            novalidate
+        >
 
-        <small id="emailError" class="error"></small>
+            <!-- Institution -->
+
+            <label for="institution_id">
+                Institution:
+            </label>
+
+            <select
+                id="institution_id"
+                name="institution_id"
+                required
+            >
+
+                <option value="">
+                    Select Institution
+                </option>
+
+                {% for institution in institutions %}
+
+                <option
+                    value="{{ institution.institution_id }}"
+                    {% if institution.institution_id == parent.institution_id %}
+                    selected
+                    {% endif %}
+                >
+                    {{ institution.institution_name }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+            <small id="institutionError" class="error"></small>
 
 
-        <!-- Mobile -->
-        <label for="mobile">Mobile Number:</label>
+            <!-- Parent Name -->
 
-        <input type="text"
-               id="mobile"
-               name="mobile"
-               value="{{ parent.mobile or '' }}"
-               maxlength="10"
-               inputmode="numeric"
-               required>
+            <label for="name">
+                Parent Name:
+            </label>
 
-        <small id="mobileError" class="error"></small>
+            <input
+                type="text"
+                id="name"
+                name="name"
+                maxlength="100"
+                value="{{ parent.parent_name }}"
+                required
+            >
+
+            <small id="nameError" class="error"></small>
 
 
-        <button type="submit">
-            Save Changes
-        </button>
+            <!-- Email -->
+
+            <label for="email">
+                Email:
+            </label>
+
+            <input
+                type="email"
+                id="email"
+                name="email"
+                maxlength="150"
+                value="{{ parent.email }}"
+                required
+            >
+
+            <small id="emailError" class="error"></small>
 
 
-        <a href="{{ url_for('admin.view_parents') }}"
-           class="btn">
-            Cancel
-        </a>
+            <!-- Password -->
 
-    </form>
+            <label for="password">
+                New Password:
+            </label>
+
+            <div class="password-container">
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    minlength="8"
+                    placeholder="Leave blank to keep current password"
+                >
+
+                <button
+                    type="button"
+                    class="password-toggle"
+                    onclick="togglePassword()"
+                >
+                    👁
+                </button>
+
+            </div>
+
+            <small id="passwordError" class="error"></small>
+
+
+            <!-- Mobile -->
+
+            <label for="mobile">
+                Mobile Number:
+            </label>
+
+            <input
+                type="text"
+                id="mobile"
+                name="mobile"
+                maxlength="10"
+                inputmode="numeric"
+                value="{{ parent.phone or '' }}"
+            >
+
+            <small id="mobileError" class="error"></small>
+
+            <small class="field-note">
+                Optional. If provided, enter a valid 10-digit Indian mobile number.
+            </small>
+
+
+            <!-- Status -->
+
+            <label for="status">
+                Status:
+            </label>
+
+            <select
+                id="status"
+                name="status"
+            >
+
+                <option
+                    value="Active"
+                    {% if parent.status == 'Active' %}
+                    selected
+                    {% endif %}
+                >
+                    Active
+                </option>
+
+                <option
+                    value="Inactive"
+                    {% if parent.status == 'Inactive' %}
+                    selected
+                    {% endif %}
+                >
+                    Inactive
+                </option>
+
+            </select>
+
+
+            <!-- Buttons -->
+
+            <button type="submit">
+                Update Parent
+            </button>
+
+            <a
+                href="{{ url_for('admin.view_parents') }}"
+                style="margin-left:10px;"
+            >
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
 
 </div>
 
-</div>
 
 <style>
 
+.error-message {
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
 .error {
-    color: red;
+    color: #dc2626;
     display: none;
     margin-top: 3px;
     margin-bottom: 5px;
-    font-size: 14px;
+    font-size: 13px;
     background: transparent;
     border: none;
 }
 
-/* Keep input boxes normal */
+.field-note {
+    display: block;
+    color: #6b7280;
+    font-size: 12px;
+    margin-top: -5px;
+    margin-bottom: 12px;
+}
+
 input.invalid,
-input.valid {
+input.valid,
+select.invalid,
+select.valid {
     border: 1px solid #ccc !important;
     background-color: white !important;
     box-shadow: none !important;
 }
 
+.password-container {
+    display: flex;
+    align-items: center;
+}
+
+.password-container input {
+    flex: 1;
+}
+
+.password-toggle {
+    margin-left: 6px;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
 </style>
+
 
 <script>
 
-const form = document.getElementById("editParentForm");
+const form =
+    document.getElementById("parentForm");
 
-const nameInput = document.getElementById("name");
-const emailInput = document.getElementById("email");
-const mobileInput = document.getElementById("mobile");
+const institutionInput =
+    document.getElementById("institution_id");
+
+const nameInput =
+    document.getElementById("name");
+
+const emailInput =
+    document.getElementById("email");
+
+const passwordInput =
+    document.getElementById("password");
+
+const mobileInput =
+    document.getElementById("mobile");
 
 
 // =====================================================
-// ERROR MESSAGE FUNCTIONS
+// ERROR FUNCTIONS
 // =====================================================
 
 function showError(errorElement, message) {
@@ -129,22 +298,59 @@ function clearError(errorElement) {
 
 
 // =====================================================
-// NAME VALIDATION
+// INSTITUTION
+// =====================================================
+
+function validateInstitution() {
+
+    const error =
+        document.getElementById("institutionError");
+
+    if (institutionInput.value === "") {
+
+        showError(
+            error,
+            "Please select an institution."
+        );
+
+        return false;
+
+    }
+
+    clearError(error);
+
+    return true;
+
+}
+
+
+// =====================================================
+// NAME
 // =====================================================
 
 function validateName() {
 
-    const name = nameInput.value.trim();
-    const error = document.getElementById("nameError");
+    const name =
+        nameInput.value.trim();
 
-    const namePattern = /^[A-Za-z][A-Za-z .']{1,49}$/;
+    const error =
+        document.getElementById("nameError");
+
+    const namePattern =
+        /^[A-Za-z][A-Za-z .']{1,99}$/;
+
 
     if (name === "") {
 
-        showError(error, "Parent name is required.");
+        showError(
+            error,
+            "Parent name is required."
+        );
+
         return false;
 
     }
+
 
     if (!namePattern.test(name)) {
 
@@ -154,32 +360,44 @@ function validateName() {
         );
 
         return false;
+
     }
+
 
     clearError(error);
 
     return true;
+
 }
 
 
 // =====================================================
-// EMAIL VALIDATION
+// EMAIL
 // =====================================================
 
 function validateEmail() {
 
-    const email = emailInput.value.trim();
-    const error = document.getElementById("emailError");
+    const email =
+        emailInput.value.trim();
+
+    const error =
+        document.getElementById("emailError");
 
     const emailPattern =
         /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
+
     if (email === "") {
 
-        showError(error, "Email address is required.");
+        showError(
+            error,
+            "Email address is required."
+        );
+
         return false;
 
     }
+
 
     if (!emailPattern.test(email)) {
 
@@ -189,31 +407,84 @@ function validateEmail() {
         );
 
         return false;
+
     }
+
 
     clearError(error);
 
     return true;
+
 }
 
 
 // =====================================================
-// MOBILE VALIDATION
+// PASSWORD
+// =====================================================
+
+function validatePassword() {
+
+    const password =
+        passwordInput.value;
+
+    const error =
+        document.getElementById("passwordError");
+
+
+    // Blank means keep existing password
+
+    if (password === "") {
+
+        clearError(error);
+
+        return true;
+
+    }
+
+
+    if (password.length < 8) {
+
+        showError(
+            error,
+            "New password must contain at least 8 characters."
+        );
+
+        return false;
+
+    }
+
+
+    clearError(error);
+
+    return true;
+
+}
+
+
+// =====================================================
+// MOBILE
 // =====================================================
 
 function validateMobile() {
 
-    const mobile = mobileInput.value.trim();
-    const error = document.getElementById("mobileError");
+    const mobile =
+        mobileInput.value.trim();
 
-    const mobilePattern = /^[6-9][0-9]{9}$/;
+    const error =
+        document.getElementById("mobileError");
+
+    const mobilePattern =
+        /^[6-9][0-9]{9}$/;
+
 
     if (mobile === "") {
 
-        showError(error, "Mobile number is required.");
-        return false;
+        clearError(error);
+
+        return true;
 
     }
+
 
     if (!mobilePattern.test(mobile)) {
 
@@ -223,64 +494,116 @@ function validateMobile() {
         );
 
         return false;
+
     }
+
 
     clearError(error);
 
     return true;
+
 }
 
 
 // =====================================================
-// VALIDATE WHILE TYPING
+// LIVE VALIDATION
 // =====================================================
 
-nameInput.addEventListener("input", validateName);
+institutionInput.addEventListener(
+    "change",
+    validateInstitution
+);
 
-emailInput.addEventListener("input", validateEmail);
+nameInput.addEventListener(
+    "input",
+    validateName
+);
 
-mobileInput.addEventListener("input", validateMobile);
+emailInput.addEventListener(
+    "input",
+    validateEmail
+);
+
+passwordInput.addEventListener(
+    "input",
+    validatePassword
+);
+
+mobileInput.addEventListener(
+    "input",
+    function () {
+
+        this.value =
+            this.value.replace(/[^0-9]/g, "");
+
+        validateMobile();
+
+    }
+);
 
 
 // =====================================================
-// MOBILE - ALLOW ONLY NUMBERS
+// SUBMIT
 // =====================================================
 
-mobileInput.addEventListener("input", function() {
+form.addEventListener(
+    "submit",
+    function (event) {
 
-    this.value = this.value.replace(/[^0-9]/g, "");
+        const institutionValid =
+            validateInstitution();
 
-});
+        const nameValid =
+            validateName();
+
+        const emailValid =
+            validateEmail();
+
+        const passwordValid =
+            validatePassword();
+
+        const mobileValid =
+            validateMobile();
+
+
+        if (
+            !institutionValid ||
+            !nameValid ||
+            !emailValid ||
+            !passwordValid ||
+            !mobileValid
+        ) {
+
+            event.preventDefault();
+
+            return false;
+
+        }
+
+    }
+);
 
 
 // =====================================================
-// FORM SUBMISSION
+// PASSWORD SHOW / HIDE
 // =====================================================
 
-form.addEventListener("submit", function(event) {
+function togglePassword() {
 
-    const nameValid = validateName();
+    const password =
+        document.getElementById("password");
 
-    const emailValid = validateEmail();
+    if (password.type === "password") {
 
-    const mobileValid = validateMobile();
+        password.type = "text";
 
+    } else {
 
-    if (
-        !nameValid ||
-        !emailValid ||
-        !mobileValid
-    ) {
-
-        event.preventDefault();
-
-        alert("Please correct the invalid fields before submitting.");
-
-        return false;
+        password.type = "password";
 
     }
 
-});
+}
 
 </script>
 

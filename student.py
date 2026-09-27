@@ -1349,7 +1349,7 @@ def test_result(attempt_id):
             conn.close()
 
 # ---------------------------------
-# MY PROGRESS
+# LEARNING PROGRESS
 # ---------------------------------
 @student_bp.route("/my_progress")
 @role_required("Student")
@@ -1366,23 +1366,48 @@ def my_progress():
         cursor = conn.cursor(dictionary=True)
 
         # ---------------------------------
-        # TEST STATISTICS
+        # OVERALL STATISTICS
         # ---------------------------------
         cursor.execute("""
             SELECT
-                COUNT(*) AS total_tests,
 
-                SUM(
-                    CASE
-                        WHEN status = 'Submitted'
-                        THEN 1
-                        ELSE 0
-                    END
-                ) AS completed_tests
+                COUNT(*) AS completed_tests,
 
-            FROM test_attempt
+                COALESCE(
+                    ROUND(
+                        AVG(
+                            CASE
+                                WHEN t.total_marks > 0
+                                THEN
+                                    (ta.score / t.total_marks) * 100
+                            END
+                        ),
+                        2
+                    ),
+                    0
+                ) AS average_percentage,
 
-            WHERE student_id = %s
+                COALESCE(
+                    ROUND(
+                        MAX(
+                            CASE
+                                WHEN t.total_marks > 0
+                                THEN
+                                    (ta.score / t.total_marks) * 100
+                            END
+                        ),
+                        2
+                    ),
+                    0
+                ) AS highest_percentage
+
+            FROM test_attempt ta
+
+            JOIN test t
+                ON t.test_id = ta.test_id
+
+            WHERE ta.student_id = %s
+              AND ta.status = 'Submitted'
         """, (
             student_id,
         ))
@@ -1390,19 +1415,100 @@ def my_progress():
         stats = cursor.fetchone()
 
         # ---------------------------------
+        # SUBJECT-WISE PERFORMANCE
+        # ---------------------------------
+        cursor.execute("""
+            SELECT
+
+                sub.subject_name,
+
+                COUNT(ta.attempt_id) AS tests_completed,
+
+                ROUND(
+                    AVG(
+                        CASE
+                            WHEN t.total_marks > 0
+                            THEN
+                                (ta.score / t.total_marks) * 100
+                        END
+                    ),
+                    2
+                ) AS average_percentage
+
+            FROM test_attempt ta
+
+            JOIN test t
+                ON t.test_id = ta.test_id
+
+            JOIN subject sub
+                ON sub.subject_id = t.subject_id
+
+            WHERE ta.student_id = %s
+              AND ta.status = 'Submitted'
+
+            GROUP BY
+                sub.subject_id,
+                sub.subject_name
+
+            ORDER BY
+                average_percentage DESC
+        """, (
+            student_id,
+        ))
+
+        subject_performance = cursor.fetchall()
+
+        # ---------------------------------
+        # ADD PERFORMANCE LABEL
+        # ---------------------------------
+        for subject in subject_performance:
+
+            percentage = float(
+                subject["average_percentage"] or 0
+            )
+
+            if percentage >= 75:
+                subject["performance"] = "Strong"
+            elif percentage >= 60:
+                subject["performance"] = "Good"
+            elif percentage >= 50:
+                subject["performance"] = "Average"
+            else:
+                subject["performance"] = "Needs Improvement"
+        
+        # ---------------------------------
         # RECENT RESULTS
         # ---------------------------------
         cursor.execute("""
             SELECT
+
                 t.test_name,
+
+                sub.subject_name,
+
                 ta.score,
+
                 t.total_marks,
+
+                ROUND(
+                    CASE
+                        WHEN t.total_marks > 0
+                        THEN
+                            (ta.score / t.total_marks) * 100
+                        ELSE 0
+                    END,
+                    2
+                ) AS percentage,
+
                 ta.submitted_at
 
             FROM test_attempt ta
 
             JOIN test t
                 ON t.test_id = ta.test_id
+
+            JOIN subject sub
+                ON sub.subject_id = t.subject_id
 
             WHERE ta.student_id = %s
               AND ta.status = 'Submitted'
@@ -1416,20 +1522,46 @@ def my_progress():
 
         recent_results = cursor.fetchall()
 
+        # ---------------------------------
+        # STRONGEST SUBJECT
+        # ---------------------------------
+        strongest_subject = None
+
+        if subject_performance:
+
+            strongest_subject = subject_performance[0]
+
+        # ---------------------------------
+        # NEEDS IMPROVEMENT SUBJECT
+        # ---------------------------------
+        weakest_subject = None
+
+        if subject_performance:
+
+            weakest_subject = subject_performance[-1]
+
         return render_template(
             "student/my_progress.html",
+
             stats=stats,
-            recent_results=recent_results
+
+            subject_performance=subject_performance,
+
+            recent_results=recent_results,
+
+            strongest_subject=strongest_subject,
+
+            weakest_subject=weakest_subject
         )
 
     except Exception as e:
 
-        print("\n========== MY PROGRESS ERROR ==========")
+        print("\n========== LEARNING PROGRESS ERROR ==========")
         print(e)
-        print("=======================================\n")
+        print("=============================================\n")
 
         flash(
-            "Unable to load progress.",
+            "Unable to load learning progress.",
             "error"
         )
 

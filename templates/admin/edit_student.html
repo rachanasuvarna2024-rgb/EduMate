@@ -4,186 +4,276 @@
 
 <div class="container">
 
+    <h2>Edit Student</h2>
 
-<h2>Edit Student</h2>
+    <p>Update the student's details below.</p>
 
-<p>Update the student's details below.</p>
-
-
-{% if message %}
-    <div class="error message">
+    {% if message %}
+    <div class="error-message">
         {{ message }}
     </div>
-{% endif %}
+    {% endif %}
 
+    <div class="card">
 
-<div class="card">
+        <form
+            action="{{ url_for('admin.edit_student', student_id=student.student_id) }}"
+            method="POST"
+            id="studentForm"
+            novalidate
+        >
 
-    <form action="{{ url_for('admin.edit_student', student_id=student.student_id) }}"
-          method="POST"
-          id="editStudentForm"
-          novalidate>
+            <!-- Institution -->
+            <label for="institution_id">
+                Institution:
+            </label>
 
-
-        <!-- Parent -->
-        <label for="parent_id">Parent:</label>
-
-        <select id="parent_id"
-                name="parent_id"
-                required>
-
-            <option value="">Select Parent</option>
-
-            {% for parent in parents %}
-
-                <option value="{{ parent.parent_id }}"
-                    {% if parent.parent_id == student.parent_id %}
-                        selected
-                    {% endif %}>
-                    {{ parent.name }}
+            <select
+                id="institution_id"
+                name="institution_id"
+                required
+                onchange="changeInstitution(this.value)"
+            >
+                <option value="">
+                    Select Institution
                 </option>
 
-            {% endfor %}
+                {% set selected_inst = request.form.get(
+                    'institution_id',
+                    selected_institution_id|string
+                ) %}
 
-        </select>
+                {% for institution in institutions %}
+                <option
+                    value="{{ institution.institution_id }}"
+                    {% if institution.institution_id|string == selected_inst|string %}
+                    selected
+                    {% endif %}
+                >
+                    {{ institution.institution_name }}
+                </option>
+                {% endfor %}
+            </select>
 
-        <small id="parentError" class="error"></small>
+            <small id="institutionError" class="error"></small>
 
 
-        <!-- Standard -->
-        <label for="standard_id">Standard:</label>
+            <!-- Parent -->
+            <label for="parent_id">
+                Parent:
+            </label>
 
-        <select id="standard_id"
+            <select
+                id="parent_id"
+                name="parent_id"
+            >
+                <option value="">
+                    No Parent Linked
+                </option>
+
+                {% set selected_parent = request.form.get(
+                    'parent_id',
+                    student.parent_id or ''
+                ) %}
+
+                {% for parent in parents %}
+                <option
+                    value="{{ parent.parent_id }}"
+                    {% if parent.parent_id|string == selected_parent|string %}
+                    selected
+                    {% endif %}
+                >
+                    {{ parent.parent_name }}
+                </option>
+                {% endfor %}
+            </select>
+
+
+            <!-- Standard -->
+            <label for="standard_id">
+                Standard:
+            </label>
+
+            <select
+                id="standard_id"
                 name="standard_id"
-                required>
+            >
+                <option value="">
+                    No Standard Assigned
+                </option>
 
-            <option value="">Select Standard</option>
+                {% set selected_standard = request.form.get(
+                    'standard_id',
+                    student.standard_id or ''
+                ) %}
 
-            {% for standard in standards %}
-
-                <option value="{{ standard.standard_id }}"
-                    {% if standard.standard_id == student.standard_id %}
-                        selected
-                    {% endif %}>
+                {% for standard in standards %}
+                <option
+                    value="{{ standard.standard_id }}"
+                    {% if standard.standard_id|string == selected_standard|string %}
+                    selected
+                    {% endif %}
+                >
                     {{ standard.standard_name }}
                 </option>
-
-            {% endfor %}
-
-        </select>
-
-        <small id="standardError" class="error"></small>
+                {% endfor %}
+            </select>
 
 
-        <!-- Admission Number -->
-        <label for="admission_no">Admission Number:</label>
+            <!-- Student Name -->
+            <label for="student_name">
+                Student Name:
+            </label>
 
-        <input type="text"
-               id="admission_no"
-               name="admission_no"
-               value="{{ student.admission_no or '' }}"
-               maxlength="30"
-               placeholder="e.g. ADM-2026/01">
+            <input
+                type="text"
+                id="student_name"
+                name="student_name"
+                maxlength="100"
+                value="{{ request.form.get('student_name', student.student_name) }}"
+                required
+            >
 
-        <small id="admissionError" class="error"></small>
-
-
-        <!-- Roll Number -->
-        <label for="roll_no">Roll Number:</label>
-
-        <input type="text"
-               id="roll_no"
-               name="roll_no"
-               value="{{ student.roll_no }}"
-               maxlength="20"
-               required
-               placeholder="e.g. 101">
-
-        <small id="rollError" class="error"></small>
+            <small id="studentNameError" class="error"></small>
 
 
-        <!-- Division -->
-        <label for="division">Division:</label>
+            <!-- Email -->
+            <label for="email">
+                Email:
+            </label>
 
-        <input type="text"
-               id="division"
-               name="division"
-               value="{{ student.division or '' }}"
-               maxlength="10"
-               placeholder="e.g. A">
+            <input
+                type="email"
+                id="email"
+                name="email"
+                maxlength="150"
+                value="{{ request.form.get('email', student.email) }}"
+                required
+            >
 
-        <small id="divisionError" class="error"></small>
-
-
-        <!-- Student Name -->
-        <label for="name">Student Name:</label>
-
-        <input type="text"
-               id="name"
-               name="name"
-               value="{{ student.name }}"
-               maxlength="100"
-               required>
-
-        <small id="nameError" class="error"></small>
+            <small id="emailError" class="error"></small>
 
 
-        <!-- Email -->
-        <label for="email">Email:</label>
+            <!-- New Password -->
+            <label for="password">
+                New Password:
+            </label>
 
-        <input type="email"
-               id="email"
-               name="email"
-               value="{{ student.email }}"
-               maxlength="100"
-               required>
+            <div class="password-container">
 
-        <small id="emailError" class="error"></small>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    minlength="8"
+                    placeholder="Leave blank to keep current password"
+                >
 
+                <button
+                    type="button"
+                    class="password-toggle"
+                    onclick="togglePassword()"
+                >
+                    👁
+                </button>
 
-        <!-- Mobile -->
-        <label for="mobile">Mobile Number:</label>
+            </div>
 
-        <input type="text"
-               id="mobile"
-               name="mobile"
-               value="{{ student.mobile or '' }}"
-               maxlength="10"
-               inputmode="numeric">
-
-        <small id="mobileError" class="error"></small>
-
-
-        <button type="submit">
-            Save Changes
-        </button>
+            <small id="passwordError" class="error"></small>
 
 
-        <a href="{{ url_for('admin.view_students') }}"
-           class="btn">
-            Cancel
-        </a>
+            <!-- Phone -->
+            <label for="phone">
+                Phone Number:
+            </label>
 
-    </form>
+            <input
+                type="text"
+                id="phone"
+                name="phone"
+                maxlength="10"
+                inputmode="numeric"
+                value="{{ request.form.get('phone', student.phone or '') }}"
+            >
+
+            <small id="phoneError" class="error"></small>
+
+
+            <!-- Status -->
+            <label for="status">
+                Status:
+            </label>
+
+            {% set selected_status = request.form.get(
+                'status',
+                student.status
+            ) %}
+
+            <select
+                id="status"
+                name="status"
+            >
+                <option
+                    value="Active"
+                    {% if selected_status == 'Active' %}
+                    selected
+                    {% endif %}
+                >
+                    Active
+                </option>
+
+                <option
+                    value="Inactive"
+                    {% if selected_status == 'Inactive' %}
+                    selected
+                    {% endif %}
+                >
+                    Inactive
+                </option>
+            </select>
+
+
+            <!-- BUTTONS -->
+
+            <button type="submit">
+                Update Student
+            </button>
+
+            <a
+                href="{{ url_for('admin.view_students') }}"
+                style="margin-left:10px;"
+            >
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
 
 </div>
 
-
-</div>
 
 <style>
 
+.error-message {
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
 .error {
-    color: red;
+    color: #dc2626;
     display: none;
     margin-top: 3px;
     margin-bottom: 5px;
-    font-size: 14px;
+    font-size: 13px;
     background: transparent;
     border: none;
 }
 
-/* Keep input and select boxes normal */
 input.invalid,
 input.valid,
 select.invalid,
@@ -193,26 +283,47 @@ select.valid {
     box-shadow: none !important;
 }
 
+.password-container {
+    display: flex;
+    align-items: center;
+}
+
+.password-container input {
+    flex: 1;
+}
+
+.password-toggle {
+    margin-left: 6px;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
 </style>
+
 
 <script>
 
-const form = document.getElementById("editStudentForm");
+const form =
+    document.getElementById("studentForm");
 
-const parentInput = document.getElementById("parent_id");
-const standardInput = document.getElementById("standard_id");
+const institutionInput =
+    document.getElementById("institution_id");
 
-const admissionInput = document.getElementById("admission_no");
-const rollInput = document.getElementById("roll_no");
-const divisionInput = document.getElementById("division");
+const studentNameInput =
+    document.getElementById("student_name");
 
-const nameInput = document.getElementById("name");
-const emailInput = document.getElementById("email");
-const mobileInput = document.getElementById("mobile");
+const emailInput =
+    document.getElementById("email");
+
+const passwordInput =
+    document.getElementById("password");
+
+const phoneInput =
+    document.getElementById("phone");
 
 
 // =====================================================
-// ERROR MESSAGE FUNCTIONS
+// ERROR FUNCTIONS
 // =====================================================
 
 function showError(errorElement, message) {
@@ -232,177 +343,59 @@ function clearError(errorElement) {
 
 
 // =====================================================
-// PARENT VALIDATION
+// INSTITUTION
 // =====================================================
 
-function validateParent() {
+function validateInstitution() {
 
-    const error = document.getElementById("parentError");
+    const error =
+        document.getElementById("institutionError");
 
-    if (parentInput.value === "") {
-
-        showError(error, "Please select a parent.");
-        return false;
-
-    }
-
-    clearError(error);
-    return true;
-}
-
-
-// =====================================================
-// STANDARD VALIDATION
-// =====================================================
-
-function validateStandard() {
-
-    const error = document.getElementById("standardError");
-
-    if (standardInput.value === "") {
-
-        showError(error, "Please select a standard.");
-        return false;
-
-    }
-
-    clearError(error);
-    return true;
-}
-
-
-// =====================================================
-// ADMISSION NUMBER
-// =====================================================
-
-function validateAdmission() {
-
-    const admission = admissionInput.value.trim();
-    const error = document.getElementById("admissionError");
-
-    /* Admission number is optional */
-    if (admission === "") {
-
-        clearError(error);
-        return true;
-
-    }
-
-    if (admission.length > 30) {
+    if (institutionInput.value === "") {
 
         showError(
             error,
-            "Admission number cannot exceed 30 characters."
-        );
-
-        return false;
-    }
-
-    /* Allows letters, numbers, hyphens, slashes, and spaces */
-    const admissionPattern = /^[A-Za-z0-9/ -]{1,30}$/;
-
-    if (!admissionPattern.test(admission)) {
-
-        showError(
-            error,
-            "Admission number can only contain letters, numbers, spaces, hyphens (-), and slashes (/)."
+            "Please select an institution."
         );
 
         return false;
     }
 
     clearError(error);
+
     return true;
+
 }
 
 
 // =====================================================
-// ROLL NUMBER
+// STUDENT NAME
 // =====================================================
 
-function validateRoll() {
+function validateStudentName() {
 
-    const roll = rollInput.value.trim();
-    const error = document.getElementById("rollError");
+    const studentName =
+        studentNameInput.value.trim();
 
-    if (roll === "") {
+    const error =
+        document.getElementById("studentNameError");
 
-        showError(error, "Roll number is required.");
-        return false;
+    const pattern =
+        /^[A-Za-z][A-Za-z .']{1,99}$/;
 
-    }
 
-    /* Checks for numbers/alphanumeric roll codes up to 20 chars */
-    const rollPattern = /^[A-Za-z0-9-]{1,20}$/;
-
-    if (!rollPattern.test(roll)) {
+    if (studentName === "") {
 
         showError(
             error,
-            "Roll number must be alphanumeric (e.g., 101 or R-101)."
+            "Student name is required."
         );
 
         return false;
     }
 
-    clearError(error);
-    return true;
-}
 
-
-// =====================================================
-// DIVISION
-// =====================================================
-
-function validateDivision() {
-
-    const division = divisionInput.value.trim();
-    const error = document.getElementById("divisionError");
-
-    /* Division is optional */
-    if (division === "") {
-
-        clearError(error);
-        return true;
-
-    }
-
-    const divisionPattern = /^[A-Za-z0-9 ]{1,10}$/;
-
-    if (!divisionPattern.test(division)) {
-
-        showError(
-            error,
-            "Division should contain only letters and numbers (e.g., A, B, Div-1)."
-        );
-
-        return false;
-    }
-
-    clearError(error);
-    return true;
-}
-
-
-// =====================================================
-// NAME
-// =====================================================
-
-function validateName() {
-
-    const name = nameInput.value.trim();
-    const error = document.getElementById("nameError");
-
-    const namePattern = /^[A-Za-z][A-Za-z .']{1,99}$/;
-
-    if (name === "") {
-
-        showError(error, "Student name is required.");
-        return false;
-
-    }
-
-    if (!namePattern.test(name)) {
+    if (!pattern.test(studentName)) {
 
         showError(
             error,
@@ -412,8 +405,11 @@ function validateName() {
         return false;
     }
 
+
     clearError(error);
+
     return true;
+
 }
 
 
@@ -423,20 +419,28 @@ function validateName() {
 
 function validateEmail() {
 
-    const email = emailInput.value.trim();
-    const error = document.getElementById("emailError");
+    const email =
+        emailInput.value.trim();
 
-    const emailPattern =
+    const error =
+        document.getElementById("emailError");
+
+    const pattern =
         /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
 
     if (email === "") {
 
-        showError(error, "Email address is required.");
-        return false;
+        showError(
+            error,
+            "Email address is required."
+        );
 
+        return false;
     }
 
-    if (!emailPattern.test(email)) {
+
+    if (!pattern.test(email)) {
 
         showError(
             error,
@@ -446,115 +450,213 @@ function validateEmail() {
         return false;
     }
 
+
     clearError(error);
+
     return true;
+
 }
 
 
 // =====================================================
-// MOBILE
+// PASSWORD
 // =====================================================
 
-function validateMobile() {
+function validatePassword() {
 
-    const mobile = mobileInput.value.trim();
-    const error = document.getElementById("mobileError");
+    const password =
+        passwordInput.value;
 
-    /* Mobile is optional */
+    const error =
+        document.getElementById("passwordError");
 
-    if (mobile === "") {
+
+    // Blank = keep existing password
+
+    if (password === "") {
 
         clearError(error);
-        return true;
 
+        return true;
     }
 
-    const mobilePattern = /^[6-9][0-9]{9}$/;
 
-    if (!mobilePattern.test(mobile)) {
+    if (password.length < 8) {
 
         showError(
             error,
-            "Enter a valid 10-digit Indian mobile number."
+            "New password must contain at least 8 characters."
         );
 
         return false;
     }
 
+
     clearError(error);
+
     return true;
+
 }
 
 
 // =====================================================
-// REAL-TIME INPUT & AUTO-FORMATTING
+// PHONE
 // =====================================================
 
-parentInput.addEventListener("change", validateParent);
-standardInput.addEventListener("change", validateStandard);
+function validatePhone() {
 
-admissionInput.addEventListener("input", validateAdmission);
+    const phone =
+        phoneInput.value.trim();
 
-/* Automatically strip invalid symbols from roll numbers */
-rollInput.addEventListener("input", function() {
+    const error =
+        document.getElementById("phoneError");
 
-    this.value = this.value.replace(/[^A-Za-z0-9-]/g, "");
-    validateRoll();
-
-});
-
-/* Convert division inputs directly to uppercase */
-divisionInput.addEventListener("input", function() {
-
-    this.value = this.value.toUpperCase();
-    validateDivision();
-
-});
-
-nameInput.addEventListener("input", validateName);
-emailInput.addEventListener("input", validateEmail);
-mobileInput.addEventListener("input", validateMobile);
+    const pattern =
+        /^[6-9][0-9]{9}$/;
 
 
-// =====================================================
-// MOBILE - ALLOW ONLY NUMBERS
-// =====================================================
+    // Optional field
 
-mobileInput.addEventListener("input", function() {
+    if (phone === "") {
 
-    this.value = this.value.replace(/[^0-9]/g, "");
+        clearError(error);
 
-});
-
-
-// =====================================================
-// FORM SUBMISSION
-// =====================================================
-
-form.addEventListener("submit", function(event) {
-
-    const valid =
-        validateParent() &&
-        validateStandard() &&
-        validateAdmission() &&
-        validateRoll() &&
-        validateDivision() &&
-        validateName() &&
-        validateEmail() &&
-        validateMobile();
+        return true;
+    }
 
 
-    if (!valid) {
+    if (!pattern.test(phone)) {
 
-        event.preventDefault();
-
-        alert("Please correct the invalid fields before submitting.");
+        showError(
+            error,
+            "Enter a valid 10-digit Indian phone number."
+        );
 
         return false;
+    }
+
+
+    clearError(error);
+
+    return true;
+
+}
+
+
+// =====================================================
+// LIVE VALIDATION
+// =====================================================
+
+institutionInput.addEventListener(
+    "change",
+    validateInstitution
+);
+
+
+studentNameInput.addEventListener(
+    "input",
+    validateStudentName
+);
+
+
+emailInput.addEventListener(
+    "input",
+    validateEmail
+);
+
+
+passwordInput.addEventListener(
+    "input",
+    validatePassword
+);
+
+
+phoneInput.addEventListener(
+    "input",
+    function () {
+
+        this.value =
+            this.value.replace(/[^0-9]/g, "");
+
+        validatePhone();
+
+    }
+);
+
+
+// =====================================================
+// SUBMIT
+// =====================================================
+
+form.addEventListener(
+    "submit",
+    function (event) {
+
+        const valid =
+            validateInstitution() &&
+            validateStudentName() &&
+            validateEmail() &&
+            validatePassword() &&
+            validatePhone();
+
+
+        if (!valid) {
+
+            event.preventDefault();
+
+            return false;
+
+        }
+
+    }
+);
+
+
+// =====================================================
+// PASSWORD TOGGLE
+// =====================================================
+
+function togglePassword() {
+
+    const password =
+        document.getElementById("password");
+
+
+    if (password.type === "password") {
+
+        password.type = "text";
+
+    } else {
+
+        password.type = "password";
 
     }
 
-});
+}
+
+
+// =====================================================
+// CHANGE INSTITUTION
+// =====================================================
+
+function changeInstitution(value) {
+
+    if (!value) {
+
+        window.location.href =
+            "{{ url_for('admin.edit_student', student_id=student.student_id) }}";
+
+        return;
+
+    }
+
+
+    window.location.href =
+        "{{ url_for('admin.edit_student', student_id=student.student_id) }}"
+        + "?institution_id="
+        + encodeURIComponent(value);
+
+}
 
 </script>
 

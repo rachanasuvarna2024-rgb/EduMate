@@ -1,113 +1,661 @@
 {% extends "admin/admin_home.html" %}
 
 {% block content %}
+
 <div class="container">
-    <h2>Add Standard</h2>
-    <p>Enter a new class or academic year standard below.</p>
 
-    {% if msg %}
-        <div class="alert alert-success">{{ msg }}</div>
-    {% endif %}
-    {% if err %}
-        <div class="alert alert-danger">{{ err }}</div>
-    {% endif %}
+    <h2>Add Student</h2>
 
-    <!-- FORM TO CREATE NEW STANDARD -->
-    <div class="card form-card">
-        <form method="POST" action="{{ url_for('admin.add_standard') }}" id="standardForm" novalidate>
-            <div class="form-group">
-                <label for="standard_name">Standard Name <span class="required">*</span></label>
-                <input type="text" id="standard_name" name="standard_name" placeholder="e.g., 10, FYBSc, 10th" maxlength="50" required>
-                <small id="standardError" class="error"></small>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Add Standard</button>
-            </div>
-        </form>
+    <p>Enter the student's details below.</p>
+
+    {% if message %}
+    <div class="error-message">
+        {{ message }}
     </div>
+    {% endif %}
 
-    <!-- TABLE TO VIEW EXISTING STANDARDS -->
-    <div style="margin-top: 30px;">
-        <h3>Existing Standards</h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Standard Name</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for std in standards %}
-                <tr>
-                    <td>{{ std.standard_id }}</td>
-                    <td>{{ std.standard_name }}</td>
-                    <td>
-                        <a href="{{ url_for('admin.edit_standard', standard_id=std.standard_id) }}" class="btn">
-                            Edit
-                        </a>
+    <div class="card">
 
-                        <form action="{{ url_for('admin.delete_standard', standard_id=std.standard_id) }}" method="POST" style="display:inline;">
-                            <button type="submit" onclick="return confirm('Are you sure you want to delete this standard?');">
-                                Delete
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="3">No standards added yet.</td>
-                </tr>
+        <form
+            action="{{ url_for('admin.add_student') }}"
+            method="POST"
+            id="studentForm"
+            novalidate
+        >
+
+            <!-- Institution -->
+
+            <label for="institution_id">
+                Institution:
+            </label>
+
+            {% set selected_institution = request.form.get(
+                'institution_id',
+                selected_institution_id
+            ) %}
+
+            <select
+                id="institution_id"
+                name="institution_id"
+                required
+                onchange="loadInstitutionData(this.value)"
+            >
+
+                <option value="">
+                    Select Institution
+                </option>
+
+                {% for institution in institutions %}
+
+                <option
+                    value="{{ institution.institution_id }}"
+                    {% if institution.institution_id|string == selected_institution|string %}
+                    selected
+                    {% endif %}
+                >
+                    {{ institution.institution_name }}
+                </option>
+
                 {% endfor %}
-            </tbody>
-        </table>
+
+            </select>
+
+            <small id="institutionError" class="error"></small>
+
+
+            <!-- Parent -->
+
+            <label for="parent_id">
+                Parent:
+            </label>
+
+            {% set selected_parent = request.form.get(
+                'parent_id',
+                ''
+            ) %}
+
+            <select
+                id="parent_id"
+                name="parent_id"
+            >
+
+                <option value="">
+                    Select Parent (Optional)
+                </option>
+
+                {% for parent in parents %}
+
+                <option
+                    value="{{ parent.parent_id }}"
+                    {% if parent.parent_id|string == selected_parent|string %}
+                    selected
+                    {% endif %}
+                >
+                    {{ parent.parent_name }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+            <small class="field-note">
+                You can leave this blank if no parent is linked yet.
+            </small>
+
+
+            <!-- Standard -->
+
+            <label for="standard_id">
+                Standard:
+            </label>
+
+            {% set selected_standard = request.form.get(
+                'standard_id',
+                ''
+            ) %}
+
+            <select
+                id="standard_id"
+                name="standard_id"
+            >
+
+                <option value="">
+                    Select Standard (Optional)
+                </option>
+
+                {% for standard in standards %}
+
+                <option
+                    value="{{ standard.standard_id }}"
+                    {% if standard.standard_id|string == selected_standard|string %}
+                    selected
+                    {% endif %}
+                >
+                    {{ standard.standard_name }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+            <small class="field-note">
+                You can assign a standard later from Edit Student.
+            </small>
+
+
+            <!-- Student Name -->
+
+            <label for="student_name">
+                Student Name:
+            </label>
+
+            <input
+                type="text"
+                id="student_name"
+                name="student_name"
+                maxlength="100"
+                value="{{ request.form.get('student_name', '') }}"
+                required
+            >
+
+            <small id="studentNameError" class="error"></small>
+
+
+            <!-- Email -->
+
+            <label for="email">
+                Email:
+            </label>
+
+            <input
+                type="email"
+                id="email"
+                name="email"
+                maxlength="150"
+                value="{{ request.form.get('email', '') }}"
+                required
+            >
+
+            <small id="emailError" class="error"></small>
+
+
+            <!-- Password -->
+
+            <label for="password">
+                Password:
+            </label>
+
+            <div class="password-container">
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    minlength="8"
+                    required
+                >
+
+                <button
+                    type="button"
+                    class="password-toggle"
+                    onclick="togglePassword()"
+                >
+                    👁
+                </button>
+
+            </div>
+
+            <small id="passwordError" class="error"></small>
+
+
+            <!-- Phone -->
+
+            <label for="phone">
+                Phone Number:
+            </label>
+
+            <input
+                type="text"
+                id="phone"
+                name="phone"
+                maxlength="10"
+                inputmode="numeric"
+                value="{{ request.form.get('phone', '') }}"
+            >
+
+            <small id="phoneError" class="error"></small>
+
+            <small class="field-note">
+                Optional.
+            </small>
+
+
+            <button type="submit">
+                Add Student
+            </button>
+
+        </form>
+
     </div>
+
 </div>
 
+
 <style>
+
+.error-message {
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
 .error {
-    color: red;
+    color: #dc2626;
     display: none;
     margin-top: 3px;
     margin-bottom: 5px;
-    font-size: 14px;
+    font-size: 13px;
     background: transparent;
     border: none;
 }
-</style>
 
-<script>
-const form = document.getElementById("standardForm");
-const standardInput = document.getElementById("standard_name");
-const error = document.getElementById("standardError");
-
-function validateStandardName() {
-    const name = standardInput.value.trim();
-    const pattern = /^[A-Za-z0-9]{1,50}$/;
-
-    if (name === "") {
-        error.textContent = "Standard name is required.";
-        error.style.display = "block";
-        return false;
-    }
-
-    if (!pattern.test(name)) {
-        error.textContent = "Standard name must contain only letters and numbers (no spaces or special characters allowed).";
-        error.style.display = "block";
-        return false;
-    }
-
-    error.textContent = "";
-    error.style.display = "none";
-    return true;
+.field-note {
+    display: block;
+    color: #6b7280;
+    font-size: 12px;
+    margin-top: -5px;
+    margin-bottom: 12px;
 }
 
-standardInput.addEventListener("input", validateStandardName);
+input.invalid,
+input.valid,
+select.invalid,
+select.valid {
+    border: 1px solid #ccc !important;
+    background-color: white !important;
+    box-shadow: none !important;
+}
 
-form.addEventListener("submit", function(event) {
-    if (!validateStandardName()) {
-        event.preventDefault();
+.password-container {
+    display: flex;
+    align-items: center;
+}
+
+.password-container input {
+    flex: 1;
+}
+
+.password-toggle {
+    margin-left: 6px;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+</style>
+
+
+<script>
+
+const form =
+    document.getElementById("studentForm");
+
+const institutionInput =
+    document.getElementById("institution_id");
+
+const studentNameInput =
+    document.getElementById("student_name");
+
+const emailInput =
+    document.getElementById("email");
+
+const passwordInput =
+    document.getElementById("password");
+
+const phoneInput =
+    document.getElementById("phone");
+
+
+// =====================================================
+// LOAD PARENTS + STANDARDS
+// =====================================================
+
+function loadInstitutionData(value) {
+
+    if (!value) {
+
+        window.location.href =
+            "{{ url_for('admin.add_student') }}";
+
+        return;
+
     }
-});
+
+    window.location.href =
+        "{{ url_for('admin.add_student') }}"
+        + "?institution_id="
+        + encodeURIComponent(value);
+
+}
+
+
+// =====================================================
+// ERROR FUNCTIONS
+// =====================================================
+
+function showError(errorElement, message) {
+
+    errorElement.textContent = message;
+    errorElement.style.display = "block";
+
+}
+
+
+function clearError(errorElement) {
+
+    errorElement.textContent = "";
+    errorElement.style.display = "none";
+
+}
+
+
+// =====================================================
+// INSTITUTION
+// =====================================================
+
+function validateInstitution() {
+
+    const error =
+        document.getElementById("institutionError");
+
+    if (institutionInput.value === "") {
+
+        showError(
+            error,
+            "Please select an institution."
+        );
+
+        return false;
+
+    }
+
+    clearError(error);
+
+    return true;
+
+}
+
+
+// =====================================================
+// STUDENT NAME
+// =====================================================
+
+function validateStudentName() {
+
+    const studentName =
+        studentNameInput.value.trim();
+
+    const error =
+        document.getElementById("studentNameError");
+
+    const pattern =
+        /^[A-Za-z][A-Za-z .']{1,99}$/;
+
+
+    if (studentName === "") {
+
+        showError(
+            error,
+            "Student name is required."
+        );
+
+        return false;
+
+    }
+
+
+    if (!pattern.test(studentName)) {
+
+        showError(
+            error,
+            "Name should contain only letters, spaces, dots or apostrophes."
+        );
+
+        return false;
+
+    }
+
+
+    clearError(error);
+
+    return true;
+
+}
+
+
+// =====================================================
+// EMAIL
+// =====================================================
+
+function validateEmail() {
+
+    const email =
+        emailInput.value.trim();
+
+    const error =
+        document.getElementById("emailError");
+
+    const pattern =
+        /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+
+    if (email === "") {
+
+        showError(
+            error,
+            "Email address is required."
+        );
+
+        return false;
+
+    }
+
+
+    if (!pattern.test(email)) {
+
+        showError(
+            error,
+            "Please enter a valid email address."
+        );
+
+        return false;
+
+    }
+
+
+    clearError(error);
+
+    return true;
+
+}
+
+
+// =====================================================
+// PASSWORD
+// =====================================================
+
+function validatePassword() {
+
+    const password =
+        passwordInput.value;
+
+    const error =
+        document.getElementById("passwordError");
+
+
+    if (password === "") {
+
+        showError(
+            error,
+            "Password is required."
+        );
+
+        return false;
+
+    }
+
+
+    if (password.length < 8) {
+
+        showError(
+            error,
+            "Password must contain at least 8 characters."
+        );
+
+        return false;
+
+    }
+
+
+    clearError(error);
+
+    return true;
+
+}
+
+
+// =====================================================
+// PHONE
+// =====================================================
+
+function validatePhone() {
+
+    const phone =
+        phoneInput.value.trim();
+
+    const error =
+        document.getElementById("phoneError");
+
+    const pattern =
+        /^[6-9][0-9]{9}$/;
+
+
+    if (phone === "") {
+
+        clearError(error);
+
+        return true;
+
+    }
+
+
+    if (!pattern.test(phone)) {
+
+        showError(
+            error,
+            "Enter a valid 10-digit Indian phone number."
+        );
+
+        return false;
+
+    }
+
+
+    clearError(error);
+
+    return true;
+
+}
+
+
+// =====================================================
+// LIVE VALIDATION
+// =====================================================
+
+institutionInput.addEventListener(
+    "change",
+    validateInstitution
+);
+
+studentNameInput.addEventListener(
+    "input",
+    validateStudentName
+);
+
+emailInput.addEventListener(
+    "input",
+    validateEmail
+);
+
+passwordInput.addEventListener(
+    "input",
+    validatePassword
+);
+
+phoneInput.addEventListener(
+    "input",
+    function () {
+
+        this.value =
+            this.value.replace(/[^0-9]/g, "");
+
+        validatePhone();
+
+    }
+);
+
+
+// =====================================================
+// FORM SUBMIT
+// =====================================================
+
+form.addEventListener(
+    "submit",
+    function (event) {
+
+        const valid =
+            validateInstitution() &&
+            validateStudentName() &&
+            validateEmail() &&
+            validatePassword() &&
+            validatePhone();
+
+
+        if (!valid) {
+
+            event.preventDefault();
+
+            return false;
+
+        }
+
+    }
+);
+
+
+// =====================================================
+// PASSWORD TOGGLE
+// =====================================================
+
+function togglePassword() {
+
+    const password =
+        document.getElementById("password");
+
+    if (password.type === "password") {
+
+        password.type = "text";
+
+    } else {
+
+        password.type = "password";
+
+    }
+
+}
+
 </script>
+
 {% endblock %}
